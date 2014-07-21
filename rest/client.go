@@ -34,7 +34,7 @@ const (
 )
 
 // Consumer encapsulates the required authentication logic for the API the
-// Client is will interact with.
+// Client will interact with.
 type Consumer interface {
 	AuthorizeRequest(urlStr string, requestType string, form url.Values) url.Values
 }
@@ -45,12 +45,15 @@ type Client struct {
 	Consumer
 }
 
+// BaseResponse is the resultant type of any of the Do*() methods of the
+// Client. It contains several informational fields as well as the result
+// value.
 type BaseResponse struct {
-	Status   int
-	Reason   string
-	Messages []string
-	Next     string
-	Results  interface{}
+	Status   int         // HTTP status code.
+	Reason   string      // Reason message for the status code.
+	Messages []string    // Any server messages attached to the Response.
+	Next     string      // A cursor to the next result set.
+	Results  interface{} // The actual results of the REST request.
 }
 
 func (c *Client) decode(r io.Reader, want interface{}) (*BaseResponse, error) {
