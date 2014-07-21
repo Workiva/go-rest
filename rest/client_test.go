@@ -13,11 +13,11 @@ import (
 
 type testObj struct{ Prop string }
 
-type testConsumer struct{ key, secret string }
+type testAuthorizer struct{ key, secret string }
 
-// AuthorizeRequest will provide a testing specific authorization without
+// Authorize will provide a testing specific authorization without
 // actually signing the request.
-func (tc testConsumer) AuthorizeRequest(urlStr string, requestType string, form url.Values) url.Values {
+func (tc testAuthorizer) Authorize(urlStr string, requestType string, form url.Values) url.Values {
 	baseParams := map[string]string{
 		"oauth_consumer_key":     tc.key,
 		"oauth_signature_method": "HMAC-SHA1",
@@ -66,7 +66,7 @@ func TestEverything(t *testing.T) {
 
 	defer ts.Close()
 
-	var c = Client{testConsumer{
+	var c = Client{testAuthorizer{
 		"token",
 		"value",
 	}}

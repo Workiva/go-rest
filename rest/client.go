@@ -33,16 +33,16 @@ const (
 	PUT    = "PUT"
 )
 
-// Consumer encapsulates the required authentication logic for the API the
+// Authorizer encapsulates the required authentication logic for the API the
 // Client will interact with.
-type Consumer interface {
-	AuthorizeRequest(urlStr string, requestType string, form url.Values) url.Values
+type Authorizer interface {
+	Authorize(urlStr string, requestType string, form url.Values) url.Values
 }
 
 // Client is the type that encapsulates and uses the Consumer to sign any REST
 // requests that are performed.
 type Client struct {
-	Consumer
+	Authorizer
 }
 
 // BaseResponse is the resultant type of any of the Do*() methods of the
@@ -80,7 +80,7 @@ func (c *Client) do(method, urlStr string, params map[string]string) (*http.Resp
 		return nil, err
 	}
 
-	form := c.AuthorizeRequest(urlStr, method, c.BuildForm(params))
+	form := c.Authorize(urlStr, method, c.BuildForm(params))
 
 	// TODO: Investigate if this needs to be different for POST
 	req.URL.RawQuery = form.Encode()
