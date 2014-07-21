@@ -58,10 +58,8 @@ type BaseResponse struct {
 
 func (c *Client) decode(r io.Reader, want interface{}) (*BaseResponse, error) {
 	resp := &BaseResponse{Results: want}
-	if err := json.NewDecoder(r).Decode(resp); err != nil {
-		return resp, err
-	}
-	return resp, nil
+	err := json.NewDecoder(r).Decode(resp)
+	return resp, err
 }
 
 // BuildForm will take a map of the form input and build a url.Values object.
@@ -92,7 +90,6 @@ func (c *Client) do(method, urlStr string, params map[string]string) (*http.Resp
 
 func (c *Client) doJson(method, url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
 	response, err := c.do(method, url, params)
-
 	if err != nil {
 		return &BaseResponse{}, err
 	}
@@ -100,9 +97,7 @@ func (c *Client) doJson(method, url string, params map[string]string, entity int
 	defer response.Body.Close()
 
 	b, _ := ioutil.ReadAll(response.Body)
-	resp, e := c.decode(strings.NewReader(string(b)), entity)
-
-	return resp, e
+	return c.decode(strings.NewReader(string(b)), entity)
 }
 
 // Get will perform a HTTP GET against the supplied URL with the given parameters.
