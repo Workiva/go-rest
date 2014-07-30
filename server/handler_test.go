@@ -382,3 +382,34 @@ func TestHandleDeleteHappyPath(t *testing.T) {
 		"Incorrect response string",
 	)
 }
+
+func getMiddleware(called *bool) RequestMiddleware {
+	return func(h http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			*called = true
+			h(w, r)
+		}
+	}
+}
+
+// Ensures that the middleware passed to RegisterResourceHandler is invoked during requests.
+func TestApplyMiddleware(t *testing.T) {
+	assert := assert.New(t)
+	handler := new(MockResourceHandler)
+	router := mux.NewRouter()
+
+	handler.On("ResourceName").Return("foo")
+	handler.On("ReadResource").Return(&Resource{Foo: "hello"}, nil)
+
+	called := false
+	RegisterResourceHandler(router, handler, getMiddleware(&called))
+	readHandler := router.Get("read").GetHandler()
+
+	req, _ := http.NewRequest("GET", "http://foo.com/api/v0.1/foo/1", nil)
+	resp := httptest.NewRecorder()
+
+	readHandler.ServeHTTP(resp, req)
+
+	handler.Mock.AssertExpectations(t)
+	assert.True(called, "Middleware was not invoked")
+}
