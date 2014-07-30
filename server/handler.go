@@ -18,14 +18,26 @@ type ResourceHandler interface {
 	DeleteResource(context.RequestContext, string) (interface{}, error)
 }
 
-func RegisterResourceHandler(router *mux.Router, r ResourceHandler) {
+// RequestMiddleware is a function that returns a HandlerFunc wrapping the provided HandlerFunc.
+// This allows injecting custom logic to operate on requests (e.g. performing authentication).
+type RequestMiddleware func(http.HandlerFunc) http.HandlerFunc
+
+func RegisterResourceHandler(router *mux.Router, r ResourceHandler, middleware ...RequestMiddleware) {
 	urlBase := fmt.Sprintf("/api/v{%s:[^/]+}/%s", context.VersionKey, r.EndpointName())
 	resourceUrl := fmt.Sprintf("%s/{%s}", urlBase, context.ResourceIdKey)
 
-	router.HandleFunc(urlBase, handleCreate(r.CreateResource)).Methods("POST")
-	router.HandleFunc(resourceUrl, handleRead(r.ReadResource)).Methods("GET")
-	router.HandleFunc(resourceUrl, handleUpdate(r.UpdateResource)).Methods("PUT")
-	router.HandleFunc(resourceUrl, handleDelete(r.DeleteResource)).Methods("DELETE")
+	router.HandleFunc(urlBase, applyMiddleware(handleCreate(r.CreateResource), middleware)).Methods("POST")
+	router.HandleFunc(resourceUrl, applyMiddleware(handleRead(r.ReadResource), middleware)).Methods("GET")
+	router.HandleFunc(resourceUrl, applyMiddleware(handleUpdate(r.UpdateResource), middleware)).Methods("PUT")
+	router.HandleFunc(resourceUrl, applyMiddleware(handleDelete(r.DeleteResource), middleware)).Methods("DELETE")
+}
+
+func applyMiddleware(h http.HandlerFunc, middleware []RequestMiddleware) http.HandlerFunc {
+	for _, m := range middleware {
+		h = m(h)
+	}
+
+	return h
 }
 
 func handleCreate(createFunc func(context.RequestContext, map[string]interface{}) (interface{}, error)) http.HandlerFunc {

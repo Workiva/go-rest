@@ -63,10 +63,29 @@ func (f FooHandler) DeleteResource(ctx context.RequestContext, id string) (inter
 	return foo, nil
 }
 
+func MyMiddleware(wrapped http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("This is my middleware!")
+		wrapped(w, r)
+	}
+}
+
+func OtherMiddleware(wrapped http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		foo := r.Header["Foo"][0]
+		if foo == "bar" {
+			w.WriteHeader(401)
+			w.Write([]byte("not authenticated"))
+			return
+		}
+		wrapped(w, r)
+	}
+}
+
 func main() {
 	if os.Args[1] == "1" {
 		r := mux.NewRouter()
-		server.RegisterResourceHandler(r, FooHandler{})
+		server.RegisterResourceHandler(r, FooHandler{}, MyMiddleware, OtherMiddleware)
 		http.Handle("/", r)
 		http.ListenAndServe(":8080", nil)
 	}
