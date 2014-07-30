@@ -52,6 +52,16 @@ func (f FooHandler) CreateResource(params *server.CreateParams) (interface{}, er
 	return foo, nil
 }
 
+func (f FooHandler) UpdateResource(params *server.UpdateParams) (interface{}, error) {
+	foo := &Foo{Foo: params.Data["foo"].(string), Bar: params.Data["bar"].(float64)}
+	return foo, nil
+}
+
+func (f FooHandler) DeleteResource(params *server.DeleteParams) (interface{}, error) {
+	foo := &Foo{}
+	return foo, nil
+}
+
 func main() {
 	if os.Args[1] == "1" {
 		r := mux.NewRouter()

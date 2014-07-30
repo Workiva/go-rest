@@ -10,7 +10,7 @@ type Response map[string]interface{}
 // ResponseSerializer is responsible for serializing REST responses and sending
 // them back to the client.
 type ResponseSerializer interface {
-	SendSuccessResponse(http.ResponseWriter, Response)
+	SendSuccessResponse(http.ResponseWriter, Response, int)
 	SendErrorResponse(http.ResponseWriter, error, int)
 }
 
@@ -28,7 +28,7 @@ func (j JsonSerializer) SendErrorResponse(w http.ResponseWriter, err error, erro
 	w.Write(jsonResponse)
 }
 
-func (j JsonSerializer) SendSuccessResponse(w http.ResponseWriter, r Response) {
+func (j JsonSerializer) SendSuccessResponse(w http.ResponseWriter, r Response, status int) {
 	jsonResponse, err := json.Marshal(r)
 	if err != nil {
 		j.SendErrorResponse(w, err, 500)
@@ -36,6 +36,7 @@ func (j JsonSerializer) SendSuccessResponse(w http.ResponseWriter, r Response) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
 	w.Write(jsonResponse)
 }
 
@@ -53,7 +54,7 @@ func makeErrorResponse(err error) Response {
 	}
 }
 
-func sendResponse(s ResponseSerializer, w http.ResponseWriter, r interface{}, err error) {
+func sendResponse(s ResponseSerializer, w http.ResponseWriter, r interface{}, err error, status int) {
 	if s == nil {
 		// Fall back to json serialization.
 		s = JsonSerializer{}
@@ -64,5 +65,5 @@ func sendResponse(s ResponseSerializer, w http.ResponseWriter, r interface{}, er
 		return
 	}
 
-	s.SendSuccessResponse(w, makeSuccessResponse(r))
+	s.SendSuccessResponse(w, makeSuccessResponse(r), status)
 }
