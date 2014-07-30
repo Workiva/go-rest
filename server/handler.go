@@ -37,6 +37,8 @@ func RegisterResourceHandler(router *mux.Router, r ResourceHandler, middleware .
 	router.HandleFunc(resourceUrl, applyMiddleware(handleDelete(r.DeleteResource), middleware)).Methods("DELETE")
 }
 
+// applyMiddleware wraps the HandlerFunc with the provided RequestMiddleware and returns the
+// function composition.
 func applyMiddleware(h http.HandlerFunc, middleware []RequestMiddleware) http.HandlerFunc {
 	for _, m := range middleware {
 		h = m(h)
