@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-rest/rest"
 	"go-rest/server"
+	"go-rest/server/context"
 	"net/http"
 	"net/url"
 	"os"
@@ -39,25 +40,25 @@ func (f FooHandler) EndpointName() string {
 	return "foos"
 }
 
-func (f FooHandler) ReadResource(params *server.ReadParams) (interface{}, error) {
-	if params.ResourceId == "42" {
+func (f FooHandler) ReadResource(ctx context.RequestContext, id string) (interface{}, error) {
+	if id == "42" {
 		return &Foo{"hello", 42}, nil
 	}
 
-	return nil, fmt.Errorf("No resource with id %s", params.ResourceId)
+	return nil, fmt.Errorf("No resource with id %s", id)
 }
 
-func (f FooHandler) CreateResource(params *server.CreateParams) (interface{}, error) {
-	foo := &Foo{Foo: params.Data["foo"].(string), Bar: params.Data["bar"].(float64)}
+func (f FooHandler) CreateResource(ctx context.RequestContext, data map[string]interface{}) (interface{}, error) {
+	foo := &Foo{Foo: data["foo"].(string), Bar: data["bar"].(float64)}
 	return foo, nil
 }
 
-func (f FooHandler) UpdateResource(params *server.UpdateParams) (interface{}, error) {
-	foo := &Foo{Foo: params.Data["foo"].(string), Bar: params.Data["bar"].(float64)}
+func (f FooHandler) UpdateResource(ctx context.RequestContext, id string, data map[string]interface{}) (interface{}, error) {
+	foo := &Foo{Foo: data["foo"].(string), Bar: data["bar"].(float64)}
 	return foo, nil
 }
 
-func (f FooHandler) DeleteResource(params *server.DeleteParams) (interface{}, error) {
+func (f FooHandler) DeleteResource(ctx context.RequestContext, id string) (interface{}, error) {
 	foo := &Foo{}
 	return foo, nil
 }

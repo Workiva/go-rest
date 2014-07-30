@@ -5,54 +5,33 @@ import (
 	"fmt"
 	"net/http"
 
+	"go-rest/server/context"
+
 	"github.com/gorilla/mux"
 )
 
-type CreateParams struct {
-	Data    map[string]interface{}
-	Version string
-}
-
-type ReadParams struct {
-	ResourceId string
-	Version    string
-}
-
-type UpdateParams struct {
-	ResourceId string
-	Data       map[string]interface{}
-	Version    string
-}
-
-type DeleteParams struct {
-	ResourceId string
-	Version    string
-}
-
 type ResourceHandler interface {
 	EndpointName() string
-	CreateResource(*CreateParams) (interface{}, error)
-	ReadResource(*ReadParams) (interface{}, error)
-	UpdateResource(*UpdateParams) (interface{}, error)
-	DeleteResource(*DeleteParams) (interface{}, error)
+	CreateResource(context.RequestContext, map[string]interface{}) (interface{}, error)
+	ReadResource(context.RequestContext, string) (interface{}, error)
+	UpdateResource(context.RequestContext, string, map[string]interface{}) (interface{}, error)
+	DeleteResource(context.RequestContext, string) (interface{}, error)
 }
 
 func RegisterResourceHandler(router *mux.Router, r ResourceHandler) {
-	urlBase := fmt.Sprintf("/api/v{version:[^/]+}/%s", r.EndpointName())
+	urlBase := fmt.Sprintf("/api/v{%s:[^/]+}/%s", context.VersionKey, r.EndpointName())
+	resourceUrl := fmt.Sprintf("%s/{%s}", urlBase, context.ResourceIdKey)
+
 	router.HandleFunc(urlBase, handleCreate(r.CreateResource)).Methods("POST")
-	router.HandleFunc(urlBase+"/{resource_id}", handleRead(r.ReadResource)).Methods("GET")
-	router.HandleFunc(urlBase+"/{resource_id}", handleUpdate(r.UpdateResource)).Methods("PUT")
-	router.HandleFunc(urlBase+"/{resource_id}", handleDelete(r.DeleteResource)).Methods("DELETE")
+	router.HandleFunc(resourceUrl, handleRead(r.ReadResource)).Methods("GET")
+	router.HandleFunc(resourceUrl, handleUpdate(r.UpdateResource)).Methods("PUT")
+	router.HandleFunc(resourceUrl, handleDelete(r.DeleteResource)).Methods("DELETE")
 }
 
-func handleCreate(createFunc func(*CreateParams) (interface{}, error)) http.HandlerFunc {
+func handleCreate(createFunc func(context.RequestContext, map[string]interface{}) (interface{}, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		version := vars["version"]
-		format := "json"
-		if format, ok := r.URL.Query()["format"]; ok {
-			format = format
-		}
+		ctx := context.NewContext(nil, r)
+		format := ctx.ResponseFormat()
 
 		serializer, err := responseSerializer(format)
 		if err != nil {
@@ -67,22 +46,16 @@ func handleCreate(createFunc func(*CreateParams) (interface{}, error)) http.Hand
 			return
 		}
 
-		createParams := &CreateParams{Data: data, Version: version}
-		resource, err := createFunc(createParams)
+		resource, err := createFunc(ctx, data)
 
 		sendResponse(serializer, w, resource, err, http.StatusCreated)
 	}
 }
 
-func handleRead(readFunc func(*ReadParams) (interface{}, error)) http.HandlerFunc {
+func handleRead(readFunc func(context.RequestContext, string) (interface{}, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		resource_id := vars["resource_id"]
-		version := vars["version"]
-		format := "json"
-		if format, ok := r.URL.Query()["format"]; ok {
-			format = format
-		}
+		ctx := context.NewContext(nil, r)
+		format := ctx.ResponseFormat()
 
 		serializer, err := responseSerializer(format)
 		if err != nil {
@@ -90,22 +63,16 @@ func handleRead(readFunc func(*ReadParams) (interface{}, error)) http.HandlerFun
 			return
 		}
 
-		readParams := &ReadParams{ResourceId: resource_id, Version: version}
-		resource, err := readFunc(readParams)
+		resource, err := readFunc(ctx, ctx.ResourceId())
 
 		sendResponse(serializer, w, resource, err, http.StatusOK)
 	}
 }
 
-func handleUpdate(updateFunc func(*UpdateParams) (interface{}, error)) http.HandlerFunc {
+func handleUpdate(updateFunc func(context.RequestContext, string, map[string]interface{}) (interface{}, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		resource_id := vars["resource_id"]
-		version := vars["version"]
-		format := "json"
-		if format, ok := r.URL.Query()["format"]; ok {
-			format = format
-		}
+		ctx := context.NewContext(nil, r)
+		format := ctx.ResponseFormat()
 
 		serializer, err := responseSerializer(format)
 		if err != nil {
@@ -120,26 +87,16 @@ func handleUpdate(updateFunc func(*UpdateParams) (interface{}, error)) http.Hand
 			return
 		}
 
-		updateParams := &UpdateParams{
-			ResourceId: resource_id,
-			Data:       data,
-			Version:    version,
-		}
-		resource, err := updateFunc(updateParams)
+		resource, err := updateFunc(ctx, ctx.ResourceId(), data)
 
 		sendResponse(serializer, w, resource, err, http.StatusOK)
 	}
 }
 
-func handleDelete(deleteFunc func(*DeleteParams) (interface{}, error)) http.HandlerFunc {
+func handleDelete(deleteFunc func(context.RequestContext, string) (interface{}, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		resource_id := vars["resource_id"]
-		version := vars["version"]
-		format := "json"
-		if format, ok := r.URL.Query()["format"]; ok {
-			format = format
-		}
+		ctx := context.NewContext(nil, r)
+		format := ctx.ResponseFormat()
 
 		serializer, err := responseSerializer(format)
 		if err != nil {
@@ -147,8 +104,7 @@ func handleDelete(deleteFunc func(*DeleteParams) (interface{}, error)) http.Hand
 			return
 		}
 
-		deleteParams := &DeleteParams{ResourceId: resource_id, Version: version}
-		resource, err := deleteFunc(deleteParams)
+		resource, err := deleteFunc(ctx, ctx.ResourceId())
 
 		sendResponse(serializer, w, resource, err, http.StatusOK)
 	}
