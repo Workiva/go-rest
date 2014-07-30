@@ -47,7 +47,11 @@ func (m *MockResourceHandler) ReadResource(r context.RequestContext, id string) 
 
 func (m *MockResourceHandler) UpdateResource(r context.RequestContext, id string, data map[string]interface{}) (interface{}, error) {
 	args := m.Mock.Called()
-	return args.Get(0).(*Resource), args.Error(1)
+	resource := args.Get(0)
+	if resource != nil {
+		resource = resource.(*Resource)
+	}
+	return resource, args.Error(1)
 }
 
 func (m *MockResourceHandler) DeleteResource(r context.RequestContext, id string) (interface{}, error) {
@@ -210,6 +214,89 @@ func TestHandleReadHappyPath(t *testing.T) {
 	assert.Equal(http.StatusOK, resp.Code, "Incorrect response code")
 	assert.Equal(
 		`{"result":{"foo":"hello"},"success":true}`,
+		resp.Body.String(),
+		"Incorrect response string",
+	)
+}
+
+// Ensures that the update handler returns a Not Implemented code if an invalid response format is provided.
+func TestHandleUpdateBadFormat(t *testing.T) {
+	assert := assert.New(t)
+	handler := new(MockResourceHandler)
+	router := mux.NewRouter()
+
+	handler.On("ResourceName").Return("foo")
+
+	RegisterResourceHandler(router, handler)
+	updateHandler := router.Get("update").GetHandler()
+
+	payload := []byte(`{"foo": "bar"}`)
+	r := bytes.NewReader(payload)
+	req, _ := http.NewRequest("PUT", "http://foo.com/api/v0.1/foo/1?format=blah", r)
+	resp := httptest.NewRecorder()
+
+	updateHandler.ServeHTTP(resp, req)
+
+	handler.Mock.AssertExpectations(t)
+	assert.Equal(http.StatusNotImplemented, resp.Code, "Incorrect response code")
+	assert.Equal(
+		`{"error":"Format not implemented: blah","success":false}`,
+		resp.Body.String(),
+		"Incorrect response string",
+	)
+}
+
+// Ensures that the update handler returns an Internal Server Error code when the updateFunc returns an error.
+func TestHandleUpdateBadUpdate(t *testing.T) {
+	assert := assert.New(t)
+	handler := new(MockResourceHandler)
+	router := mux.NewRouter()
+
+	handler.On("ResourceName").Return("foo")
+	handler.On("UpdateResource").Return(nil, fmt.Errorf("couldn't update"))
+
+	RegisterResourceHandler(router, handler)
+	updateHandler := router.Get("update").GetHandler()
+
+	payload := []byte(`{"foo": "bar"}`)
+	r := bytes.NewReader(payload)
+	req, _ := http.NewRequest("PUT", "http://foo.com/api/v0.1/foo/1", r)
+	resp := httptest.NewRecorder()
+
+	updateHandler.ServeHTTP(resp, req)
+
+	handler.Mock.AssertExpectations(t)
+	assert.Equal(http.StatusInternalServerError, resp.Code, "Incorrect response code")
+	assert.Equal(
+		`{"error":"couldn't update","success":false}`,
+		resp.Body.String(),
+		"Incorrect response string",
+	)
+}
+
+// Ensures that the update handler returns the serialized resource and OK code when updateFunc succeeds.
+func TestHandleUpdateHappyPath(t *testing.T) {
+	assert := assert.New(t)
+	handler := new(MockResourceHandler)
+	router := mux.NewRouter()
+
+	handler.On("ResourceName").Return("foo")
+	handler.On("UpdateResource").Return(&Resource{Foo: "bar"}, nil)
+
+	RegisterResourceHandler(router, handler)
+	updateHandler := router.Get("update").GetHandler()
+
+	payload := []byte(`{"foo": "bar"}`)
+	r := bytes.NewReader(payload)
+	req, _ := http.NewRequest("PUT", "http://foo.com/api/v0.1/foo/1", r)
+	resp := httptest.NewRecorder()
+
+	updateHandler.ServeHTTP(resp, req)
+
+	handler.Mock.AssertExpectations(t)
+	assert.Equal(http.StatusOK, resp.Code, "Incorrect response code")
+	assert.Equal(
+		`{"result":{"foo":"bar"},"success":true}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
