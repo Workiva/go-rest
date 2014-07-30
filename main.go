@@ -36,7 +36,7 @@ func (f Foo) MarshalJSON() ([]byte, error) {
 
 type FooHandler struct{}
 
-func (f FooHandler) EndpointName() string {
+func (f FooHandler) ResourceName() string {
 	return "foos"
 }
 

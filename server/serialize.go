@@ -61,7 +61,10 @@ func sendResponse(s ResponseSerializer, w http.ResponseWriter, r interface{}, er
 	}
 
 	if err != nil {
-		s.SendErrorResponse(w, err, 500)
+		if status < 400 {
+			status = http.StatusInternalServerError
+		}
+		s.SendErrorResponse(w, err, status)
 		return
 	}
 

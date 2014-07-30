@@ -31,10 +31,37 @@ func RegisterResourceHandler(router *mux.Router, r ResourceHandler, middleware .
 	urlBase := fmt.Sprintf("/api/v{%s:[^/]+}/%s", context.VersionKey, r.ResourceName())
 	resourceUrl := fmt.Sprintf("%s/{%s}", urlBase, context.ResourceIdKey)
 
-	router.HandleFunc(urlBase, applyMiddleware(handleCreate(r.CreateResource), middleware)).Methods("POST")
-	router.HandleFunc(resourceUrl, applyMiddleware(handleRead(r.ReadResource), middleware)).Methods("GET")
-	router.HandleFunc(resourceUrl, applyMiddleware(handleUpdate(r.UpdateResource), middleware)).Methods("PUT")
-	router.HandleFunc(resourceUrl, applyMiddleware(handleDelete(r.DeleteResource), middleware)).Methods("DELETE")
+	router.HandleFunc(
+		urlBase,
+		applyMiddleware(
+			handleCreate(r.CreateResource),
+			middleware,
+		),
+	).Methods("POST").Name("create")
+
+	router.HandleFunc(
+		resourceUrl,
+		applyMiddleware(
+			handleRead(r.ReadResource),
+			middleware,
+		),
+	).Methods("GET").Name("read")
+
+	router.HandleFunc(
+		resourceUrl,
+		applyMiddleware(
+			handleUpdate(r.UpdateResource),
+			middleware,
+		),
+	).Methods("PUT").Name("update")
+
+	router.HandleFunc(
+		resourceUrl,
+		applyMiddleware(
+			handleDelete(r.DeleteResource),
+			middleware,
+		),
+	).Methods("DELETE").Name("delete")
 }
 
 // applyMiddleware wraps the HandlerFunc with the provided RequestMiddleware and returns the
@@ -57,7 +84,7 @@ func handleCreate(createFunc func(context.RequestContext, map[string]interface{}
 
 		serializer, err := responseSerializer(format)
 		if err != nil {
-			sendResponse(nil, w, nil, err, http.StatusInternalServerError)
+			sendResponse(nil, w, nil, err, http.StatusNotImplemented)
 			return
 		}
 
@@ -84,7 +111,7 @@ func handleRead(readFunc func(context.RequestContext, string) (interface{}, erro
 
 		serializer, err := responseSerializer(format)
 		if err != nil {
-			sendResponse(nil, w, nil, err, http.StatusInternalServerError)
+			sendResponse(nil, w, nil, err, http.StatusNotImplemented)
 			return
 		}
 
@@ -104,7 +131,7 @@ func handleUpdate(updateFunc func(context.RequestContext, string, map[string]int
 
 		serializer, err := responseSerializer(format)
 		if err != nil {
-			sendResponse(nil, w, nil, err, http.StatusInternalServerError)
+			sendResponse(nil, w, nil, err, http.StatusNotImplemented)
 			return
 		}
 
@@ -131,7 +158,7 @@ func handleDelete(deleteFunc func(context.RequestContext, string) (interface{}, 
 
 		serializer, err := responseSerializer(format)
 		if err != nil {
-			sendResponse(nil, w, nil, err, http.StatusInternalServerError)
+			sendResponse(nil, w, nil, err, http.StatusNotImplemented)
 			return
 		}
 
