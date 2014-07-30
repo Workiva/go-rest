@@ -10,8 +10,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// ResourceHandler specifies the endpoint handlers for working with a resource. This consists of
+// the business logic for performing CRUD operations.
 type ResourceHandler interface {
-	EndpointName() string
+	ResourceName() string
 	CreateResource(context.RequestContext, map[string]interface{}) (interface{}, error)
 	ReadResource(context.RequestContext, string) (interface{}, error)
 	UpdateResource(context.RequestContext, string, map[string]interface{}) (interface{}, error)
@@ -22,8 +24,11 @@ type ResourceHandler interface {
 // This allows injecting custom logic to operate on requests (e.g. performing authentication).
 type RequestMiddleware func(http.HandlerFunc) http.HandlerFunc
 
+// RegisterResourceHandler binds the provided ResourceHandler to the appropriate REST endpoints and
+// applies any specified middleware. Endpoints will have the following base URL:
+// /api/:version/resourceName.
 func RegisterResourceHandler(router *mux.Router, r ResourceHandler, middleware ...RequestMiddleware) {
-	urlBase := fmt.Sprintf("/api/v{%s:[^/]+}/%s", context.VersionKey, r.EndpointName())
+	urlBase := fmt.Sprintf("/api/v{%s:[^/]+}/%s", context.VersionKey, r.ResourceName())
 	resourceUrl := fmt.Sprintf("%s/{%s}", urlBase, context.ResourceIdKey)
 
 	router.HandleFunc(urlBase, applyMiddleware(handleCreate(r.CreateResource), middleware)).Methods("POST")
@@ -40,6 +45,9 @@ func applyMiddleware(h http.HandlerFunc, middleware []RequestMiddleware) http.Ha
 	return h
 }
 
+// handleCreate returns a HandlerFunc which will deserialize the request payload, pass it to the
+// provided create function, and then serialize and dispatch the response. The
+// serialization/deserialization mechanism used is specified by the "format" query parameter.
 func handleCreate(createFunc func(context.RequestContext, map[string]interface{}) (interface{}, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.NewContext(nil, r)
@@ -64,6 +72,9 @@ func handleCreate(createFunc func(context.RequestContext, map[string]interface{}
 	}
 }
 
+// handleRead returns a HandlerFunc which will pass the resource id to the provided read function
+// and then serialize and dispatch the response. The serialization/deserialization mechanism used
+// is specified by the "format" query parameter.
 func handleRead(readFunc func(context.RequestContext, string) (interface{}, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.NewContext(nil, r)
@@ -81,6 +92,9 @@ func handleRead(readFunc func(context.RequestContext, string) (interface{}, erro
 	}
 }
 
+// handleUpdate returns a HandlerFunc which will deserialize the request payload, pass it to the
+// provided update function, and then serialize and dispatch the response. The
+// serialization/deserialization mechanism used is specified by the "format" query parameter.
 func handleUpdate(updateFunc func(context.RequestContext, string, map[string]interface{}) (interface{}, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.NewContext(nil, r)
@@ -105,6 +119,9 @@ func handleUpdate(updateFunc func(context.RequestContext, string, map[string]int
 	}
 }
 
+// handleDelete returns a HandlerFunc which will pass the resource id to the provided delete
+// function and then serialize and dispatch the response. The serialization/deserialization
+// mechanism used is specified by the "format" query parameter.
 func handleDelete(deleteFunc func(context.RequestContext, string) (interface{}, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.NewContext(nil, r)
@@ -122,6 +139,8 @@ func handleDelete(deleteFunc func(context.RequestContext, string) (interface{}, 
 	}
 }
 
+// responseSerializer returns a ResponseSerializer for the given format type. If the format
+// is not implemented, the returned serializer will be nil and the error set.
 func responseSerializer(format string) (ResponseSerializer, error) {
 	var serializer ResponseSerializer
 	switch format {
