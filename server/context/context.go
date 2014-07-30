@@ -1,3 +1,5 @@
+// Context is a package that contains the interfaces and implementations for working with
+// request-scoped data.
 package context
 
 import (
