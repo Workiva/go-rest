@@ -31,8 +31,8 @@ type DeleteParams struct {
 
 type ResourceHandler interface {
 	EndpointName() string
-	ReadResource(*ReadParams) (interface{}, error)
 	CreateResource(*CreateParams) (interface{}, error)
+	ReadResource(*ReadParams) (interface{}, error)
 	UpdateResource(*UpdateParams) (interface{}, error)
 	DeleteResource(*DeleteParams) (interface{}, error)
 }
