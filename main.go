@@ -48,7 +48,7 @@ func (f FooHandler) ReadResource(ctx context.RequestContext, id string, version 
 	return nil, fmt.Errorf("No resource with id %s", id)
 }
 
-func (f FooHandler) ReadResourceList(ctx context.RequestContext, version string) ([]server.Resource, string, error) {
+func (f FooHandler) ReadResourceList(ctx context.RequestContext, limit int, version string) ([]server.Resource, string, error) {
 	resources := make([]server.Resource, 0)
 	resources = append(resources, &Foo{Foo: "hello", Bar: 42})
 	resources = append(resources, &Foo{Foo: "world", Bar: 100})

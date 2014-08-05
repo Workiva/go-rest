@@ -45,7 +45,7 @@ func (m *MockResourceHandler) ReadResource(r context.RequestContext, id string, 
 	return resource, args.Error(1)
 }
 
-func (m *MockResourceHandler) ReadResourceList(r context.RequestContext, version string) ([]Resource, string, error) {
+func (m *MockResourceHandler) ReadResourceList(r context.RequestContext, limit int, version string) ([]Resource, string, error) {
 	args := m.Mock.Called()
 	resources := args.Get(0)
 	if resources != nil {

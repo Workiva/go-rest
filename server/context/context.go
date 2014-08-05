@@ -22,6 +22,7 @@ const (
 	errorKey
 	resultKey
 	cursorKey
+	limitKey
 )
 
 // RequestContext contains the context information for the current HTTP request. It's a wrapper
@@ -32,6 +33,8 @@ type RequestContext interface {
 	context.Context
 	WithValue(key, value interface{}) RequestContext
 	ValueWithDefault(key, defaultVal interface{}) interface{}
+	Request() (*http.Request, bool)
+	NextURL() (string, error)
 	ResponseFormat() string
 	ResourceId() string
 	Version() string
@@ -43,8 +46,8 @@ type RequestContext interface {
 	SetResult(interface{}) RequestContext
 	Cursor() string
 	SetCursor(string) RequestContext
-	Request() (*http.Request, bool)
-	NextURL() (string, error)
+	Limit() int
+	SetLimit(int) RequestContext
 }
 
 // requestContext is an implementation of the RequestContext interface.
@@ -191,6 +194,16 @@ func (ctx *requestContext) Request() (*http.Request, bool) {
 	// access the request if it is anywhere up the Context tree.
 	req, ok := ctx.Value(requestKey).(*http.Request)
 	return req, ok
+}
+
+// Limit returns the maximum number of results that should be fetched.
+func (ctx *requestContext) Limit() int {
+	return ctx.ValueWithDefault(limitKey, 100).(int)
+}
+
+// SetLimit sets the maximum number of results that should be fetched.
+func (ctx *requestContext) SetLimit(limit int) RequestContext {
+	return ctx.WithValue(limitKey, limit)
 }
 
 // NextURL returns the URL to use to request the next page of results using the current
