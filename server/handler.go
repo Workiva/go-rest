@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"go-rest/server/context"
@@ -21,10 +22,36 @@ type Payload map[string]interface{}
 type ResourceHandler interface {
 	ResourceName() string
 	CreateResource(context.RequestContext, Payload, string) (Resource, error)
-	ReadResourceList(context.RequestContext, string) ([]Resource, string, error)
+	ReadResourceList(context.RequestContext, int, string) ([]Resource, string, error)
 	ReadResource(context.RequestContext, string, string) (Resource, error)
 	UpdateResource(context.RequestContext, string, Payload, string) (Resource, error)
 	DeleteResource(context.RequestContext, string, string) (Resource, error)
+}
+
+type BaseResourceHandler struct{}
+
+func (b BaseResourceHandler) ResourceName() string {
+	panic("ResourceName not implemented")
+}
+
+func (b BaseResourceHandler) CreateResource(ctx context.RequestContext, data Payload, version string) (Resource, error) {
+	panic("CreateResource not implemented")
+}
+
+func (b BaseResourceHandler) ReadResourceList(ctx context.RequestContext, limit int, version string) ([]Resource, string, error) {
+	panic("ReadResourceList not implemented")
+}
+
+func (b BaseResourceHandler) ReadResource(ctx context.RequestContext, id string, version string) (Resource, error) {
+	panic("ReadResource not implemented")
+}
+
+func (b BaseResourceHandler) UpdateResource(ctx context.RequestContext, id string, data Payload, version string) (Resource, error) {
+	panic("UpdateResource not implemented")
+}
+
+func (b BaseResourceHandler) DeleteResource(ctx context.RequestContext, id string, version string) (Resource, error) {
+	panic("DeleteResource not implemented")
 }
 
 // RequestMiddleware is a function that returns a HandlerFunc wrapping the provided HandlerFunc.
@@ -45,6 +72,7 @@ func RegisterResourceHandler(router *mux.Router, r ResourceHandler, middleware .
 			middleware,
 		),
 	).Methods("POST").Name("create")
+	log.Printf("Registered create handler at POST %s", urlBase)
 
 	router.HandleFunc(
 		urlBase,
@@ -53,6 +81,7 @@ func RegisterResourceHandler(router *mux.Router, r ResourceHandler, middleware .
 			middleware,
 		),
 	).Methods("GET").Name("readList")
+	log.Printf("Registered read list handler at GET %s", urlBase)
 
 	router.HandleFunc(
 		resourceUrl,
@@ -61,6 +90,7 @@ func RegisterResourceHandler(router *mux.Router, r ResourceHandler, middleware .
 			middleware,
 		),
 	).Methods("GET").Name("read")
+	log.Printf("Registered read handler at GET %s", resourceUrl)
 
 	router.HandleFunc(
 		resourceUrl,
@@ -69,6 +99,7 @@ func RegisterResourceHandler(router *mux.Router, r ResourceHandler, middleware .
 			middleware,
 		),
 	).Methods("PUT").Name("update")
+	log.Printf("Registered update handler at UPDATE %s", resourceUrl)
 
 	router.HandleFunc(
 		resourceUrl,
@@ -77,6 +108,7 @@ func RegisterResourceHandler(router *mux.Router, r ResourceHandler, middleware .
 			middleware,
 		),
 	).Methods("DELETE").Name("delete")
+	log.Printf("Registered delete handler at DELETE %s", resourceUrl)
 }
 
 // applyMiddleware wraps the HandlerFunc with the provided RequestMiddleware and returns the
@@ -117,11 +149,11 @@ func handleCreate(createFunc func(context.RequestContext, Payload, string) (Reso
 // handleReadList returns a HandlerFunc which will pass the request context to the provided read function
 // and then serialize and dispatch the response. The serialization mechanism used is specified by the
 // "format" query parameter.
-func handleReadList(readFunc func(context.RequestContext, string) ([]Resource, string, error)) http.HandlerFunc {
+func handleReadList(readFunc func(context.RequestContext, int, string) ([]Resource, string, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.NewContext(nil, r)
 
-		resources, cursor, err := readFunc(ctx, ctx.Version())
+		resources, cursor, err := readFunc(ctx, ctx.Limit(), ctx.Version())
 		ctx = ctx.SetResult(resources)
 		ctx = ctx.SetCursor(cursor)
 		ctx = ctx.SetError(err)
