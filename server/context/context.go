@@ -11,14 +11,15 @@ import (
 )
 
 const (
-	RequestKey    = 0
 	ResourceIdKey = "resource_id"
 	FormatKey     = "format"
 	VersionKey    = "version"
-	statusKey     = "status"
-	errorKey      = "error"
-	resultKey     = "result"
-	cursorKey     = "cursor"
+
+	requestKey int = iota
+	statusKey
+	errorKey
+	resultKey
+	cursorKey
 )
 
 // RequestContext contains the context information for the current HTTP request. It's a wrapper
@@ -40,6 +41,7 @@ type RequestContext interface {
 	SetResult(interface{}) RequestContext
 	Cursor() string
 	SetCursor(string) RequestContext
+	Request() (*http.Request, bool)
 }
 
 // requestContext is an implementation of the RequestContext interface.
@@ -80,8 +82,10 @@ func NewContext(parent context.Context, req *http.Request) RequestContext {
 	return &requestContext{parent, req}
 }
 
+// WithValue returns a new RequestContext with the provided key-value pair and this context
+// as the parent.
 func (ctx *requestContext) WithValue(key, value interface{}) RequestContext {
-	if r, ok := HTTPRequest(ctx); ok {
+	if r, ok := ctx.Request(); ok {
 		return &requestContext{context.WithValue(ctx, key, value), r}
 	}
 
@@ -92,7 +96,7 @@ func (ctx *requestContext) WithValue(key, value interface{}) RequestContext {
 // Value returns Gorilla's context package's value for this Context's request
 // and key. It delegates to the parent Context if there is no such value.
 func (ctx *requestContext) Value(key interface{}) interface{} {
-	if key == RequestKey {
+	if key == requestKey {
 		return ctx.req
 	}
 	if val, ok := gcontext.GetOk(ctx.req, key); ok {
@@ -129,14 +133,18 @@ func (ctx *requestContext) Version() string {
 	return ctx.ValueWithDefault(VersionKey, "").(string)
 }
 
+// Status returns the current HTTP status code that will be returned for the request,
+// defaulting to 200 if one hasn't been set yet.
 func (ctx *requestContext) Status() int {
 	return ctx.ValueWithDefault(statusKey, http.StatusOK).(int)
 }
 
+// SetStatus sets the HTTP status code to be returned for the request.
 func (ctx *requestContext) SetStatus(status int) RequestContext {
 	return ctx.WithValue(statusKey, status)
 }
 
+// Error returns the current error for the request or nil if no errors have been set.
 func (ctx *requestContext) Error() error {
 	err := ctx.ValueWithDefault(errorKey, nil)
 
@@ -147,32 +155,37 @@ func (ctx *requestContext) Error() error {
 	return err.(error)
 }
 
+// SetError sets the current error for the request.
 func (ctx *requestContext) SetError(err error) RequestContext {
 	return ctx.WithValue(errorKey, err)
 }
 
+// Result returns the result resource for the request or nil if no result has been set.
 func (ctx *requestContext) Result() interface{} {
 	return ctx.ValueWithDefault(resultKey, nil)
 }
 
+// SetResult sets the result resource for the request.
 func (ctx *requestContext) SetResult(result interface{}) RequestContext {
 	return ctx.WithValue(resultKey, result)
 }
 
+// Cursor returns the current result cursor for the request, defaulting to an empty
+// string if one hasn't been set.
 func (ctx *requestContext) Cursor() string {
 	return ctx.ValueWithDefault(cursorKey, "").(string)
 }
 
+// SetCursor sets the current result cursor for the request.
 func (ctx *requestContext) SetCursor(cursor string) RequestContext {
 	return ctx.WithValue(cursorKey, cursor)
 }
 
-// HTTPRequest returns the *http.Request associated with ctx using NewContext,
-// if any.
-func HTTPRequest(ctx context.Context) (*http.Request, bool) {
+// Request returns the *http.Request associated with context using NewContext, if any.
+func (ctx *requestContext) Request() (*http.Request, bool) {
 	// We cannot use ctx.(*requestContext).req to get the request because ctx may
 	// be a Context derived from a *requestContext. Instead, we use Value to
 	// access the request if it is anywhere up the Context tree.
-	req, ok := ctx.Value(RequestKey).(*http.Request)
+	req, ok := ctx.Value(requestKey).(*http.Request)
 	return req, ok
 }
