@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type Resource struct {
+type TestResource struct {
 	Foo string `json:"foo"`
 }
 
@@ -27,38 +27,47 @@ func (m *MockResourceHandler) ResourceName() string {
 	return args.String(0)
 }
 
-func (m *MockResourceHandler) CreateResource(r context.RequestContext, data map[string]interface{}) (interface{}, error) {
+func (m *MockResourceHandler) CreateResource(r context.RequestContext, data map[string]interface{}) (Resource, error) {
 	args := m.Mock.Called()
 	resource := args.Get(0)
 	if resource != nil {
-		resource = resource.(*Resource)
+		resource = resource.(*TestResource)
 	}
 	return resource, args.Error(1)
 }
 
-func (m *MockResourceHandler) ReadResource(r context.RequestContext, id string) (interface{}, error) {
+func (m *MockResourceHandler) ReadResource(r context.RequestContext, id string) (Resource, error) {
 	args := m.Mock.Called()
 	resource := args.Get(0)
 	if resource != nil {
-		resource = resource.(*Resource)
+		resource = resource.(*TestResource)
 	}
 	return resource, args.Error(1)
 }
 
-func (m *MockResourceHandler) UpdateResource(r context.RequestContext, id string, data map[string]interface{}) (interface{}, error) {
+func (m *MockResourceHandler) ReadResourceList(r context.RequestContext) ([]Resource, string, error) {
+	args := m.Mock.Called()
+	resources := args.Get(0)
+	if resources != nil {
+		return resources.([]Resource), args.String(1), args.Error(2)
+	}
+	return nil, args.String(1), args.Error(2)
+}
+
+func (m *MockResourceHandler) UpdateResource(r context.RequestContext, id string, data map[string]interface{}) (Resource, error) {
 	args := m.Mock.Called()
 	resource := args.Get(0)
 	if resource != nil {
-		resource = resource.(*Resource)
+		resource = resource.(*TestResource)
 	}
 	return resource, args.Error(1)
 }
 
-func (m *MockResourceHandler) DeleteResource(r context.RequestContext, id string) (interface{}, error) {
+func (m *MockResourceHandler) DeleteResource(r context.RequestContext, id string) (Resource, error) {
 	args := m.Mock.Called()
 	resource := args.Get(0)
 	if resource != nil {
-		resource = resource.(*Resource)
+		resource = resource.(*TestResource)
 	}
 	return resource, args.Error(1)
 }
@@ -125,7 +134,7 @@ func TestHandleCreateHappyPath(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
-	handler.On("CreateResource").Return(&Resource{Foo: "bar"}, nil)
+	handler.On("CreateResource").Return(&TestResource{Foo: "bar"}, nil)
 
 	RegisterResourceHandler(router, handler)
 	createHandler := router.Get("create").GetHandler()
@@ -141,6 +150,83 @@ func TestHandleCreateHappyPath(t *testing.T) {
 	assert.Equal(http.StatusCreated, resp.Code, "Incorrect response code")
 	assert.Equal(
 		`{"result":{"foo":"bar"},"success":true}`,
+		resp.Body.String(),
+		"Incorrect response string",
+	)
+}
+
+// Ensures that the read list handler returns a Not Implemented code if an invalid response format is provided.
+func TestHandleReadListBadFormat(t *testing.T) {
+	assert := assert.New(t)
+	handler := new(MockResourceHandler)
+	router := mux.NewRouter()
+
+	handler.On("ResourceName").Return("foo")
+
+	RegisterResourceHandler(router, handler)
+	readHandler := router.Get("readList").GetHandler()
+
+	req, _ := http.NewRequest("GET", "http://foo.com/api/v0.1/foo?format=blah", nil)
+	resp := httptest.NewRecorder()
+
+	readHandler.ServeHTTP(resp, req)
+
+	handler.Mock.AssertExpectations(t)
+	assert.Equal(http.StatusNotImplemented, resp.Code, "Incorrect response code")
+	assert.Equal(
+		`{"error":"Format not implemented: blah","success":false}`,
+		resp.Body.String(),
+		"Incorrect response string",
+	)
+}
+
+// Ensures that the read list handler returns an Internal Server Error code when the readFunc returns an error.
+func TestHandleReadListBadRead(t *testing.T) {
+	assert := assert.New(t)
+	handler := new(MockResourceHandler)
+	router := mux.NewRouter()
+
+	handler.On("ResourceName").Return("foo")
+	handler.On("ReadResourceList").Return(nil, "", fmt.Errorf("no resource"))
+
+	RegisterResourceHandler(router, handler)
+	readHandler := router.Get("readList").GetHandler()
+
+	req, _ := http.NewRequest("GET", "http://foo.com/api/v0.1/foo", nil)
+	resp := httptest.NewRecorder()
+
+	readHandler.ServeHTTP(resp, req)
+
+	handler.Mock.AssertExpectations(t)
+	assert.Equal(http.StatusInternalServerError, resp.Code, "Incorrect response code")
+	assert.Equal(
+		`{"error":"no resource","success":false}`,
+		resp.Body.String(),
+		"Incorrect response string",
+	)
+}
+
+// Ensures that the read list handler returns the serialized resource and OK code when readFunc succeeds.
+func TestHandleReadListHappyPath(t *testing.T) {
+	assert := assert.New(t)
+	handler := new(MockResourceHandler)
+	router := mux.NewRouter()
+
+	handler.On("ResourceName").Return("foo")
+	handler.On("ReadResourceList").Return([]Resource{&TestResource{Foo: "hello"}}, "cursor123", nil)
+
+	RegisterResourceHandler(router, handler)
+	readHandler := router.Get("readList").GetHandler()
+
+	req, _ := http.NewRequest("GET", "http://foo.com/api/v0.1/foo", nil)
+	resp := httptest.NewRecorder()
+
+	readHandler.ServeHTTP(resp, req)
+
+	handler.Mock.AssertExpectations(t)
+	assert.Equal(http.StatusOK, resp.Code, "Incorrect response code")
+	assert.Equal(
+		`{"next":"cursor123","result":[{"foo":"hello"}],"success":true}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -204,7 +290,7 @@ func TestHandleReadHappyPath(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
-	handler.On("ReadResource").Return(&Resource{Foo: "hello"}, nil)
+	handler.On("ReadResource").Return(&TestResource{Foo: "hello"}, nil)
 
 	RegisterResourceHandler(router, handler)
 	readHandler := router.Get("read").GetHandler()
@@ -285,7 +371,7 @@ func TestHandleUpdateHappyPath(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
-	handler.On("UpdateResource").Return(&Resource{Foo: "bar"}, nil)
+	handler.On("UpdateResource").Return(&TestResource{Foo: "bar"}, nil)
 
 	RegisterResourceHandler(router, handler)
 	updateHandler := router.Get("update").GetHandler()
@@ -364,7 +450,7 @@ func TestHandleDeleteHappyPath(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
-	handler.On("DeleteResource").Return(&Resource{Foo: "hello"}, nil)
+	handler.On("DeleteResource").Return(&TestResource{Foo: "hello"}, nil)
 
 	RegisterResourceHandler(router, handler)
 	deleteHandler := router.Get("delete").GetHandler()
@@ -399,7 +485,7 @@ func TestApplyMiddleware(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
-	handler.On("ReadResource").Return(&Resource{Foo: "hello"}, nil)
+	handler.On("ReadResource").Return(&TestResource{Foo: "hello"}, nil)
 
 	called := false
 	RegisterResourceHandler(router, handler, getMiddleware(&called))

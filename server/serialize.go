@@ -40,11 +40,17 @@ func (j JsonSerializer) SendSuccessResponse(w http.ResponseWriter, r Response, s
 	w.Write(jsonResponse)
 }
 
-func makeSuccessResponse(r interface{}) Response {
-	return Response{
+func makeSuccessResponse(r interface{}, cursor string) Response {
+	response := Response{
 		"success": true,
 		"result":  r,
 	}
+
+	if cursor != "" {
+		response["next"] = cursor
+	}
+
+	return response
 }
 
 func makeErrorResponse(err error) Response {
@@ -54,7 +60,7 @@ func makeErrorResponse(err error) Response {
 	}
 }
 
-func sendResponse(s ResponseSerializer, w http.ResponseWriter, r interface{}, err error, status int) {
+func sendResponse(s ResponseSerializer, w http.ResponseWriter, r interface{}, cursor string, err error, status int) {
 	if s == nil {
 		// Fall back to json serialization.
 		s = JsonSerializer{}
@@ -68,5 +74,5 @@ func sendResponse(s ResponseSerializer, w http.ResponseWriter, r interface{}, er
 		return
 	}
 
-	s.SendSuccessResponse(w, makeSuccessResponse(r), status)
+	s.SendSuccessResponse(w, makeSuccessResponse(r, cursor), status)
 }
