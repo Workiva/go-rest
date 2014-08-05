@@ -2,6 +2,8 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
+	"go-rest/server/context"
 	"net/http"
 )
 
@@ -60,19 +62,41 @@ func makeErrorResponse(err error) Response {
 	}
 }
 
-func sendResponse(s ResponseSerializer, w http.ResponseWriter, r interface{}, cursor string, err error, status int) {
-	if s == nil {
+func sendResponse(w http.ResponseWriter, ctx context.RequestContext) {
+	status := ctx.Status()
+	requestError := ctx.Error()
+	cursor := ctx.Cursor()
+	result := ctx.Result()
+
+	serializer, err := responseSerializer(ctx.ResponseFormat())
+	if err != nil {
 		// Fall back to json serialization.
-		s = JsonSerializer{}
+		serializer = JsonSerializer{}
+		status = http.StatusNotImplemented
+		requestError = err
 	}
 
-	if err != nil {
+	if requestError != nil {
 		if status < 400 {
 			status = http.StatusInternalServerError
 		}
-		s.SendErrorResponse(w, err, status)
+		serializer.SendErrorResponse(w, requestError, status)
 		return
 	}
 
-	s.SendSuccessResponse(w, makeSuccessResponse(r, cursor), status)
+	serializer.SendSuccessResponse(w, makeSuccessResponse(result, cursor), status)
+}
+
+// responseSerializer returns a ResponseSerializer for the given format type. If the format
+// is not implemented, the returned serializer will be nil and the error set.
+func responseSerializer(format string) (ResponseSerializer, error) {
+	var serializer ResponseSerializer
+	switch format {
+	case "json":
+		serializer = JsonSerializer{}
+	default:
+		return nil, fmt.Errorf("Format not implemented: %s", format)
+	}
+
+	return serializer, nil
 }

@@ -40,7 +40,7 @@ func (f FooHandler) ResourceName() string {
 	return "foos"
 }
 
-func (f FooHandler) ReadResource(ctx context.RequestContext, id string) (server.Resource, error) {
+func (f FooHandler) ReadResource(ctx context.RequestContext, id string, version string) (server.Resource, error) {
 	if id == "42" {
 		return &Foo{"hello", 42}, nil
 	}
@@ -48,24 +48,24 @@ func (f FooHandler) ReadResource(ctx context.RequestContext, id string) (server.
 	return nil, fmt.Errorf("No resource with id %s", id)
 }
 
-func (f FooHandler) ReadResourceList(ctx context.RequestContext) ([]server.Resource, string, error) {
+func (f FooHandler) ReadResourceList(ctx context.RequestContext, version string) ([]server.Resource, string, error) {
 	resources := make([]server.Resource, 0)
 	resources = append(resources, &Foo{Foo: "hello", Bar: 42})
 	resources = append(resources, &Foo{Foo: "world", Bar: 100})
 	return resources, "cursor123", nil
 }
 
-func (f FooHandler) CreateResource(ctx context.RequestContext, data map[string]interface{}) (server.Resource, error) {
+func (f FooHandler) CreateResource(ctx context.RequestContext, data server.Payload, version string) (server.Resource, error) {
 	foo := &Foo{Foo: data["foo"].(string), Bar: data["bar"].(float64)}
 	return foo, nil
 }
 
-func (f FooHandler) UpdateResource(ctx context.RequestContext, id string, data map[string]interface{}) (server.Resource, error) {
+func (f FooHandler) UpdateResource(ctx context.RequestContext, id string, data server.Payload, version string) (server.Resource, error) {
 	foo := &Foo{Foo: data["foo"].(string), Bar: data["bar"].(float64)}
 	return foo, nil
 }
 
-func (f FooHandler) DeleteResource(ctx context.RequestContext, id string) (server.Resource, error) {
+func (f FooHandler) DeleteResource(ctx context.RequestContext, id string, version string) (server.Resource, error) {
 	foo := &Foo{}
 	return foo, nil
 }

@@ -27,7 +27,7 @@ func (m *MockResourceHandler) ResourceName() string {
 	return args.String(0)
 }
 
-func (m *MockResourceHandler) CreateResource(r context.RequestContext, data map[string]interface{}) (Resource, error) {
+func (m *MockResourceHandler) CreateResource(r context.RequestContext, data Payload, version string) (Resource, error) {
 	args := m.Mock.Called()
 	resource := args.Get(0)
 	if resource != nil {
@@ -36,7 +36,7 @@ func (m *MockResourceHandler) CreateResource(r context.RequestContext, data map[
 	return resource, args.Error(1)
 }
 
-func (m *MockResourceHandler) ReadResource(r context.RequestContext, id string) (Resource, error) {
+func (m *MockResourceHandler) ReadResource(r context.RequestContext, id string, version string) (Resource, error) {
 	args := m.Mock.Called()
 	resource := args.Get(0)
 	if resource != nil {
@@ -45,7 +45,7 @@ func (m *MockResourceHandler) ReadResource(r context.RequestContext, id string) 
 	return resource, args.Error(1)
 }
 
-func (m *MockResourceHandler) ReadResourceList(r context.RequestContext) ([]Resource, string, error) {
+func (m *MockResourceHandler) ReadResourceList(r context.RequestContext, version string) ([]Resource, string, error) {
 	args := m.Mock.Called()
 	resources := args.Get(0)
 	if resources != nil {
@@ -54,7 +54,7 @@ func (m *MockResourceHandler) ReadResourceList(r context.RequestContext) ([]Reso
 	return nil, args.String(1), args.Error(2)
 }
 
-func (m *MockResourceHandler) UpdateResource(r context.RequestContext, id string, data map[string]interface{}) (Resource, error) {
+func (m *MockResourceHandler) UpdateResource(r context.RequestContext, id string, data Payload, version string) (Resource, error) {
 	args := m.Mock.Called()
 	resource := args.Get(0)
 	if resource != nil {
@@ -63,7 +63,7 @@ func (m *MockResourceHandler) UpdateResource(r context.RequestContext, id string
 	return resource, args.Error(1)
 }
 
-func (m *MockResourceHandler) DeleteResource(r context.RequestContext, id string) (Resource, error) {
+func (m *MockResourceHandler) DeleteResource(r context.RequestContext, id string, version string) (Resource, error) {
 	args := m.Mock.Called()
 	resource := args.Get(0)
 	if resource != nil {
@@ -79,6 +79,7 @@ func TestHandleCreateBadFormat(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
+	handler.On("CreateResource").Return(&TestResource{}, nil)
 
 	RegisterResourceHandler(router, handler)
 	createHandler := router.Get("create").GetHandler()
@@ -162,6 +163,7 @@ func TestHandleReadListBadFormat(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
+	handler.On("ReadResourceList").Return([]Resource{}, "", nil)
 
 	RegisterResourceHandler(router, handler)
 	readHandler := router.Get("readList").GetHandler()
@@ -239,6 +241,7 @@ func TestHandleReadBadFormat(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
+	handler.On("ReadResource").Return(&TestResource{}, nil)
 
 	RegisterResourceHandler(router, handler)
 	readHandler := router.Get("read").GetHandler()
@@ -316,6 +319,7 @@ func TestHandleUpdateBadFormat(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
+	handler.On("UpdateResource").Return(&TestResource{}, nil)
 
 	RegisterResourceHandler(router, handler)
 	updateHandler := router.Get("update").GetHandler()
@@ -399,6 +403,7 @@ func TestHandleDeleteBadFormat(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
+	handler.On("DeleteResource").Return(&TestResource{}, nil)
 
 	RegisterResourceHandler(router, handler)
 	deleteHandler := router.Get("delete").GetHandler()
