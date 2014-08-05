@@ -3,7 +3,9 @@
 package context
 
 import (
+	"fmt"
 	"net/http"
+	"net/url"
 
 	"code.google.com/p/go.net/context"
 	gcontext "github.com/gorilla/context"
@@ -42,6 +44,7 @@ type RequestContext interface {
 	Cursor() string
 	SetCursor(string) RequestContext
 	Request() (*http.Request, bool)
+	NextURL() (string, error)
 }
 
 // requestContext is an implementation of the RequestContext interface.
@@ -188,4 +191,36 @@ func (ctx *requestContext) Request() (*http.Request, bool) {
 	// access the request if it is anywhere up the Context tree.
 	req, ok := ctx.Value(requestKey).(*http.Request)
 	return req, ok
+}
+
+// NextURL returns the URL to use to request the next page of results using the current
+// cursor. If there is no cursor for this request or the URL fails to be built, an empty
+// string is returned with the error set.
+func (ctx *requestContext) NextURL() (string, error) {
+	cursor := ctx.Cursor()
+	if cursor == "" {
+		return "", fmt.Errorf("Unable to build next url: no cursor")
+	}
+
+	r, ok := ctx.Request()
+	if !ok {
+		return "", fmt.Errorf("Unable to build next url: no request")
+	}
+
+	var scheme string
+	scheme = r.URL.Scheme
+	if scheme == "" {
+		scheme = "http"
+	}
+
+	urlStr := fmt.Sprintf("%s://%s%s", scheme, r.Host, r.RequestURI)
+	u, err := url.Parse(urlStr)
+	if err != nil {
+		return "", fmt.Errorf("Unable to build next url: %s", urlStr)
+	}
+
+	q := u.Query()
+	q.Set("next", cursor)
+	u.RawQuery = q.Encode()
+	return u.String(), nil
 }

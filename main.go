@@ -72,7 +72,13 @@ func (f FooHandler) DeleteResource(ctx context.RequestContext, id string, versio
 
 func MyMiddleware(wrapped http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("This is my middleware!")
+		var scheme string
+		scheme = r.URL.Scheme
+		if scheme == "" {
+			scheme = "http"
+		}
+
+		fmt.Println(scheme + "://" + r.Host + r.RequestURI)
 		wrapped(w, r)
 	}
 }

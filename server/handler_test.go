@@ -228,7 +228,7 @@ func TestHandleReadListHappyPath(t *testing.T) {
 	handler.Mock.AssertExpectations(t)
 	assert.Equal(http.StatusOK, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"next":"cursor123","result":[{"foo":"hello"}],"success":true}`,
+		`{"next":"http://foo.com?next=cursor123","result":[{"foo":"hello"}],"success":true}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)

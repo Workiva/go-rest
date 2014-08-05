@@ -42,14 +42,14 @@ func (j JsonSerializer) SendSuccessResponse(w http.ResponseWriter, r Response, s
 	w.Write(jsonResponse)
 }
 
-func makeSuccessResponse(r interface{}, cursor string) Response {
+func makeSuccessResponse(r interface{}, nextURL string) Response {
 	response := Response{
 		"success": true,
 		"result":  r,
 	}
 
-	if cursor != "" {
-		response["next"] = cursor
+	if nextURL != "" {
+		response["next"] = nextURL
 	}
 
 	return response
@@ -65,7 +65,6 @@ func makeErrorResponse(err error) Response {
 func sendResponse(w http.ResponseWriter, ctx context.RequestContext) {
 	status := ctx.Status()
 	requestError := ctx.Error()
-	cursor := ctx.Cursor()
 	result := ctx.Result()
 
 	serializer, err := responseSerializer(ctx.ResponseFormat())
@@ -84,7 +83,8 @@ func sendResponse(w http.ResponseWriter, ctx context.RequestContext) {
 		return
 	}
 
-	serializer.SendSuccessResponse(w, makeSuccessResponse(result, cursor), status)
+	nextURL, _ := ctx.NextURL()
+	serializer.SendSuccessResponse(w, makeSuccessResponse(result, nextURL), status)
 }
 
 // responseSerializer returns a ResponseSerializer for the given format type. If the format
