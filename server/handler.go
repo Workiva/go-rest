@@ -110,7 +110,7 @@ func handleCreate(createFunc func(context.RequestContext, Payload, string) (Reso
 			}
 		}
 
-		sendResponse(w, ctx)
+		SendResponse(w, ctx)
 	}
 }
 
@@ -127,7 +127,7 @@ func handleReadList(readFunc func(context.RequestContext, string) ([]Resource, s
 		ctx = ctx.SetError(err)
 		ctx = ctx.SetStatus(http.StatusOK)
 
-		sendResponse(w, ctx)
+		SendResponse(w, ctx)
 	}
 }
 
@@ -143,7 +143,7 @@ func handleRead(readFunc func(context.RequestContext, string, string) (Resource,
 		ctx = ctx.SetError(err)
 		ctx = ctx.SetStatus(http.StatusOK)
 
-		sendResponse(w, ctx)
+		SendResponse(w, ctx)
 	}
 }
 
@@ -166,7 +166,7 @@ func handleUpdate(updateFunc func(context.RequestContext, string, Payload, strin
 			ctx = ctx.SetStatus(http.StatusOK)
 		}
 
-		sendResponse(w, ctx)
+		SendResponse(w, ctx)
 	}
 }
 
@@ -182,6 +182,6 @@ func handleDelete(deleteFunc func(context.RequestContext, string, string) (Resou
 		ctx = ctx.SetError(err)
 		ctx = ctx.SetStatus(http.StatusOK)
 
-		sendResponse(w, ctx)
+		SendResponse(w, ctx)
 	}
 }
