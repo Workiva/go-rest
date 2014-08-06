@@ -14,8 +14,8 @@ type Resource interface{}
 // Payload is the unmarshalled request body.
 type Payload map[string]interface{}
 
-// ResourceHandler specifies the endpoint handlers for working with a resource. This consists of
-// the business logic for performing CRUD operations.
+// ResourceHandler specifies the endpoint handlers for working with a resource. This
+// consists of the business logic for performing CRUD operations.
 type ResourceHandler interface {
 	ResourceName() string
 	CreateResource(context.RequestContext, Payload, string) (Resource, error)
@@ -32,23 +32,28 @@ func (b BaseResourceHandler) ResourceName() string {
 	panic("ResourceName not implemented")
 }
 
-func (b BaseResourceHandler) CreateResource(ctx context.RequestContext, data Payload, version string) (Resource, error) {
+func (b BaseResourceHandler) CreateResource(ctx context.RequestContext, data Payload,
+	version string) (Resource, error) {
 	panic("CreateResource not implemented")
 }
 
-func (b BaseResourceHandler) ReadResourceList(ctx context.RequestContext, limit int, version string) ([]Resource, string, error) {
+func (b BaseResourceHandler) ReadResourceList(ctx context.RequestContext, limit int,
+	version string) ([]Resource, string, error) {
 	panic("ReadResourceList not implemented")
 }
 
-func (b BaseResourceHandler) ReadResource(ctx context.RequestContext, id string, version string) (Resource, error) {
+func (b BaseResourceHandler) ReadResource(ctx context.RequestContext, id string,
+	version string) (Resource, error) {
 	panic("ReadResource not implemented")
 }
 
-func (b BaseResourceHandler) UpdateResource(ctx context.RequestContext, id string, data Payload, version string) (Resource, error) {
+func (b BaseResourceHandler) UpdateResource(ctx context.RequestContext, id string,
+	data Payload, version string) (Resource, error) {
 	panic("UpdateResource not implemented")
 }
 
-func (b BaseResourceHandler) DeleteResource(ctx context.RequestContext, id string, version string) (Resource, error) {
+func (b BaseResourceHandler) DeleteResource(ctx context.RequestContext, id string,
+	version string) (Resource, error) {
 	panic("DeleteResource not implemented")
 }
 
@@ -61,10 +66,11 @@ type requestHandler struct {
 	RestApi
 }
 
-// handleCreate returns a HandlerFunc which will deserialize the request payload, pass it to the
-// provided create function, and then serialize and dispatch the response. The
-// serialization mechanism used is specified by the "format" query parameter.
-func (h requestHandler) handleCreate(createFunc func(context.RequestContext, Payload, string) (Resource, error)) http.HandlerFunc {
+// handleCreate returns a HandlerFunc which will deserialize the request payload, pass
+// it to the provided create function, and then serialize and dispatch the response.
+// The serialization mechanism used is specified by the "format" query parameter.
+func (h requestHandler) handleCreate(createFunc func(context.RequestContext, Payload,
+	string) (Resource, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.NewContext(nil, r)
 
@@ -86,10 +92,11 @@ func (h requestHandler) handleCreate(createFunc func(context.RequestContext, Pay
 	}
 }
 
-// handleReadList returns a HandlerFunc which will pass the request context to the provided read function
-// and then serialize and dispatch the response. The serialization mechanism used is specified by the
-// "format" query parameter.
-func (h requestHandler) handleReadList(readFunc func(context.RequestContext, int, string) ([]Resource, string, error)) http.HandlerFunc {
+// handleReadList returns a HandlerFunc which will pass the request context to the
+// provided read function and then serialize and dispatch the response. The
+// serialization mechanism used is specified by the "format" query parameter.
+func (h requestHandler) handleReadList(readFunc func(context.RequestContext, int,
+	string) ([]Resource, string, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.NewContext(nil, r)
 
@@ -103,10 +110,11 @@ func (h requestHandler) handleReadList(readFunc func(context.RequestContext, int
 	}
 }
 
-// handleRead returns a HandlerFunc which will pass the resource id to the provided read function
-// and then serialize and dispatch the response. The serialization mechanism used is specified by
-// the "format" query parameter.
-func (h requestHandler) handleRead(readFunc func(context.RequestContext, string, string) (Resource, error)) http.HandlerFunc {
+// handleRead returns a HandlerFunc which will pass the resource id to the provided
+// read function and then serialize and dispatch the response. The serialization
+// mechanism used is specified by the "format" query parameter.
+func (h requestHandler) handleRead(readFunc func(context.RequestContext, string,
+	string) (Resource, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.NewContext(nil, r)
 
@@ -119,10 +127,12 @@ func (h requestHandler) handleRead(readFunc func(context.RequestContext, string,
 	}
 }
 
-// handleUpdate returns a HandlerFunc which will deserialize the request payload, pass it to the
-// provided update function, and then serialize and dispatch the response. The serialization
-// mechanism used is specified by the "format" query parameter.
-func (h requestHandler) handleUpdate(updateFunc func(context.RequestContext, string, Payload, string) (Resource, error)) http.HandlerFunc {
+// handleUpdate returns a HandlerFunc which will deserialize the request payload,
+// pass it to the provided update function, and then serialize and dispatch the
+// response. The serialization mechanism used is specified by the "format" query
+// parameter.
+func (h requestHandler) handleUpdate(updateFunc func(context.RequestContext,
+	string, Payload, string) (Resource, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.NewContext(nil, r)
 
@@ -142,10 +152,11 @@ func (h requestHandler) handleUpdate(updateFunc func(context.RequestContext, str
 	}
 }
 
-// handleDelete returns a HandlerFunc which will pass the resource id to the provided delete
-// function and then serialize and dispatch the response. The serialization mechanism used
-// is specified by the "format" query parameter.
-func (h requestHandler) handleDelete(deleteFunc func(context.RequestContext, string, string) (Resource, error)) http.HandlerFunc {
+// handleDelete returns a HandlerFunc which will pass the resource id to the provided
+// delete function and then serialize and dispatch the response. The serialization
+// mechanism used is specified by the "format" query parameter.
+func (h requestHandler) handleDelete(deleteFunc func(context.RequestContext, string,
+	string) (Resource, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.NewContext(nil, r)
 

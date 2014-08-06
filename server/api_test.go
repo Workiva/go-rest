@@ -26,7 +26,8 @@ func (m *MockResourceHandler) ResourceName() string {
 	return args.String(0)
 }
 
-func (m *MockResourceHandler) CreateResource(r context.RequestContext, data Payload, version string) (Resource, error) {
+func (m *MockResourceHandler) CreateResource(r context.RequestContext, data Payload,
+	version string) (Resource, error) {
 	args := m.Mock.Called()
 	resource := args.Get(0)
 	if resource != nil {
@@ -35,7 +36,8 @@ func (m *MockResourceHandler) CreateResource(r context.RequestContext, data Payl
 	return resource, args.Error(1)
 }
 
-func (m *MockResourceHandler) ReadResource(r context.RequestContext, id string, version string) (Resource, error) {
+func (m *MockResourceHandler) ReadResource(r context.RequestContext, id string,
+	version string) (Resource, error) {
 	args := m.Mock.Called()
 	resource := args.Get(0)
 	if resource != nil {
@@ -44,7 +46,8 @@ func (m *MockResourceHandler) ReadResource(r context.RequestContext, id string, 
 	return resource, args.Error(1)
 }
 
-func (m *MockResourceHandler) ReadResourceList(r context.RequestContext, limit int, version string) ([]Resource, string, error) {
+func (m *MockResourceHandler) ReadResourceList(r context.RequestContext, limit int,
+	version string) ([]Resource, string, error) {
 	args := m.Mock.Called()
 	resources := args.Get(0)
 	if resources != nil {
@@ -53,7 +56,8 @@ func (m *MockResourceHandler) ReadResourceList(r context.RequestContext, limit i
 	return nil, args.String(1), args.Error(2)
 }
 
-func (m *MockResourceHandler) UpdateResource(r context.RequestContext, id string, data Payload, version string) (Resource, error) {
+func (m *MockResourceHandler) UpdateResource(r context.RequestContext, id string, data Payload,
+	version string) (Resource, error) {
 	args := m.Mock.Called()
 	resource := args.Get(0)
 	if resource != nil {
@@ -62,7 +66,8 @@ func (m *MockResourceHandler) UpdateResource(r context.RequestContext, id string
 	return resource, args.Error(1)
 }
 
-func (m *MockResourceHandler) DeleteResource(r context.RequestContext, id string, version string) (Resource, error) {
+func (m *MockResourceHandler) DeleteResource(r context.RequestContext, id string,
+	version string) (Resource, error) {
 	args := m.Mock.Called()
 	resource := args.Get(0)
 	if resource != nil {
@@ -76,7 +81,8 @@ func (m *MockResourceHandler) IsAuthorized(r http.Request) bool {
 	return args.Bool(0)
 }
 
-// Ensures that the create handler returns a Not Implemented code if an invalid response format is provided.
+// Ensures that the create handler returns a Not Implemented code if an invalid response
+// format is provided.
 func TestHandleCreateBadFormat(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
@@ -105,7 +111,8 @@ func TestHandleCreateBadFormat(t *testing.T) {
 	)
 }
 
-// Ensures that the create handler returns an Internal Server Error code when the createFunc returns an error.
+// Ensures that the create handler returns an Internal Server Error code when the createFunc
+// returns an error.
 func TestHandleCreateBadCreate(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
@@ -134,7 +141,8 @@ func TestHandleCreateBadCreate(t *testing.T) {
 	)
 }
 
-// Ensures that the create handler returns the serialized resource and Created code when createFunc succeeds.
+// Ensures that the create handler returns the serialized resource and Created code when
+// createFunc succeeds.
 func TestHandleCreateHappyPath(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
@@ -163,7 +171,8 @@ func TestHandleCreateHappyPath(t *testing.T) {
 	)
 }
 
-// Ensures that the create handler returns an Unauthorized code when the request is not authorized.
+// Ensures that the create handler returns an Unauthorized code when the request is not
+// authorized.
 func TestHandleCreateNotAuthorized(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
@@ -187,7 +196,8 @@ func TestHandleCreateNotAuthorized(t *testing.T) {
 	assert.Equal("", resp.Body.String(), "Incorrect response string")
 }
 
-// Ensures that the read list handler returns a Not Implemented code if an invalid response format is provided.
+// Ensures that the read list handler returns a Not Implemented code if an invalid response
+// format is provided.
 func TestHandleReadListBadFormat(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
@@ -214,7 +224,8 @@ func TestHandleReadListBadFormat(t *testing.T) {
 	)
 }
 
-// Ensures that the read list handler returns an Internal Server Error code when the readFunc returns an error.
+// Ensures that the read list handler returns an Internal Server Error code when the readFunc returns an
+// error.
 func TestHandleReadListBadRead(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
@@ -378,7 +389,8 @@ func TestHandleUpdateBadFormat(t *testing.T) {
 	)
 }
 
-// Ensures that the update handler returns an Internal Server Error code when the updateFunc returns an error.
+// Ensures that the update handler returns an Internal Server Error code when the updateFunc returns an
+// error.
 func TestHandleUpdateBadUpdate(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
@@ -436,7 +448,8 @@ func TestHandleUpdateHappyPath(t *testing.T) {
 	)
 }
 
-// Ensures that the delete handler returns a Not Implemented code if an invalid response format is provided.
+// Ensures that the delete handler returns a Not Implemented code if an invalid response format is
+// provided.
 func TestHandleDeleteBadFormat(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
@@ -463,7 +476,8 @@ func TestHandleDeleteBadFormat(t *testing.T) {
 	)
 }
 
-// Ensures that the delete handler returns an Internal Server Error code when the deleteFunc returns an error.
+// Ensures that the delete handler returns an Internal Server Error code when the deleteFunc returns an
+// error.
 func TestHandleDeleteBadDelete(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
