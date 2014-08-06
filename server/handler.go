@@ -20,7 +20,7 @@ type Payload map[string]interface{}
 type ResourceHandler interface {
 	ResourceName() string
 	CreateResource(context.RequestContext, Payload, string) (Resource, error)
-	ReadResourceList(context.RequestContext, int, string) ([]Resource, string, error)
+	ReadResourceList(context.RequestContext, int, string, string) ([]Resource, string, error)
 	ReadResource(context.RequestContext, string, string) (Resource, error)
 	UpdateResource(context.RequestContext, string, Payload, string) (Resource, error)
 	DeleteResource(context.RequestContext, string, string) (Resource, error)
@@ -39,7 +39,7 @@ func (b BaseResourceHandler) CreateResource(ctx context.RequestContext, data Pay
 }
 
 func (b BaseResourceHandler) ReadResourceList(ctx context.RequestContext, limit int,
-	version string) ([]Resource, string, error) {
+	cursor string, version string) ([]Resource, string, error) {
 	panic("ReadResourceList not implemented")
 }
 
@@ -97,11 +97,11 @@ func (h requestHandler) handleCreate(createFunc func(context.RequestContext, Pay
 // provided read function and then serialize and dispatch the response. The
 // serialization mechanism used is specified by the "format" query parameter.
 func (h requestHandler) handleReadList(readFunc func(context.RequestContext, int,
-	string) ([]Resource, string, error)) http.HandlerFunc {
+	string, string) ([]Resource, string, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.NewContext(nil, r)
 
-		resources, cursor, err := readFunc(ctx, ctx.Limit(), ctx.Version())
+		resources, cursor, err := readFunc(ctx, ctx.Limit(), ctx.Cursor(), ctx.Version())
 		ctx = ctx.SetResult(resources)
 		ctx = ctx.SetCursor(cursor)
 		ctx = ctx.SetError(err)

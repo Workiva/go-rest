@@ -16,12 +16,12 @@ const (
 	ResourceIdKey = "resource_id"
 	FormatKey     = "format"
 	VersionKey    = "version"
+	CursorKey     = "next"
 
 	requestKey int = iota
 	statusKey
 	errorKey
 	resultKey
-	cursorKey
 	limitKey
 )
 
@@ -181,12 +181,12 @@ func (ctx *gorillaRequestContext) SetResult(result interface{}) RequestContext {
 // Cursor returns the current result cursor for the request, defaulting to an empty
 // string if one hasn't been set.
 func (ctx *gorillaRequestContext) Cursor() string {
-	return ctx.ValueWithDefault(cursorKey, "").(string)
+	return ctx.ValueWithDefault(CursorKey, "").(string)
 }
 
 // SetCursor sets the current result cursor for the request.
 func (ctx *gorillaRequestContext) SetCursor(cursor string) RequestContext {
-	return ctx.WithValue(cursorKey, cursor)
+	return ctx.WithValue(CursorKey, cursor)
 }
 
 // Request returns the *http.Request associated with context using NewContext, if any.

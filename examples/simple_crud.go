@@ -58,7 +58,7 @@ func (f FooHandler) ReadResource(ctx context.RequestContext, id string,
 // to fetch the resources. It returns the slice of results, a cursor (or empty) string,
 // and error (or nil).
 func (f FooHandler) ReadResourceList(ctx context.RequestContext, limit int,
-	version string) ([]server.Resource, string, error) {
+	cursor string, version string) ([]server.Resource, string, error) {
 	// Make a database call here.
 	resources := make([]server.Resource, 0, limit)
 	resources = append(resources, &FooResource{ID: 1, Foobar: "hello"})

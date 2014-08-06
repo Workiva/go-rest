@@ -35,7 +35,7 @@ func (h MyResourceHandler) ResourceName() string {
 // and error (or nil). In this example, we illustrate how to use a query parameter to
 // return only the IDs of our resources.
 func (m MyResourceHandler) ReadResourceList(ctx context.RequestContext, limit int,
-	version string) ([]server.Resource, string, error) {
+	cursor string, version string) ([]server.Resource, string, error) {
 	// Make a database call here.
 	resources := make([]server.Resource, 0, limit)
 	resources = append(resources, &FooResource{ID: 1, Foobar: "hello"})
