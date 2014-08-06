@@ -9,7 +9,6 @@ import (
 
 	"go-rest/server/context"
 
-	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -81,14 +80,14 @@ func (m *MockResourceHandler) IsAuthorized(r http.Request) bool {
 func TestHandleCreateBadFormat(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	router := mux.NewRouter()
+	api := NewRestApi()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("IsAuthorized").Return(true)
 	handler.On("CreateResource").Return(&TestResource{}, nil)
 
-	RegisterResourceHandler(router, handler)
-	createHandler := router.Get("create").GetHandler()
+	api.RegisterResourceHandler(handler)
+	createHandler, _ := api.(*muxRestApi).GetRouteHandler("foo:create")
 
 	payload := []byte(`{"foo": "bar"}`)
 	r := bytes.NewReader(payload)
@@ -110,14 +109,14 @@ func TestHandleCreateBadFormat(t *testing.T) {
 func TestHandleCreateBadCreate(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	router := mux.NewRouter()
+	api := NewRestApi()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("IsAuthorized").Return(true)
 	handler.On("CreateResource").Return(nil, fmt.Errorf("couldn't create"))
 
-	RegisterResourceHandler(router, handler)
-	createHandler := router.Get("create").GetHandler()
+	api.RegisterResourceHandler(handler)
+	createHandler, _ := api.(*muxRestApi).GetRouteHandler("foo:create")
 
 	payload := []byte(`{"foo": "bar"}`)
 	r := bytes.NewReader(payload)
@@ -139,14 +138,14 @@ func TestHandleCreateBadCreate(t *testing.T) {
 func TestHandleCreateHappyPath(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	router := mux.NewRouter()
+	api := NewRestApi()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("IsAuthorized").Return(true)
 	handler.On("CreateResource").Return(&TestResource{Foo: "bar"}, nil)
 
-	RegisterResourceHandler(router, handler)
-	createHandler := router.Get("create").GetHandler()
+	api.RegisterResourceHandler(handler)
+	createHandler, _ := api.(*muxRestApi).GetRouteHandler("foo:create")
 
 	payload := []byte(`{"foo": "bar"}`)
 	r := bytes.NewReader(payload)
@@ -168,13 +167,13 @@ func TestHandleCreateHappyPath(t *testing.T) {
 func TestHandleCreateNotAuthorized(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	router := mux.NewRouter()
+	api := NewRestApi()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("IsAuthorized").Return(false)
 
-	RegisterResourceHandler(router, handler)
-	createHandler := router.Get("create").GetHandler()
+	api.RegisterResourceHandler(handler)
+	createHandler, _ := api.(*muxRestApi).GetRouteHandler("foo:create")
 
 	payload := []byte(`{"foo": "bar"}`)
 	r := bytes.NewReader(payload)
@@ -192,14 +191,14 @@ func TestHandleCreateNotAuthorized(t *testing.T) {
 func TestHandleReadListBadFormat(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	router := mux.NewRouter()
+	api := NewRestApi()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("IsAuthorized").Return(true)
 	handler.On("ReadResourceList").Return([]Resource{}, "", nil)
 
-	RegisterResourceHandler(router, handler)
-	readHandler := router.Get("readList").GetHandler()
+	api.RegisterResourceHandler(handler)
+	readHandler, _ := api.(*muxRestApi).GetRouteHandler("foo:readList")
 
 	req, _ := http.NewRequest("GET", "http://foo.com/api/v0.1/foo?format=blah", nil)
 	resp := httptest.NewRecorder()
@@ -219,14 +218,14 @@ func TestHandleReadListBadFormat(t *testing.T) {
 func TestHandleReadListBadRead(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	router := mux.NewRouter()
+	api := NewRestApi()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("IsAuthorized").Return(true)
 	handler.On("ReadResourceList").Return(nil, "", fmt.Errorf("no resource"))
 
-	RegisterResourceHandler(router, handler)
-	readHandler := router.Get("readList").GetHandler()
+	api.RegisterResourceHandler(handler)
+	readHandler, _ := api.(*muxRestApi).GetRouteHandler("foo:readList")
 
 	req, _ := http.NewRequest("GET", "http://foo.com/api/v0.1/foo", nil)
 	resp := httptest.NewRecorder()
@@ -246,14 +245,14 @@ func TestHandleReadListBadRead(t *testing.T) {
 func TestHandleReadListHappyPath(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	router := mux.NewRouter()
+	api := NewRestApi()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("IsAuthorized").Return(true)
 	handler.On("ReadResourceList").Return([]Resource{&TestResource{Foo: "hello"}}, "cursor123", nil)
 
-	RegisterResourceHandler(router, handler)
-	readHandler := router.Get("readList").GetHandler()
+	api.RegisterResourceHandler(handler)
+	readHandler, _ := api.(*muxRestApi).GetRouteHandler("foo:readList")
 
 	req, _ := http.NewRequest("GET", "http://foo.com/api/v0.1/foo", nil)
 	resp := httptest.NewRecorder()
@@ -273,14 +272,14 @@ func TestHandleReadListHappyPath(t *testing.T) {
 func TestHandleReadBadFormat(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	router := mux.NewRouter()
+	api := NewRestApi()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("IsAuthorized").Return(true)
 	handler.On("ReadResource").Return(&TestResource{}, nil)
 
-	RegisterResourceHandler(router, handler)
-	readHandler := router.Get("read").GetHandler()
+	api.RegisterResourceHandler(handler)
+	readHandler, _ := api.(*muxRestApi).GetRouteHandler("foo:read")
 
 	req, _ := http.NewRequest("GET", "http://foo.com/api/v0.1/foo/1?format=blah", nil)
 	resp := httptest.NewRecorder()
@@ -300,14 +299,14 @@ func TestHandleReadBadFormat(t *testing.T) {
 func TestHandleReadBadRead(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	router := mux.NewRouter()
+	api := NewRestApi()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("IsAuthorized").Return(true)
 	handler.On("ReadResource").Return(nil, fmt.Errorf("no resource"))
 
-	RegisterResourceHandler(router, handler)
-	readHandler := router.Get("read").GetHandler()
+	api.RegisterResourceHandler(handler)
+	readHandler, _ := api.(*muxRestApi).GetRouteHandler("foo:read")
 
 	req, _ := http.NewRequest("GET", "http://foo.com/api/v0.1/foo/1", nil)
 	resp := httptest.NewRecorder()
@@ -327,14 +326,14 @@ func TestHandleReadBadRead(t *testing.T) {
 func TestHandleReadHappyPath(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	router := mux.NewRouter()
+	api := NewRestApi()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("IsAuthorized").Return(true)
 	handler.On("ReadResource").Return(&TestResource{Foo: "hello"}, nil)
 
-	RegisterResourceHandler(router, handler)
-	readHandler := router.Get("read").GetHandler()
+	api.RegisterResourceHandler(handler)
+	readHandler, _ := api.(*muxRestApi).GetRouteHandler("foo:read")
 
 	req, _ := http.NewRequest("GET", "http://foo.com/api/v0.1/foo/1", nil)
 	resp := httptest.NewRecorder()
@@ -354,14 +353,14 @@ func TestHandleReadHappyPath(t *testing.T) {
 func TestHandleUpdateBadFormat(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	router := mux.NewRouter()
+	api := NewRestApi()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("IsAuthorized").Return(true)
 	handler.On("UpdateResource").Return(&TestResource{}, nil)
 
-	RegisterResourceHandler(router, handler)
-	updateHandler := router.Get("update").GetHandler()
+	api.RegisterResourceHandler(handler)
+	updateHandler, _ := api.(*muxRestApi).GetRouteHandler("foo:update")
 
 	payload := []byte(`{"foo": "bar"}`)
 	r := bytes.NewReader(payload)
@@ -383,14 +382,14 @@ func TestHandleUpdateBadFormat(t *testing.T) {
 func TestHandleUpdateBadUpdate(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	router := mux.NewRouter()
+	api := NewRestApi()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("IsAuthorized").Return(true)
 	handler.On("UpdateResource").Return(nil, fmt.Errorf("couldn't update"))
 
-	RegisterResourceHandler(router, handler)
-	updateHandler := router.Get("update").GetHandler()
+	api.RegisterResourceHandler(handler)
+	updateHandler, _ := api.(*muxRestApi).GetRouteHandler("foo:update")
 
 	payload := []byte(`{"foo": "bar"}`)
 	r := bytes.NewReader(payload)
@@ -412,14 +411,14 @@ func TestHandleUpdateBadUpdate(t *testing.T) {
 func TestHandleUpdateHappyPath(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	router := mux.NewRouter()
+	api := NewRestApi()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("IsAuthorized").Return(true)
 	handler.On("UpdateResource").Return(&TestResource{Foo: "bar"}, nil)
 
-	RegisterResourceHandler(router, handler)
-	updateHandler := router.Get("update").GetHandler()
+	api.RegisterResourceHandler(handler)
+	updateHandler, _ := api.(*muxRestApi).GetRouteHandler("foo:update")
 
 	payload := []byte(`{"foo": "bar"}`)
 	r := bytes.NewReader(payload)
@@ -441,14 +440,14 @@ func TestHandleUpdateHappyPath(t *testing.T) {
 func TestHandleDeleteBadFormat(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	router := mux.NewRouter()
+	api := NewRestApi()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("IsAuthorized").Return(true)
 	handler.On("DeleteResource").Return(&TestResource{}, nil)
 
-	RegisterResourceHandler(router, handler)
-	deleteHandler := router.Get("delete").GetHandler()
+	api.RegisterResourceHandler(handler)
+	deleteHandler, _ := api.(*muxRestApi).GetRouteHandler("foo:delete")
 
 	req, _ := http.NewRequest("DELETE", "http://foo.com/api/v0.1/foo/1?format=blah", nil)
 	resp := httptest.NewRecorder()
@@ -468,14 +467,14 @@ func TestHandleDeleteBadFormat(t *testing.T) {
 func TestHandleDeleteBadDelete(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	router := mux.NewRouter()
+	api := NewRestApi()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("IsAuthorized").Return(true)
 	handler.On("DeleteResource").Return(nil, fmt.Errorf("no resource"))
 
-	RegisterResourceHandler(router, handler)
-	deleteHandler := router.Get("delete").GetHandler()
+	api.RegisterResourceHandler(handler)
+	deleteHandler, _ := api.(*muxRestApi).GetRouteHandler("foo:delete")
 
 	req, _ := http.NewRequest("DELETE", "http://foo.com/api/v0.1/foo/1", nil)
 	resp := httptest.NewRecorder()
@@ -495,14 +494,14 @@ func TestHandleDeleteBadDelete(t *testing.T) {
 func TestHandleDeleteHappyPath(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	router := mux.NewRouter()
+	api := NewRestApi()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("IsAuthorized").Return(true)
 	handler.On("DeleteResource").Return(&TestResource{Foo: "hello"}, nil)
 
-	RegisterResourceHandler(router, handler)
-	deleteHandler := router.Get("delete").GetHandler()
+	api.RegisterResourceHandler(handler)
+	deleteHandler, _ := api.(*muxRestApi).GetRouteHandler("foo:delete")
 
 	req, _ := http.NewRequest("DELETE", "http://foo.com/api/v0.1/foo/1", nil)
 	resp := httptest.NewRecorder()
@@ -531,15 +530,15 @@ func getMiddleware(called *bool) RequestMiddleware {
 func TestApplyMiddleware(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	router := mux.NewRouter()
+	api := NewRestApi()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("IsAuthorized").Return(true)
 	handler.On("ReadResource").Return(&TestResource{Foo: "hello"}, nil)
 
 	called := false
-	RegisterResourceHandler(router, handler, getMiddleware(&called))
-	readHandler := router.Get("read").GetHandler()
+	api.RegisterResourceHandler(handler, getMiddleware(&called))
+	readHandler, _ := api.(*muxRestApi).GetRouteHandler("foo:read")
 
 	req, _ := http.NewRequest("GET", "http://foo.com/api/v0.1/foo/1", nil)
 	resp := httptest.NewRecorder()

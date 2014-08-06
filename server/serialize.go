@@ -101,17 +101,25 @@ func newErrorResponse(err error) response {
 	}
 }
 
+var serializerRegistry map[string]ResponseSerializer = map[string]ResponseSerializer{"json": jsonSerializer{}}
+
+// AddResponseSerializer registers the provided ResponseSerializer with the given format. If the
+// format has already been registered, it will be overwritten.
+func AddResponseSerializer(format string, serializer ResponseSerializer) {
+	serializerRegistry[format] = serializer
+}
+
+// RemoveResponseSerializer unregisters the ResponseSerializer with the provided format. If the
+// format hasn't been registered, this is a no-op.
+func RemoveResponseSerializer(format string) {
+	delete(serializerRegistry, format)
+}
+
 // responseSerializer returns a ResponseSerializer for the given format type. If the format
 // is not implemented, the returned serializer will be nil and the error set.
 func responseSerializer(format string) (ResponseSerializer, error) {
-	var serializer ResponseSerializer
-	// TODO: How to expose this to make it pluggable?
-	switch format {
-	case "json":
-		serializer = jsonSerializer{}
-	default:
-		return nil, fmt.Errorf("Format not implemented: %s", format)
+	if serializer, ok := serializerRegistry[format]; ok {
+		return serializer, nil
 	}
-
-	return serializer, nil
+	return nil, fmt.Errorf("Format not implemented: %s", format)
 }

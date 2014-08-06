@@ -50,8 +50,10 @@ type RequestContext interface {
 	SetLimit(int) RequestContext
 }
 
-// requestContext is an implementation of the RequestContext interface.
-type requestContext struct {
+// gorillaRequestContext is an implementation of the RequestContext interface. It wraps
+// Gorilla's context package from which it attempts to store/retrieve values, delegating
+// to the parent Context if necessary.
+type gorillaRequestContext struct {
 	context.Context
 	req *http.Request
 }
@@ -85,14 +87,14 @@ func NewContext(parent context.Context, req *http.Request) RequestContext {
 	// parameters with the same name as query string values. Figure out a
 	// better way to handle this.
 
-	return &requestContext{parent, req}
+	return &gorillaRequestContext{parent, req}
 }
 
 // WithValue returns a new RequestContext with the provided key-value pair and this context
 // as the parent.
-func (ctx *requestContext) WithValue(key, value interface{}) RequestContext {
+func (ctx *gorillaRequestContext) WithValue(key, value interface{}) RequestContext {
 	if r, ok := ctx.Request(); ok {
-		return &requestContext{context.WithValue(ctx, key, value), r}
+		return &gorillaRequestContext{context.WithValue(ctx, key, value), r}
 	}
 
 	// Should not reach this.
@@ -101,7 +103,7 @@ func (ctx *requestContext) WithValue(key, value interface{}) RequestContext {
 
 // Value returns Gorilla's context package's value for this Context's request
 // and key. It delegates to the parent Context if there is no such value.
-func (ctx *requestContext) Value(key interface{}) interface{} {
+func (ctx *gorillaRequestContext) Value(key interface{}) interface{} {
 	if key == requestKey {
 		return ctx.req
 	}
@@ -113,7 +115,7 @@ func (ctx *requestContext) Value(key interface{}) interface{} {
 
 // ValueWithDefault returns the context value for the given key. If there's no
 // such value, the provided default is returned.
-func (ctx *requestContext) ValueWithDefault(key, defaultVal interface{}) interface{} {
+func (ctx *gorillaRequestContext) ValueWithDefault(key, defaultVal interface{}) interface{} {
 	value := ctx.Value(key)
 	if value == nil {
 		value = defaultVal
@@ -123,35 +125,35 @@ func (ctx *requestContext) ValueWithDefault(key, defaultVal interface{}) interfa
 
 // ResponseFormat returns the response format for the request, defaulting to "json"
 // if one is not specified using the "format" query parameter.
-func (ctx *requestContext) ResponseFormat() string {
+func (ctx *gorillaRequestContext) ResponseFormat() string {
 	return ctx.ValueWithDefault(FormatKey, "json").(string)
 }
 
 // ResourceId returns the resource id for the request, defaulting to an empty string
 // if there isn't one.
-func (ctx *requestContext) ResourceId() string {
+func (ctx *gorillaRequestContext) ResourceId() string {
 	return ctx.ValueWithDefault(ResourceIdKey, "").(string)
 }
 
 // Version returns the API version for the request, defaulting to an empty string
 // if one is not specified in the request path.
-func (ctx *requestContext) Version() string {
+func (ctx *gorillaRequestContext) Version() string {
 	return ctx.ValueWithDefault(VersionKey, "").(string)
 }
 
 // Status returns the current HTTP status code that will be returned for the request,
 // defaulting to 200 if one hasn't been set yet.
-func (ctx *requestContext) Status() int {
+func (ctx *gorillaRequestContext) Status() int {
 	return ctx.ValueWithDefault(statusKey, http.StatusOK).(int)
 }
 
 // SetStatus sets the HTTP status code to be returned for the request.
-func (ctx *requestContext) SetStatus(status int) RequestContext {
+func (ctx *gorillaRequestContext) SetStatus(status int) RequestContext {
 	return ctx.WithValue(statusKey, status)
 }
 
 // Error returns the current error for the request or nil if no errors have been set.
-func (ctx *requestContext) Error() error {
+func (ctx *gorillaRequestContext) Error() error {
 	err := ctx.ValueWithDefault(errorKey, nil)
 
 	if err == nil {
@@ -162,54 +164,54 @@ func (ctx *requestContext) Error() error {
 }
 
 // SetError sets the current error for the request.
-func (ctx *requestContext) SetError(err error) RequestContext {
+func (ctx *gorillaRequestContext) SetError(err error) RequestContext {
 	return ctx.WithValue(errorKey, err)
 }
 
 // Result returns the result resource for the request or nil if no result has been set.
-func (ctx *requestContext) Result() interface{} {
+func (ctx *gorillaRequestContext) Result() interface{} {
 	return ctx.ValueWithDefault(resultKey, nil)
 }
 
 // SetResult sets the result resource for the request.
-func (ctx *requestContext) SetResult(result interface{}) RequestContext {
+func (ctx *gorillaRequestContext) SetResult(result interface{}) RequestContext {
 	return ctx.WithValue(resultKey, result)
 }
 
 // Cursor returns the current result cursor for the request, defaulting to an empty
 // string if one hasn't been set.
-func (ctx *requestContext) Cursor() string {
+func (ctx *gorillaRequestContext) Cursor() string {
 	return ctx.ValueWithDefault(cursorKey, "").(string)
 }
 
 // SetCursor sets the current result cursor for the request.
-func (ctx *requestContext) SetCursor(cursor string) RequestContext {
+func (ctx *gorillaRequestContext) SetCursor(cursor string) RequestContext {
 	return ctx.WithValue(cursorKey, cursor)
 }
 
 // Request returns the *http.Request associated with context using NewContext, if any.
-func (ctx *requestContext) Request() (*http.Request, bool) {
-	// We cannot use ctx.(*requestContext).req to get the request because ctx may
-	// be a Context derived from a *requestContext. Instead, we use Value to
+func (ctx *gorillaRequestContext) Request() (*http.Request, bool) {
+	// We cannot use ctx.(*gorillaRequestContext).req to get the request because ctx may
+	// be a Context derived from a *gorillaRequestContext. Instead, we use Value to
 	// access the request if it is anywhere up the Context tree.
 	req, ok := ctx.Value(requestKey).(*http.Request)
 	return req, ok
 }
 
 // Limit returns the maximum number of results that should be fetched.
-func (ctx *requestContext) Limit() int {
+func (ctx *gorillaRequestContext) Limit() int {
 	return ctx.ValueWithDefault(limitKey, 100).(int)
 }
 
 // SetLimit sets the maximum number of results that should be fetched.
-func (ctx *requestContext) SetLimit(limit int) RequestContext {
+func (ctx *gorillaRequestContext) SetLimit(limit int) RequestContext {
 	return ctx.WithValue(limitKey, limit)
 }
 
 // NextURL returns the URL to use to request the next page of results using the current
 // cursor. If there is no cursor for this request or the URL fails to be built, an empty
 // string is returned with the error set.
-func (ctx *requestContext) NextURL() (string, error) {
+func (ctx *gorillaRequestContext) NextURL() (string, error) {
 	cursor := ctx.Cursor()
 	if cursor == "" {
 		return "", fmt.Errorf("Unable to build next url: no cursor")

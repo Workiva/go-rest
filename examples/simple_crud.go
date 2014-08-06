@@ -7,8 +7,6 @@ import (
 	"math/rand"
 	"net/http"
 	"strconv"
-
-	"github.com/gorilla/mux"
 )
 
 // FooResource represents a domain model for which we want to perform CRUD operations with.
@@ -100,12 +98,11 @@ func (f FooHandler) IsAuthorized(r http.Request) bool {
 
 // Start the REST server.
 func simpleCrudMain() {
-	r := mux.NewRouter()
+	api := server.NewRestApi()
 
 	// Call RegisterResourceHandler to wire up FooHandler.
-	server.RegisterResourceHandler(r, FooHandler{})
+	api.RegisterResourceHandler(FooHandler{})
 
 	// We're ready to hit our CRUD endpoints.
-	http.Handle("/", r)
-	http.ListenAndServe(":8080", nil)
+	api.Start(":8080")
 }

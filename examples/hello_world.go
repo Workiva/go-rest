@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"go-rest/server"
 	"go-rest/server/context"
-	"net/http"
-
-	"github.com/gorilla/mux"
 )
 
 // HelloWorldResource represents a domain model for which we want to perform CRUD operations with.
@@ -46,12 +43,11 @@ func (h HelloWorldHandler) ReadResource(ctx context.RequestContext, id string, v
 
 // Start the REST server.
 func helloWorldMain() {
-	r := mux.NewRouter()
+	api := server.NewRestApi()
 
 	// Call RegisterResourceHandler to wire up HelloWorldHandler.
-	server.RegisterResourceHandler(r, HelloWorldHandler{})
+	api.RegisterResourceHandler(HelloWorldHandler{})
 
 	// We're ready to hit our CRUD endpoints.
-	http.Handle("/", r)
-	http.ListenAndServe(":8080", nil)
+	api.Start(":8080")
 }

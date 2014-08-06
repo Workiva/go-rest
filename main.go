@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-
-	"github.com/gorilla/mux"
 )
 
 type Consumer struct {
@@ -87,10 +85,9 @@ func MyMiddleware(wrapped http.HandlerFunc) http.HandlerFunc {
 
 func main() {
 	if os.Args[1] == "1" {
-		r := mux.NewRouter()
-		server.RegisterResourceHandler(r, FooHandler{}, MyMiddleware)
-		http.Handle("/", r)
-		http.ListenAndServe(":8080", nil)
+		api := server.NewRestApi()
+		api.RegisterResourceHandler(FooHandler{}, MyMiddleware)
+		api.Start(":8080")
 	}
 
 	rc := rest.Client{Consumer{"key", "secret"}}

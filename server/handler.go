@@ -2,13 +2,10 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
-	"log"
+
 	"net/http"
 
 	"go-rest/server/context"
-
-	"github.com/gorilla/mux"
 )
 
 // Resource represents a domain model.
@@ -74,70 +71,6 @@ func newAuthMiddleware(isAuthorized func(http.Request) bool) RequestMiddleware {
 			wrapped(w, r)
 		}
 	}
-}
-
-// RegisterResourceHandler binds the provided ResourceHandler to the appropriate REST endpoints and
-// applies any specified middleware. Endpoints will have the following base URL:
-// /api/:version/resourceName.
-func RegisterResourceHandler(router *mux.Router, r ResourceHandler, middleware ...RequestMiddleware) {
-	urlBase := fmt.Sprintf("/api/v{%s:[^/]+}/%s", context.VersionKey, r.ResourceName())
-	resourceUrl := fmt.Sprintf("%s/{%s}", urlBase, context.ResourceIdKey)
-	middleware = append(middleware, newAuthMiddleware(r.IsAuthorized))
-
-	router.HandleFunc(
-		urlBase,
-		applyMiddleware(
-			handleCreate(r.CreateResource),
-			middleware,
-		),
-	).Methods("POST").Name("create")
-	log.Printf("Registered create handler at POST %s", urlBase)
-
-	router.HandleFunc(
-		urlBase,
-		applyMiddleware(
-			handleReadList(r.ReadResourceList),
-			middleware,
-		),
-	).Methods("GET").Name("readList")
-	log.Printf("Registered read list handler at GET %s", urlBase)
-
-	router.HandleFunc(
-		resourceUrl,
-		applyMiddleware(
-			handleRead(r.ReadResource),
-			middleware,
-		),
-	).Methods("GET").Name("read")
-	log.Printf("Registered read handler at GET %s", resourceUrl)
-
-	router.HandleFunc(
-		resourceUrl,
-		applyMiddleware(
-			handleUpdate(r.UpdateResource),
-			middleware,
-		),
-	).Methods("PUT").Name("update")
-	log.Printf("Registered update handler at UPDATE %s", resourceUrl)
-
-	router.HandleFunc(
-		resourceUrl,
-		applyMiddleware(
-			handleDelete(r.DeleteResource),
-			middleware,
-		),
-	).Methods("DELETE").Name("delete")
-	log.Printf("Registered delete handler at DELETE %s", resourceUrl)
-}
-
-// applyMiddleware wraps the HandlerFunc with the provided RequestMiddleware and returns the
-// function composition.
-func applyMiddleware(h http.HandlerFunc, middleware []RequestMiddleware) http.HandlerFunc {
-	for _, m := range middleware {
-		h = m(h)
-	}
-
-	return h
 }
 
 // handleCreate returns a HandlerFunc which will deserialize the request payload, pass it to the

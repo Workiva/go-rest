@@ -6,8 +6,6 @@ import (
 	"go-rest/server/context"
 	"log"
 	"net/http"
-
-	"github.com/gorilla/mux"
 )
 
 // ExampleResource represents a domain model for which we want to perform CRUD operations with.
@@ -56,12 +54,11 @@ func ExampleMiddleware(wrapped http.HandlerFunc) http.HandlerFunc {
 
 // Start the REST server.
 func middlewareMain() {
-	r := mux.NewRouter()
+	api := server.NewRestApi()
 
 	// Call RegisterResourceHandler to wire up ExampleHandler and apply middleware.
-	server.RegisterResourceHandler(r, ExampleHandler{}, ExampleMiddleware)
+	api.RegisterResourceHandler(ExampleHandler{}, ExampleMiddleware)
 
 	// We're ready to hit our CRUD endpoints.
-	http.Handle("/", r)
-	http.ListenAndServe(":8080", nil)
+	api.Start(":8080")
 }
