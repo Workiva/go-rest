@@ -24,7 +24,7 @@ type ResourceHandler interface {
 	ReadResource(context.RequestContext, string, string) (Resource, error)
 	UpdateResource(context.RequestContext, string, Payload, string) (Resource, error)
 	DeleteResource(context.RequestContext, string, string) (Resource, error)
-	IsAuthorized(http.Request) bool
+	Authenticate(http.Request) error
 }
 
 type BaseResourceHandler struct{}
@@ -58,8 +58,8 @@ func (b BaseResourceHandler) DeleteResource(ctx context.RequestContext, id strin
 	panic("DeleteResource not implemented")
 }
 
-func (b BaseResourceHandler) IsAuthorized(r http.Request) bool {
-	return true
+func (b BaseResourceHandler) Authenticate(r http.Request) error {
+	return nil
 }
 
 // requestHandler constructs http.HandlerFuncs responsible for handling HTTP requests.

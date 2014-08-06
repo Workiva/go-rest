@@ -88,17 +88,18 @@ func (f FooHandler) DeleteResource(ctx context.RequestContext, id string,
 	return foo, nil
 }
 
-// IsAuthorized is logic that is used to authenticate requests. The default behavior
-// of IsAuthorized, seen in server.BaseResourceHandler, always returns true, meaning
-// all requests are authorized.
-func (f FooHandler) IsAuthorized(r http.Request) bool {
+// Authenticate is logic that is used to authenticate requests. The default behavior
+// of Authenticate, seen in server.BaseResourceHandler, always returns nil, meaning
+// all requests are authenticated. Returning an error means that the request is
+// unauthorized and any error message will be sent back with the response.
+func (f FooHandler) Authenticate(r http.Request) error {
 	if secrets, ok := r.Header["Authorization"]; ok {
 		if secrets[0] == "secret" {
-			return true
+			return nil
 		}
 	}
 
-	return false
+	return server.UnauthorizedRequest("You shall not pass")
 }
 
 // Start the REST server.

@@ -29,11 +29,12 @@ type RestApi interface {
 type RequestMiddleware func(http.HandlerFunc) http.HandlerFunc
 
 // newAuthMiddleware returns a RequestMiddleware used to authenticate requests.
-func newAuthMiddleware(isAuthorized func(http.Request) bool) RequestMiddleware {
+func newAuthMiddleware(authenticate func(http.Request) error) RequestMiddleware {
 	return func(wrapped http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			if !isAuthorized(*r) {
+			if err := authenticate(*r); err != nil {
 				w.WriteHeader(http.StatusUnauthorized)
+				w.Write([]byte(err.Error()))
 				return
 			}
 			wrapped(w, r)
@@ -73,7 +74,7 @@ func (r muxRestApi) RegisterResourceHandler(h ResourceHandler, middleware ...Req
 	resource := h.ResourceName()
 	urlBase := fmt.Sprintf("/api/v{%s:[^/]+}/%s", context.VersionKey, resource)
 	resourceUrl := fmt.Sprintf("%s/{%s}", urlBase, context.ResourceIdKey)
-	middleware = append(middleware, newAuthMiddleware(h.IsAuthorized))
+	middleware = append(middleware, newAuthMiddleware(h.Authenticate))
 
 	r.router.HandleFunc(
 		urlBase,
