@@ -40,7 +40,7 @@ func (e ExampleHandler) ReadResource(ctx context.RequestContext, id string, vers
 	if id == "42" {
 		return &ExampleResource{ID: 42, Foobar: "hello world"}, nil
 	}
-	return nil, fmt.Errorf("No resource with id %s", id)
+	return nil, server.ResourceNotFound(fmt.Sprintf("No resource with id %s", id))
 }
 
 // Middleware is implemented as a closure which takes an http.HandlerFunc and returns

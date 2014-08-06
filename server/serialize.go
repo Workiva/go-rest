@@ -40,7 +40,7 @@ func (j jsonSerializer) sendErrorResponse(w http.ResponseWriter, err error, erro
 func (j jsonSerializer) sendSuccessResponse(w http.ResponseWriter, r response, status int) {
 	jsonResponse, err := json.Marshal(r)
 	if err != nil {
-		j.sendErrorResponse(w, err, 500)
+		j.sendErrorResponse(w, err, http.StatusInternalServerError)
 		return
 	}
 

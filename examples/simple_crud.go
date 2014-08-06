@@ -47,7 +47,7 @@ func (f FooHandler) ReadResource(ctx context.RequestContext, id string, version 
 	if id == "42" {
 		return &FooResource{ID: 42, Foobar: "hello world"}, nil
 	}
-	return nil, fmt.Errorf("No resource with id %s", id)
+	return nil, server.ResourceNotFound(fmt.Sprintf("No resource with id %s", id))
 }
 
 // ReadResourceList is the logic that corresponds to reading multiple resources, perhaps

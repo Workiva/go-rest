@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"net/http"
 
@@ -175,18 +176,22 @@ func (h requestHandler) sendResponse(w http.ResponseWriter, ctx context.RequestC
 	status := ctx.Status()
 	requestError := ctx.Error()
 	result := ctx.Result()
+	format := ctx.ResponseFormat()
 
-	serializer, err := h.responseSerializer(ctx.ResponseFormat())
+	serializer, err := h.responseSerializer(format)
 	if err != nil {
 		// Fall back to json serialization.
 		serializer = jsonSerializer{}
-		status = http.StatusNotImplemented
-		requestError = err
+		requestError = NotImplemented(fmt.Sprintf("Format not implemented: %s", format))
 	}
 
 	if requestError != nil {
 		if status < 400 {
-			status = http.StatusInternalServerError
+			if restError, ok := requestError.(RestError); ok {
+				status = restError.Status()
+			} else {
+				status = http.StatusInternalServerError
+			}
 		}
 		serializer.sendErrorResponse(w, requestError, status)
 		return

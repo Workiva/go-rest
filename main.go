@@ -45,7 +45,7 @@ func (f FooHandler) ReadResource(ctx context.RequestContext, id string, version 
 		return &Foo{"hello", 42}, nil
 	}
 
-	return nil, fmt.Errorf("No resource with id %s", id)
+	return nil, server.ResourceNotFound()
 }
 
 func (f FooHandler) ReadResourceList(ctx context.RequestContext, limit int, version string) ([]server.Resource, string, error) {

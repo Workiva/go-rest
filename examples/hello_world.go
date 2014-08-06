@@ -38,7 +38,7 @@ func (h HelloWorldHandler) ReadResource(ctx context.RequestContext, id string, v
 	if id == "42" {
 		return &HelloWorldResource{ID: 42, Foobar: "hello world"}, nil
 	}
-	return nil, fmt.Errorf("No resource with id %s", id)
+	return nil, server.ResourceNotFound(fmt.Sprintf("No resource with id %s", id))
 }
 
 // Start the REST server.
