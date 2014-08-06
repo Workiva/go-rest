@@ -56,27 +56,15 @@ func (b BaseResourceHandler) IsAuthorized(r http.Request) bool {
 	return true
 }
 
-// RequestMiddleware is a function that returns a HandlerFunc wrapping the provided HandlerFunc.
-// This allows injecting custom logic to operate on requests (e.g. performing authentication).
-type RequestMiddleware func(http.HandlerFunc) http.HandlerFunc
-
-// newAuthMiddleware returns a RequestMiddleware used to authenticate requests.
-func newAuthMiddleware(isAuthorized func(http.Request) bool) RequestMiddleware {
-	return func(wrapped http.HandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			if !isAuthorized(*r) {
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-			wrapped(w, r)
-		}
-	}
+// requestHandler constructs http.HandlerFuncs responsible for handling HTTP requests.
+type requestHandler struct {
+	RestApi
 }
 
 // handleCreate returns a HandlerFunc which will deserialize the request payload, pass it to the
 // provided create function, and then serialize and dispatch the response. The
 // serialization mechanism used is specified by the "format" query parameter.
-func handleCreate(createFunc func(context.RequestContext, Payload, string) (Resource, error)) http.HandlerFunc {
+func (h requestHandler) handleCreate(createFunc func(context.RequestContext, Payload, string) (Resource, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.NewContext(nil, r)
 
@@ -94,14 +82,14 @@ func handleCreate(createFunc func(context.RequestContext, Payload, string) (Reso
 			}
 		}
 
-		SendResponse(w, ctx)
+		h.sendResponse(w, ctx)
 	}
 }
 
 // handleReadList returns a HandlerFunc which will pass the request context to the provided read function
 // and then serialize and dispatch the response. The serialization mechanism used is specified by the
 // "format" query parameter.
-func handleReadList(readFunc func(context.RequestContext, int, string) ([]Resource, string, error)) http.HandlerFunc {
+func (h requestHandler) handleReadList(readFunc func(context.RequestContext, int, string) ([]Resource, string, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.NewContext(nil, r)
 
@@ -111,14 +99,14 @@ func handleReadList(readFunc func(context.RequestContext, int, string) ([]Resour
 		ctx = ctx.SetError(err)
 		ctx = ctx.SetStatus(http.StatusOK)
 
-		SendResponse(w, ctx)
+		h.sendResponse(w, ctx)
 	}
 }
 
 // handleRead returns a HandlerFunc which will pass the resource id to the provided read function
 // and then serialize and dispatch the response. The serialization mechanism used is specified by
 // the "format" query parameter.
-func handleRead(readFunc func(context.RequestContext, string, string) (Resource, error)) http.HandlerFunc {
+func (h requestHandler) handleRead(readFunc func(context.RequestContext, string, string) (Resource, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.NewContext(nil, r)
 
@@ -127,14 +115,14 @@ func handleRead(readFunc func(context.RequestContext, string, string) (Resource,
 		ctx = ctx.SetError(err)
 		ctx = ctx.SetStatus(http.StatusOK)
 
-		SendResponse(w, ctx)
+		h.sendResponse(w, ctx)
 	}
 }
 
 // handleUpdate returns a HandlerFunc which will deserialize the request payload, pass it to the
 // provided update function, and then serialize and dispatch the response. The serialization
 // mechanism used is specified by the "format" query parameter.
-func handleUpdate(updateFunc func(context.RequestContext, string, Payload, string) (Resource, error)) http.HandlerFunc {
+func (h requestHandler) handleUpdate(updateFunc func(context.RequestContext, string, Payload, string) (Resource, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.NewContext(nil, r)
 
@@ -150,14 +138,14 @@ func handleUpdate(updateFunc func(context.RequestContext, string, Payload, strin
 			ctx = ctx.SetStatus(http.StatusOK)
 		}
 
-		SendResponse(w, ctx)
+		h.sendResponse(w, ctx)
 	}
 }
 
 // handleDelete returns a HandlerFunc which will pass the resource id to the provided delete
 // function and then serialize and dispatch the response. The serialization mechanism used
 // is specified by the "format" query parameter.
-func handleDelete(deleteFunc func(context.RequestContext, string, string) (Resource, error)) http.HandlerFunc {
+func (h requestHandler) handleDelete(deleteFunc func(context.RequestContext, string, string) (Resource, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.NewContext(nil, r)
 
@@ -166,6 +154,33 @@ func handleDelete(deleteFunc func(context.RequestContext, string, string) (Resou
 		ctx = ctx.SetError(err)
 		ctx = ctx.SetStatus(http.StatusOK)
 
-		SendResponse(w, ctx)
+		h.sendResponse(w, ctx)
 	}
+}
+
+// sendResponse writes a success or error response to the provided http.ResponseWriter
+// based on the contents of the context.RequestContext.
+func (h requestHandler) sendResponse(w http.ResponseWriter, ctx context.RequestContext) {
+	status := ctx.Status()
+	requestError := ctx.Error()
+	result := ctx.Result()
+
+	serializer, err := h.responseSerializer(ctx.ResponseFormat())
+	if err != nil {
+		// Fall back to json serialization.
+		serializer = jsonSerializer{}
+		status = http.StatusNotImplemented
+		requestError = err
+	}
+
+	if requestError != nil {
+		if status < 400 {
+			status = http.StatusInternalServerError
+		}
+		serializer.sendErrorResponse(w, requestError, status)
+		return
+	}
+
+	nextURL, _ := ctx.NextURL()
+	serializer.sendSuccessResponse(w, newSuccessResponse(result, nextURL), status)
 }

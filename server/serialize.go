@@ -2,8 +2,6 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
-	"go-rest/server/context"
 	"net/http"
 )
 
@@ -16,33 +14,6 @@ type response map[string]interface{}
 type ResponseSerializer interface {
 	sendSuccessResponse(http.ResponseWriter, response, int)
 	sendErrorResponse(http.ResponseWriter, error, int)
-}
-
-// SendResponse writes a success or error response to the provided http.ResponseWriter
-// based on the contents of the context.RequestContext.
-func SendResponse(w http.ResponseWriter, ctx context.RequestContext) {
-	status := ctx.Status()
-	requestError := ctx.Error()
-	result := ctx.Result()
-
-	serializer, err := responseSerializer(ctx.ResponseFormat())
-	if err != nil {
-		// Fall back to json serialization.
-		serializer = jsonSerializer{}
-		status = http.StatusNotImplemented
-		requestError = err
-	}
-
-	if requestError != nil {
-		if status < 400 {
-			status = http.StatusInternalServerError
-		}
-		serializer.sendErrorResponse(w, requestError, status)
-		return
-	}
-
-	nextURL, _ := ctx.NextURL()
-	serializer.sendSuccessResponse(w, newSuccessResponse(result, nextURL), status)
 }
 
 // jsonSerializer is an implementation of ResponseSerializer which serializes responses
@@ -99,27 +70,4 @@ func newErrorResponse(err error) response {
 		"success": false,
 		"error":   err.Error(),
 	}
-}
-
-var serializerRegistry map[string]ResponseSerializer = map[string]ResponseSerializer{"json": jsonSerializer{}}
-
-// AddResponseSerializer registers the provided ResponseSerializer with the given format. If the
-// format has already been registered, it will be overwritten.
-func AddResponseSerializer(format string, serializer ResponseSerializer) {
-	serializerRegistry[format] = serializer
-}
-
-// RemoveResponseSerializer unregisters the ResponseSerializer with the provided format. If the
-// format hasn't been registered, this is a no-op.
-func RemoveResponseSerializer(format string) {
-	delete(serializerRegistry, format)
-}
-
-// responseSerializer returns a ResponseSerializer for the given format type. If the format
-// is not implemented, the returned serializer will be nil and the error set.
-func responseSerializer(format string) (ResponseSerializer, error) {
-	if serializer, ok := serializerRegistry[format]; ok {
-		return serializer, nil
-	}
-	return nil, fmt.Errorf("Format not implemented: %s", format)
 }
