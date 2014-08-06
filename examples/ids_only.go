@@ -30,8 +30,8 @@ func (h MyResourceHandler) ResourceName() string {
 
 // ReadResourceList is the logic that corresponds to reading multiple resources, perhaps
 // with specified query parameters accessed through the context.RequestContext. This is
-// mapped to GET /api/:version/foo. Typically, this would make some sort of database query
-// to fetch the resources. It returns the slice of results, a cursor (or empty) string,
+// mapped to GET /api/:version/myresource. Typically, this would make some sort of database
+// query to fetch the resources. It returns the slice of results, a cursor (or empty) string,
 // and error (or nil). In this example, we illustrate how to use a query parameter to
 // return only the IDs of our resources.
 func (m MyResourceHandler) ReadResourceList(ctx context.RequestContext, limit int,

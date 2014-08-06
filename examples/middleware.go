@@ -32,7 +32,7 @@ func (e ExampleHandler) ResourceName() string {
 }
 
 // ReadResource is the logic that corresponds to reading a single resource by its ID at
-// GET /api/:version/foo/{id}. Typically, this would make some sort of database query to
+// GET /api/:version/example/{id}. Typically, this would make some sort of database query to
 // load the resource. If the resource doesn't exist, nil should be returned along with
 // an appropriate error.
 func (e ExampleHandler) ReadResource(ctx context.RequestContext, id string, version string) (server.Resource, error) {
