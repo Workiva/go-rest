@@ -8,9 +8,9 @@ import (
 	"sort"
 	"sync"
 
-	"go-rest/server/context"
-
 	"github.com/gorilla/mux"
+
+	"go-rest/server/context"
 )
 
 // RestApi is the top-level interface encapsulating an HTTP REST server. It's responsible for
