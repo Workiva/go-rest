@@ -1,9 +1,10 @@
 package examples
 
 import (
-	"go-rest/server"
-	"go-rest/server/context"
 	"strconv"
+
+	"go-rest/rest"
+	"go-rest/rest/context"
 )
 
 // MyResource represents a domain model for which we want to perform CRUD operations with.
@@ -15,11 +16,11 @@ type MyResource struct {
 	Foobar string `json:"foobar"`
 }
 
-// MyResourceHandler implements the server.ResourceHandler interface. It specifies the business
-// logic for performing CRUD operations. server.BaseResourceHandler provides stubs for each method
+// MyResourceHandler implements the rest.ResourceHandler interface. It specifies the business
+// logic for performing CRUD operations. rest.BaseResourceHandler provides stubs for each method
 // if you only need to implement certain operations (as this example illustrates).
 type MyResourceHandler struct {
-	server.BaseResourceHandler
+	rest.BaseResourceHandler
 }
 
 // ResourceName is used to identify what resource a handler corresponds to and is used
@@ -35,9 +36,9 @@ func (h MyResourceHandler) ResourceName() string {
 // and error (or nil). In this example, we illustrate how to use a query parameter to
 // return only the IDs of our resources.
 func (m MyResourceHandler) ReadResourceList(ctx context.RequestContext, limit int,
-	cursor string, version string) ([]server.Resource, string, error) {
+	cursor string, version string) ([]rest.Resource, string, error) {
 	// Make a database call here.
-	resources := make([]server.Resource, 0, limit)
+	resources := make([]rest.Resource, 0, limit)
 	resources = append(resources, &FooResource{ID: 1, Foobar: "hello"})
 	resources = append(resources, &FooResource{ID: 2, Foobar: "world"})
 
@@ -45,7 +46,7 @@ func (m MyResourceHandler) ReadResourceList(ctx context.RequestContext, limit in
 	keysOnly, _ := strconv.ParseBool(ctx.ValueWithDefault("ids_only", "0").(string))
 
 	if keysOnly {
-		keys := make([]server.Resource, 0, len(resources))
+		keys := make([]rest.Resource, 0, len(resources))
 		for _, resource := range resources {
 			keys = append(keys, resource.(*FooResource).ID)
 		}
@@ -57,7 +58,7 @@ func (m MyResourceHandler) ReadResourceList(ctx context.RequestContext, limit in
 
 // Start the REST server.
 func idsOnlyMain() {
-	api := server.NewRestAPI()
+	api := rest.NewAPI()
 
 	// Call RegisterResourceHandler to wire up HelloWorldHandler.
 	api.RegisterResourceHandler(MyResourceHandler{})

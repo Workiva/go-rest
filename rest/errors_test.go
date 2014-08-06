@@ -7,10 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// Ensures that the RestError factories produce errors with expected values.
+// Ensures that the Error factories produce errors with expected values.
 func TestErrors(t *testing.T) {
 	assert := assert.New(t)
-	var err RestError
+	var err Error
 
 	err = ResourceNotFound()
 	assert.Equal("Resource not found", err.Error())

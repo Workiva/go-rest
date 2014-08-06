@@ -2,10 +2,11 @@ package examples
 
 import (
 	"fmt"
-	"go-rest/server"
-	"go-rest/server/context"
 	"log"
 	"net/http"
+
+	"go-rest/rest"
+	"go-rest/rest/context"
 )
 
 // ExampleResource represents a domain model for which we want to perform CRUD operations with.
@@ -17,12 +18,12 @@ type ExampleResource struct {
 	Foobar string `json:"foobar"`
 }
 
-// ExampleHandler implements the server.ResourceHandler interface. It specifies the business
-// logic for performing CRUD operations. server.BaseResourceHandler provides stubs for
+// ExampleHandler implements the rest.ResourceHandler interface. It specifies the business
+// logic for performing CRUD operations. rest.BaseResourceHandler provides stubs for
 // each method if you only need to implement certain operations (as this example
 // illustrates).
 type ExampleHandler struct {
-	server.BaseResourceHandler
+	rest.BaseResourceHandler
 }
 
 // ResourceName is used to identify what resource a handler corresponds to and is used
@@ -35,12 +36,12 @@ func (e ExampleHandler) ResourceName() string {
 // GET /api/:version/example/{id}. Typically, this would make some sort of database query to
 // load the resource. If the resource doesn't exist, nil should be returned along with
 // an appropriate error.
-func (e ExampleHandler) ReadResource(ctx context.RequestContext, id string, version string) (server.Resource, error) {
+func (e ExampleHandler) ReadResource(ctx context.RequestContext, id string, version string) (rest.Resource, error) {
 	// Make a database call here.
 	if id == "42" {
 		return &ExampleResource{ID: 42, Foobar: "hello world"}, nil
 	}
-	return nil, server.ResourceNotFound(fmt.Sprintf("No resource with id %s", id))
+	return nil, rest.ResourceNotFound(fmt.Sprintf("No resource with id %s", id))
 }
 
 // Middleware is implemented as a closure which takes an http.HandlerFunc and returns
@@ -54,7 +55,7 @@ func ExampleMiddleware(wrapped http.HandlerFunc) http.HandlerFunc {
 
 // Start the REST server.
 func middlewareMain() {
-	api := server.NewRestAPI()
+	api := rest.NewAPI()
 
 	// Call RegisterResourceHandler to wire up ExampleHandler and apply middleware.
 	api.RegisterResourceHandler(ExampleHandler{}, ExampleMiddleware)

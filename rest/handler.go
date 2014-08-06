@@ -75,7 +75,7 @@ func (b BaseResourceHandler) Authenticate(r http.Request) error {
 
 // requestHandler constructs http.HandlerFuncs responsible for handling HTTP requests.
 type requestHandler struct {
-	RestAPI
+	API
 }
 
 // handleCreate returns a HandlerFunc which will deserialize the request payload, pass
@@ -198,7 +198,7 @@ func (h requestHandler) sendResponse(w http.ResponseWriter, ctx context.RequestC
 
 	if requestError != nil {
 		if status < 400 {
-			if restError, ok := requestError.(RestError); ok {
+			if restError, ok := requestError.(Error); ok {
 				status = restError.Status()
 			} else {
 				status = http.StatusInternalServerError

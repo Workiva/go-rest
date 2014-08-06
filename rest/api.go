@@ -12,9 +12,9 @@ import (
 	"go-rest/rest/context"
 )
 
-// RestAPI is the top-level interface encapsulating an HTTP REST server. It's responsible for
-// registering ResourceHandlers and routing requests. Use NewRestAPI to retrieve an instance.
-type RestAPI interface {
+// API is the top-level interface encapsulating an HTTP REST server. It's responsible for
+// registering ResourceHandlers and routing requests. Use NewAPI to retrieve an instance.
+type API interface {
 	Start(addr string)
 	RegisterResourceHandler(ResourceHandler, ...RequestMiddleware)
 	AddResponseSerializer(string, ResponseSerializer)
@@ -41,19 +41,19 @@ func newAuthMiddleware(authenticate func(http.Request) error) RequestMiddleware 
 	}
 }
 
-// muxRestAPI is an implementation of the RestAPI interface which relies on the gorilla/mux
+// muxAPI is an implementation of the API interface which relies on the gorilla/mux
 // package to handle request dispatching (see http://www.gorillatoolkit.org/pkg/mux).
-type muxRestAPI struct {
+type muxAPI struct {
 	router             *mux.Router
 	mu                 sync.RWMutex
 	handler            *requestHandler
 	serializerRegistry map[string]ResponseSerializer
 }
 
-// NewRestAPI returns a newly allocated RestAPI instance.
-func NewRestAPI() RestAPI {
+// NewAPI returns a newly allocated API instance.
+func NewAPI() API {
 	r := mux.NewRouter()
-	restAPI := &muxRestAPI{
+	restAPI := &muxAPI{
 		router:             r,
 		serializerRegistry: map[string]ResponseSerializer{"json": &jsonSerializer{}},
 	}
@@ -62,14 +62,14 @@ func NewRestAPI() RestAPI {
 }
 
 // Start begins serving requests. This will block.
-func (r muxRestAPI) Start(addr string) {
+func (r muxAPI) Start(addr string) {
 	http.ListenAndServe(addr, r.router)
 }
 
 // RegisterResourceHandler binds the provided ResourceHandler to the appropriate REST endpoints and
 // applies any specified middleware. Endpoints will have the following base URL:
 // /api/:version/resourceName.
-func (r muxRestAPI) RegisterResourceHandler(h ResourceHandler, middleware ...RequestMiddleware) {
+func (r muxAPI) RegisterResourceHandler(h ResourceHandler, middleware ...RequestMiddleware) {
 	resource := h.ResourceName()
 	urlBase := fmt.Sprintf("/api/v{%s:[^/]+}/%s", context.VersionKey, resource)
 	resourceURL := fmt.Sprintf("%s/{%s}", urlBase, context.ResourceIDKey)
@@ -123,7 +123,7 @@ func (r muxRestAPI) RegisterResourceHandler(h ResourceHandler, middleware ...Req
 
 // AddResponseSerializer registers the provided ResponseSerializer with the given format. If the
 // format has already been registered, it will be overwritten.
-func (r muxRestAPI) AddResponseSerializer(format string, serializer ResponseSerializer) {
+func (r muxAPI) AddResponseSerializer(format string, serializer ResponseSerializer) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.serializerRegistry[format] = serializer
@@ -131,7 +131,7 @@ func (r muxRestAPI) AddResponseSerializer(format string, serializer ResponseSeri
 
 // RemoveResponseSerializer unregisters the ResponseSerializer with the provided format. If the
 // format hasn't been registered, this is a no-op.
-func (r muxRestAPI) RemoveResponseSerializer(format string) {
+func (r muxAPI) RemoveResponseSerializer(format string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.serializerRegistry, format)
@@ -139,7 +139,7 @@ func (r muxRestAPI) RemoveResponseSerializer(format string) {
 
 // AvailableFormats returns a slice containing all of the available serialization formats
 // currently available.
-func (r muxRestAPI) AvailableFormats() []string {
+func (r muxAPI) AvailableFormats() []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	formats := make([]string, 0, len(r.serializerRegistry))
@@ -152,7 +152,7 @@ func (r muxRestAPI) AvailableFormats() []string {
 
 // responseSerializer returns a ResponseSerializer for the given format type. If the format
 // is not implemented, the returned serializer will be nil and the error set.
-func (r muxRestAPI) responseSerializer(format string) (ResponseSerializer, error) {
+func (r muxAPI) responseSerializer(format string) (ResponseSerializer, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	if serializer, ok := r.serializerRegistry[format]; ok {
@@ -163,7 +163,7 @@ func (r muxRestAPI) responseSerializer(format string) (ResponseSerializer, error
 
 // getRouteHandler returns the http.Handler for the API route with the given name.
 // This is purely for testing purposes and shouldn't be used elsewhere.
-func (r muxRestAPI) getRouteHandler(name string) (http.Handler, error) {
+func (r muxAPI) getRouteHandler(name string) (http.Handler, error) {
 	route := r.router.Get(name)
 	if route == nil {
 		return nil, fmt.Errorf("No API route with name %s", name)

@@ -86,14 +86,14 @@ func (m *MockResourceHandler) Authenticate(r http.Request) error {
 func TestHandleCreateBadFormat(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewRestAPI()
+	api := NewAPI()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
 	handler.On("CreateResource").Return(&TestResource{}, nil)
 
 	api.RegisterResourceHandler(handler)
-	createHandler, _ := api.(*muxRestAPI).getRouteHandler("foo:create")
+	createHandler, _ := api.(*muxAPI).getRouteHandler("foo:create")
 
 	payload := []byte(`{"foo": "bar"}`)
 	r := bytes.NewReader(payload)
@@ -116,14 +116,14 @@ func TestHandleCreateBadFormat(t *testing.T) {
 func TestHandleCreateBadCreate(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewRestAPI()
+	api := NewAPI()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
 	handler.On("CreateResource").Return(nil, fmt.Errorf("couldn't create"))
 
 	api.RegisterResourceHandler(handler)
-	createHandler, _ := api.(*muxRestAPI).getRouteHandler("foo:create")
+	createHandler, _ := api.(*muxAPI).getRouteHandler("foo:create")
 
 	payload := []byte(`{"foo": "bar"}`)
 	r := bytes.NewReader(payload)
@@ -146,14 +146,14 @@ func TestHandleCreateBadCreate(t *testing.T) {
 func TestHandleCreateHappyPath(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewRestAPI()
+	api := NewAPI()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
 	handler.On("CreateResource").Return(&TestResource{Foo: "bar"}, nil)
 
 	api.RegisterResourceHandler(handler)
-	createHandler, _ := api.(*muxRestAPI).getRouteHandler("foo:create")
+	createHandler, _ := api.(*muxAPI).getRouteHandler("foo:create")
 
 	payload := []byte(`{"foo": "bar"}`)
 	r := bytes.NewReader(payload)
@@ -176,13 +176,13 @@ func TestHandleCreateHappyPath(t *testing.T) {
 func TestHandleCreateNotAuthorized(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewRestAPI()
+	api := NewAPI()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(fmt.Errorf("Not authorized"))
 
 	api.RegisterResourceHandler(handler)
-	createHandler, _ := api.(*muxRestAPI).getRouteHandler("foo:create")
+	createHandler, _ := api.(*muxAPI).getRouteHandler("foo:create")
 
 	payload := []byte(`{"foo": "bar"}`)
 	r := bytes.NewReader(payload)
@@ -201,14 +201,14 @@ func TestHandleCreateNotAuthorized(t *testing.T) {
 func TestHandleReadListBadFormat(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewRestAPI()
+	api := NewAPI()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
 	handler.On("ReadResourceList").Return([]Resource{}, "", nil)
 
 	api.RegisterResourceHandler(handler)
-	readHandler, _ := api.(*muxRestAPI).getRouteHandler("foo:readList")
+	readHandler, _ := api.(*muxAPI).getRouteHandler("foo:readList")
 
 	req, _ := http.NewRequest("GET", "http://foo.com/api/v0.1/foo?format=blah", nil)
 	resp := httptest.NewRecorder()
@@ -229,14 +229,14 @@ func TestHandleReadListBadFormat(t *testing.T) {
 func TestHandleReadListBadRead(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewRestAPI()
+	api := NewAPI()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
 	handler.On("ReadResourceList").Return(nil, "", fmt.Errorf("no resource"))
 
 	api.RegisterResourceHandler(handler)
-	readHandler, _ := api.(*muxRestAPI).getRouteHandler("foo:readList")
+	readHandler, _ := api.(*muxAPI).getRouteHandler("foo:readList")
 
 	req, _ := http.NewRequest("GET", "http://foo.com/api/v0.1/foo", nil)
 	resp := httptest.NewRecorder()
@@ -256,14 +256,14 @@ func TestHandleReadListBadRead(t *testing.T) {
 func TestHandleReadListHappyPath(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewRestAPI()
+	api := NewAPI()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
 	handler.On("ReadResourceList").Return([]Resource{&TestResource{Foo: "hello"}}, "cursor123", nil)
 
 	api.RegisterResourceHandler(handler)
-	readHandler, _ := api.(*muxRestAPI).getRouteHandler("foo:readList")
+	readHandler, _ := api.(*muxAPI).getRouteHandler("foo:readList")
 
 	req, _ := http.NewRequest("GET", "http://foo.com/api/v0.1/foo", nil)
 	resp := httptest.NewRecorder()
@@ -283,14 +283,14 @@ func TestHandleReadListHappyPath(t *testing.T) {
 func TestHandleReadBadFormat(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewRestAPI()
+	api := NewAPI()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
 	handler.On("ReadResource").Return(&TestResource{}, nil)
 
 	api.RegisterResourceHandler(handler)
-	readHandler, _ := api.(*muxRestAPI).getRouteHandler("foo:read")
+	readHandler, _ := api.(*muxAPI).getRouteHandler("foo:read")
 
 	req, _ := http.NewRequest("GET", "http://foo.com/api/v0.1/foo/1?format=blah", nil)
 	resp := httptest.NewRecorder()
@@ -310,14 +310,14 @@ func TestHandleReadBadFormat(t *testing.T) {
 func TestHandleReadBadRead(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewRestAPI()
+	api := NewAPI()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
 	handler.On("ReadResource").Return(nil, fmt.Errorf("no resource"))
 
 	api.RegisterResourceHandler(handler)
-	readHandler, _ := api.(*muxRestAPI).getRouteHandler("foo:read")
+	readHandler, _ := api.(*muxAPI).getRouteHandler("foo:read")
 
 	req, _ := http.NewRequest("GET", "http://foo.com/api/v0.1/foo/1", nil)
 	resp := httptest.NewRecorder()
@@ -337,14 +337,14 @@ func TestHandleReadBadRead(t *testing.T) {
 func TestHandleReadHappyPath(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewRestAPI()
+	api := NewAPI()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
 	handler.On("ReadResource").Return(&TestResource{Foo: "hello"}, nil)
 
 	api.RegisterResourceHandler(handler)
-	readHandler, _ := api.(*muxRestAPI).getRouteHandler("foo:read")
+	readHandler, _ := api.(*muxAPI).getRouteHandler("foo:read")
 
 	req, _ := http.NewRequest("GET", "http://foo.com/api/v0.1/foo/1", nil)
 	resp := httptest.NewRecorder()
@@ -364,14 +364,14 @@ func TestHandleReadHappyPath(t *testing.T) {
 func TestHandleUpdateBadFormat(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewRestAPI()
+	api := NewAPI()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
 	handler.On("UpdateResource").Return(&TestResource{}, nil)
 
 	api.RegisterResourceHandler(handler)
-	updateHandler, _ := api.(*muxRestAPI).getRouteHandler("foo:update")
+	updateHandler, _ := api.(*muxAPI).getRouteHandler("foo:update")
 
 	payload := []byte(`{"foo": "bar"}`)
 	r := bytes.NewReader(payload)
@@ -394,14 +394,14 @@ func TestHandleUpdateBadFormat(t *testing.T) {
 func TestHandleUpdateBadUpdate(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewRestAPI()
+	api := NewAPI()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
 	handler.On("UpdateResource").Return(nil, fmt.Errorf("couldn't update"))
 
 	api.RegisterResourceHandler(handler)
-	updateHandler, _ := api.(*muxRestAPI).getRouteHandler("foo:update")
+	updateHandler, _ := api.(*muxAPI).getRouteHandler("foo:update")
 
 	payload := []byte(`{"foo": "bar"}`)
 	r := bytes.NewReader(payload)
@@ -423,14 +423,14 @@ func TestHandleUpdateBadUpdate(t *testing.T) {
 func TestHandleUpdateHappyPath(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewRestAPI()
+	api := NewAPI()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
 	handler.On("UpdateResource").Return(&TestResource{Foo: "bar"}, nil)
 
 	api.RegisterResourceHandler(handler)
-	updateHandler, _ := api.(*muxRestAPI).getRouteHandler("foo:update")
+	updateHandler, _ := api.(*muxAPI).getRouteHandler("foo:update")
 
 	payload := []byte(`{"foo": "bar"}`)
 	r := bytes.NewReader(payload)
@@ -453,14 +453,14 @@ func TestHandleUpdateHappyPath(t *testing.T) {
 func TestHandleDeleteBadFormat(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewRestAPI()
+	api := NewAPI()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
 	handler.On("DeleteResource").Return(&TestResource{}, nil)
 
 	api.RegisterResourceHandler(handler)
-	deleteHandler, _ := api.(*muxRestAPI).getRouteHandler("foo:delete")
+	deleteHandler, _ := api.(*muxAPI).getRouteHandler("foo:delete")
 
 	req, _ := http.NewRequest("DELETE", "http://foo.com/api/v0.1/foo/1?format=blah", nil)
 	resp := httptest.NewRecorder()
@@ -481,14 +481,14 @@ func TestHandleDeleteBadFormat(t *testing.T) {
 func TestHandleDeleteBadDelete(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewRestAPI()
+	api := NewAPI()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
 	handler.On("DeleteResource").Return(nil, fmt.Errorf("no resource"))
 
 	api.RegisterResourceHandler(handler)
-	deleteHandler, _ := api.(*muxRestAPI).getRouteHandler("foo:delete")
+	deleteHandler, _ := api.(*muxAPI).getRouteHandler("foo:delete")
 
 	req, _ := http.NewRequest("DELETE", "http://foo.com/api/v0.1/foo/1", nil)
 	resp := httptest.NewRecorder()
@@ -508,14 +508,14 @@ func TestHandleDeleteBadDelete(t *testing.T) {
 func TestHandleDeleteHappyPath(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewRestAPI()
+	api := NewAPI()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
 	handler.On("DeleteResource").Return(&TestResource{Foo: "hello"}, nil)
 
 	api.RegisterResourceHandler(handler)
-	deleteHandler, _ := api.(*muxRestAPI).getRouteHandler("foo:delete")
+	deleteHandler, _ := api.(*muxAPI).getRouteHandler("foo:delete")
 
 	req, _ := http.NewRequest("DELETE", "http://foo.com/api/v0.1/foo/1", nil)
 	resp := httptest.NewRecorder()
@@ -544,7 +544,7 @@ func getMiddleware(called *bool) RequestMiddleware {
 func TestApplyMiddleware(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewRestAPI()
+	api := NewAPI()
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
@@ -552,7 +552,7 @@ func TestApplyMiddleware(t *testing.T) {
 
 	called := false
 	api.RegisterResourceHandler(handler, getMiddleware(&called))
-	readHandler, _ := api.(*muxRestAPI).getRouteHandler("foo:read")
+	readHandler, _ := api.(*muxAPI).getRouteHandler("foo:read")
 
 	req, _ := http.NewRequest("GET", "http://foo.com/api/v0.1/foo/1", nil)
 	resp := httptest.NewRecorder()
@@ -573,7 +573,7 @@ func (t TestResponseSerializer) sendErrorResponse(http.ResponseWriter, error, in
 // as expected.
 func TestAddRemoveResponseSerializer(t *testing.T) {
 	assert := assert.New(t)
-	api := NewRestAPI()
+	api := NewAPI()
 
 	assert.Equal([]string{"json"}, api.AvailableFormats())
 
