@@ -1,5 +1,4 @@
-// Package server contains the server implementation of the REST API framework.
-package server
+package rest
 
 import (
 	"fmt"
@@ -10,7 +9,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"go-rest/server/context"
+	"go-rest/rest/context"
 )
 
 // RestAPI is the top-level interface encapsulating an HTTP REST server. It's responsible for

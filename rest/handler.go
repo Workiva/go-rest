@@ -1,4 +1,4 @@
-package server
+package rest
 
 import (
 	"encoding/json"
@@ -6,7 +6,7 @@ import (
 
 	"net/http"
 
-	"go-rest/server/context"
+	"go-rest/rest/context"
 )
 
 // Resource represents a domain model.

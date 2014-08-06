@@ -1,4 +1,4 @@
-package server
+package rest
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"go-rest/server/context"
+	"go-rest/rest/context"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
