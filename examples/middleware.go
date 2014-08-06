@@ -17,7 +17,7 @@ type ExampleResource struct {
 	Foobar string `json:"foobar"`
 }
 
-// FooHandler implements the server.ResourceHandler interface. It specifies the business
+// ExampleHandler implements the server.ResourceHandler interface. It specifies the business
 // logic for performing CRUD operations. server.BaseResourceHandler provides stubs for
 // each method if you only need to implement certain operations (as this example
 // illustrates).

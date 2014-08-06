@@ -15,10 +15,9 @@ type HelloWorldResource struct {
 	Foobar string `json:"foobar"`
 }
 
-// FooHandler implements the server.ResourceHandler interface. It specifies the business
-// logic for performing CRUD operations. server.BaseResourceHandler provides stubs for
-// each method if you only need to implement certain operations (as this example
-// illustrates).
+// HelloWorldHandler implements the server.ResourceHandler interface. It specifies the business
+// logic for performing CRUD operations. server.BaseResourceHandler provides stubs for each method
+// if you only need to implement certain operations (as this example illustrates).
 type HelloWorldHandler struct {
 	server.BaseResourceHandler
 }
@@ -33,7 +32,8 @@ func (h HelloWorldHandler) ResourceName() string {
 // GET /api/:version/foo/{id}. Typically, this would make some sort of database query to
 // load the resource. If the resource doesn't exist, nil should be returned along with
 // an appropriate error.
-func (h HelloWorldHandler) ReadResource(ctx context.RequestContext, id string, version string) (server.Resource, error) {
+func (h HelloWorldHandler) ReadResource(ctx context.RequestContext, id string,
+	version string) (server.Resource, error) {
 	// Make a database call here.
 	if id == "42" {
 		return &HelloWorldResource{ID: 42, Foobar: "hello world"}, nil
