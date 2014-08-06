@@ -4,12 +4,17 @@ This contains the Workiva standard REST API client and server implementations fo
 
 # Server
 
-The server package contains the APIs for implementing a RESTful web service. The goal is to
-provide a framework that makes it easy to build a flexible and (mostly) unopinionated REST API
-with little ceremony. It's platform-agnostic, meaning it works both on- and off- App Engine,
-and pluggable in that it supports custom response serializers, middleware and authentication.
+This contains the APIs for implementing a RESTful web service. The goal is to provide
+a framework that makes it easy to build a flexible and (mostly) unopinionated REST API with
+little ceremony. It's platform-agnostic, meaning it works both on- and off- App Engine, and
+pluggable in that it supports custom response serializers, middleware and authentication.
 
 See the examples to get started.
+
+# Client
+
+The rest package also contains a client implementation for consuming REST APIs.  It
+includes pluggable request authorization and response deserialization.
 
 NOTICE
 ------
