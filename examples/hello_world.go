@@ -44,7 +44,7 @@ func (h HelloWorldHandler) ReadResource(ctx context.RequestContext, id string,
 
 // Start the REST server.
 func helloWorldMain() {
-	api := server.NewRestApi()
+	api := server.NewRestAPI()
 
 	// Call RegisterResourceHandler to wire up HelloWorldHandler.
 	api.RegisterResourceHandler(HelloWorldHandler{})

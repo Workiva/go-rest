@@ -104,7 +104,7 @@ func (f FooHandler) Authenticate(r http.Request) error {
 
 // Start the REST server.
 func simpleCrudMain() {
-	api := server.NewRestApi()
+	api := server.NewRestAPI()
 
 	// Call RegisterResourceHandler to wire up FooHandler.
 	api.RegisterResourceHandler(FooHandler{})

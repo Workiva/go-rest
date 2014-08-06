@@ -27,44 +27,55 @@ type ResourceHandler interface {
 	Authenticate(http.Request) error
 }
 
+// BaseResourceHandler is a base implementation of ResourceHandler with stubs for the
+// CRUD operations. This allows ResourceHandler implementations to only implement
+// what they need.
 type BaseResourceHandler struct{}
 
+// ResourceName is a stub. It must be implemented.
 func (b BaseResourceHandler) ResourceName() string {
 	panic("ResourceName not implemented")
 }
 
+// CreateResource is a stub. Implement if necessary.
 func (b BaseResourceHandler) CreateResource(ctx context.RequestContext, data Payload,
 	version string) (Resource, error) {
 	panic("CreateResource not implemented")
 }
 
+// ReadResourceList is a stub. Implement if necessary.
 func (b BaseResourceHandler) ReadResourceList(ctx context.RequestContext, limit int,
 	cursor string, version string) ([]Resource, string, error) {
 	panic("ReadResourceList not implemented")
 }
 
+// ReadResource is a stub. Implement if necessary.
 func (b BaseResourceHandler) ReadResource(ctx context.RequestContext, id string,
 	version string) (Resource, error) {
 	panic("ReadResource not implemented")
 }
 
+// UpdateResource is a stub. Implement if necessary.
 func (b BaseResourceHandler) UpdateResource(ctx context.RequestContext, id string,
 	data Payload, version string) (Resource, error) {
 	panic("UpdateResource not implemented")
 }
 
+// DeleteResource is a stub. Implement if necessary.
 func (b BaseResourceHandler) DeleteResource(ctx context.RequestContext, id string,
 	version string) (Resource, error) {
 	panic("DeleteResource not implemented")
 }
 
+// Authenticate is the default authentication logic. All requests are authorized.
+// Implement custom authentication logic if necessary.
 func (b BaseResourceHandler) Authenticate(r http.Request) error {
 	return nil
 }
 
 // requestHandler constructs http.HandlerFuncs responsible for handling HTTP requests.
 type requestHandler struct {
-	RestApi
+	RestAPI
 }
 
 // handleCreate returns a HandlerFunc which will deserialize the request payload, pass
@@ -119,7 +130,7 @@ func (h requestHandler) handleRead(readFunc func(context.RequestContext, string,
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.NewContext(nil, r)
 
-		resource, err := readFunc(ctx, ctx.ResourceId(), ctx.Version())
+		resource, err := readFunc(ctx, ctx.ResourceID(), ctx.Version())
 		ctx = ctx.SetResult(resource)
 		ctx = ctx.SetError(err)
 		ctx = ctx.SetStatus(http.StatusOK)
@@ -143,7 +154,7 @@ func (h requestHandler) handleUpdate(updateFunc func(context.RequestContext,
 			ctx = ctx.SetError(err)
 			ctx = ctx.SetStatus(http.StatusInternalServerError)
 		} else {
-			resource, err := updateFunc(ctx, ctx.ResourceId(), data, ctx.Version())
+			resource, err := updateFunc(ctx, ctx.ResourceID(), data, ctx.Version())
 			ctx = ctx.SetResult(resource)
 			ctx = ctx.SetError(err)
 			ctx = ctx.SetStatus(http.StatusOK)
@@ -161,7 +172,7 @@ func (h requestHandler) handleDelete(deleteFunc func(context.RequestContext, str
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.NewContext(nil, r)
 
-		resource, err := deleteFunc(ctx, ctx.ResourceId(), ctx.Version())
+		resource, err := deleteFunc(ctx, ctx.ResourceID(), ctx.Version())
 		ctx = ctx.SetResult(resource)
 		ctx = ctx.SetError(err)
 		ctx = ctx.SetStatus(http.StatusOK)

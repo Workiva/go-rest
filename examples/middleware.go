@@ -54,7 +54,7 @@ func ExampleMiddleware(wrapped http.HandlerFunc) http.HandlerFunc {
 
 // Start the REST server.
 func middlewareMain() {
-	api := server.NewRestApi()
+	api := server.NewRestAPI()
 
 	// Call RegisterResourceHandler to wire up ExampleHandler and apply middleware.
 	api.RegisterResourceHandler(ExampleHandler{}, ExampleMiddleware)

@@ -57,7 +57,7 @@ func (m MyResourceHandler) ReadResourceList(ctx context.RequestContext, limit in
 
 // Start the REST server.
 func idsOnlyMain() {
-	api := server.NewRestApi()
+	api := server.NewRestAPI()
 
 	// Call RegisterResourceHandler to wire up HelloWorldHandler.
 	api.RegisterResourceHandler(MyResourceHandler{})

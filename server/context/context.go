@@ -13,10 +13,17 @@ import (
 )
 
 const (
-	ResourceIdKey = "resource_id"
-	FormatKey     = "format"
-	VersionKey    = "version"
-	CursorKey     = "next"
+	// ResourceIDKey is the name of the URL path variable for a resource ID.
+	ResourceIDKey = "resource_id"
+
+	// FormatKey is the name of the query string variable for the response format.
+	FormatKey = "format"
+
+	// VersionKey is the name of the URL path variable for the endpoint version.
+	VersionKey = "version"
+
+	// CursorKey is the name of the query string variable for the results cursor.
+	CursorKey = "next"
 
 	requestKey int = iota
 	statusKey
@@ -36,7 +43,7 @@ type RequestContext interface {
 	Request() (*http.Request, bool)
 	NextURL() (string, error)
 	ResponseFormat() string
-	ResourceId() string
+	ResourceID() string
 	Version() string
 	Status() int
 	SetStatus(int) RequestContext
@@ -129,10 +136,10 @@ func (ctx *gorillaRequestContext) ResponseFormat() string {
 	return ctx.ValueWithDefault(FormatKey, "json").(string)
 }
 
-// ResourceId returns the resource id for the request, defaulting to an empty string
+// ResourceID returns the resource id for the request, defaulting to an empty string
 // if there isn't one.
-func (ctx *gorillaRequestContext) ResourceId() string {
-	return ctx.ValueWithDefault(ResourceIdKey, "").(string)
+func (ctx *gorillaRequestContext) ResourceID() string {
+	return ctx.ValueWithDefault(ResourceIDKey, "").(string)
 }
 
 // Version returns the API version for the request, defaulting to an empty string
