@@ -1,3 +1,4 @@
+// Package server contains the server implementation of the REST API framework.
 package server
 
 import (

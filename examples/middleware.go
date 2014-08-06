@@ -26,9 +26,9 @@ type ExampleHandler struct {
 }
 
 // ResourceName is used to identify what resource a handler corresponds to and is used
-// in the endpoint URLs, i.e. /api/:version/foo.
+// in the endpoint URLs, i.e. /api/:version/example.
 func (e ExampleHandler) ResourceName() string {
-	return "foo"
+	return "example"
 }
 
 // ReadResource is the logic that corresponds to reading a single resource by its ID at

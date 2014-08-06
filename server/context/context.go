@@ -1,5 +1,5 @@
-// Context is a package that contains the interfaces and implementations for working with
-// request-scoped data. See http://blog.golang.org/context.
+// Package context contains the interfaces and implementations for working with request-scoped
+// data. See http://blog.golang.org/context.
 package context
 
 import (

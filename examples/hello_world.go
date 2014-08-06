@@ -1,3 +1,4 @@
+// Package examples contains example code for using the REST framework.
 package examples
 
 import (
@@ -23,9 +24,9 @@ type HelloWorldHandler struct {
 }
 
 // ResourceName is used to identify what resource a handler corresponds to and is used
-// in the endpoint URLs, i.e. /api/:version/foo.
+// in the endpoint URLs, i.e. /api/:version/helloworld.
 func (h HelloWorldHandler) ResourceName() string {
-	return "foo"
+	return "helloworld"
 }
 
 // ReadResource is the logic that corresponds to reading a single resource by its ID at
