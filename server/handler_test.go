@@ -72,6 +72,11 @@ func (m *MockResourceHandler) DeleteResource(r context.RequestContext, id string
 	return resource, args.Error(1)
 }
 
+func (m *MockResourceHandler) IsAuthorized(r http.Request) bool {
+	args := m.Mock.Called()
+	return args.Bool(0)
+}
+
 // Ensures that the create handler returns a Not Implemented code if an invalid response format is provided.
 func TestHandleCreateBadFormat(t *testing.T) {
 	assert := assert.New(t)
@@ -79,6 +84,7 @@ func TestHandleCreateBadFormat(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
+	handler.On("IsAuthorized").Return(true)
 	handler.On("CreateResource").Return(&TestResource{}, nil)
 
 	RegisterResourceHandler(router, handler)
@@ -107,6 +113,7 @@ func TestHandleCreateBadCreate(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
+	handler.On("IsAuthorized").Return(true)
 	handler.On("CreateResource").Return(nil, fmt.Errorf("couldn't create"))
 
 	RegisterResourceHandler(router, handler)
@@ -135,6 +142,7 @@ func TestHandleCreateHappyPath(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
+	handler.On("IsAuthorized").Return(true)
 	handler.On("CreateResource").Return(&TestResource{Foo: "bar"}, nil)
 
 	RegisterResourceHandler(router, handler)
@@ -156,6 +164,30 @@ func TestHandleCreateHappyPath(t *testing.T) {
 	)
 }
 
+// Ensures that the create handler returns an Unauthorized code when the request is not authorized.
+func TestHandleCreateNotAuthorized(t *testing.T) {
+	assert := assert.New(t)
+	handler := new(MockResourceHandler)
+	router := mux.NewRouter()
+
+	handler.On("ResourceName").Return("foo")
+	handler.On("IsAuthorized").Return(false)
+
+	RegisterResourceHandler(router, handler)
+	createHandler := router.Get("create").GetHandler()
+
+	payload := []byte(`{"foo": "bar"}`)
+	r := bytes.NewReader(payload)
+	req, _ := http.NewRequest("POST", "http://foo.com/api/v0.1/foo", r)
+	resp := httptest.NewRecorder()
+
+	createHandler.ServeHTTP(resp, req)
+
+	handler.Mock.AssertExpectations(t)
+	assert.Equal(http.StatusUnauthorized, resp.Code, "Incorrect response code")
+	assert.Equal("", resp.Body.String(), "Incorrect response string")
+}
+
 // Ensures that the read list handler returns a Not Implemented code if an invalid response format is provided.
 func TestHandleReadListBadFormat(t *testing.T) {
 	assert := assert.New(t)
@@ -163,6 +195,7 @@ func TestHandleReadListBadFormat(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
+	handler.On("IsAuthorized").Return(true)
 	handler.On("ReadResourceList").Return([]Resource{}, "", nil)
 
 	RegisterResourceHandler(router, handler)
@@ -189,6 +222,7 @@ func TestHandleReadListBadRead(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
+	handler.On("IsAuthorized").Return(true)
 	handler.On("ReadResourceList").Return(nil, "", fmt.Errorf("no resource"))
 
 	RegisterResourceHandler(router, handler)
@@ -215,6 +249,7 @@ func TestHandleReadListHappyPath(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
+	handler.On("IsAuthorized").Return(true)
 	handler.On("ReadResourceList").Return([]Resource{&TestResource{Foo: "hello"}}, "cursor123", nil)
 
 	RegisterResourceHandler(router, handler)
@@ -241,6 +276,7 @@ func TestHandleReadBadFormat(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
+	handler.On("IsAuthorized").Return(true)
 	handler.On("ReadResource").Return(&TestResource{}, nil)
 
 	RegisterResourceHandler(router, handler)
@@ -267,6 +303,7 @@ func TestHandleReadBadRead(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
+	handler.On("IsAuthorized").Return(true)
 	handler.On("ReadResource").Return(nil, fmt.Errorf("no resource"))
 
 	RegisterResourceHandler(router, handler)
@@ -293,6 +330,7 @@ func TestHandleReadHappyPath(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
+	handler.On("IsAuthorized").Return(true)
 	handler.On("ReadResource").Return(&TestResource{Foo: "hello"}, nil)
 
 	RegisterResourceHandler(router, handler)
@@ -319,6 +357,7 @@ func TestHandleUpdateBadFormat(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
+	handler.On("IsAuthorized").Return(true)
 	handler.On("UpdateResource").Return(&TestResource{}, nil)
 
 	RegisterResourceHandler(router, handler)
@@ -347,6 +386,7 @@ func TestHandleUpdateBadUpdate(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
+	handler.On("IsAuthorized").Return(true)
 	handler.On("UpdateResource").Return(nil, fmt.Errorf("couldn't update"))
 
 	RegisterResourceHandler(router, handler)
@@ -375,6 +415,7 @@ func TestHandleUpdateHappyPath(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
+	handler.On("IsAuthorized").Return(true)
 	handler.On("UpdateResource").Return(&TestResource{Foo: "bar"}, nil)
 
 	RegisterResourceHandler(router, handler)
@@ -403,6 +444,7 @@ func TestHandleDeleteBadFormat(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
+	handler.On("IsAuthorized").Return(true)
 	handler.On("DeleteResource").Return(&TestResource{}, nil)
 
 	RegisterResourceHandler(router, handler)
@@ -429,6 +471,7 @@ func TestHandleDeleteBadDelete(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
+	handler.On("IsAuthorized").Return(true)
 	handler.On("DeleteResource").Return(nil, fmt.Errorf("no resource"))
 
 	RegisterResourceHandler(router, handler)
@@ -455,6 +498,7 @@ func TestHandleDeleteHappyPath(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
+	handler.On("IsAuthorized").Return(true)
 	handler.On("DeleteResource").Return(&TestResource{Foo: "hello"}, nil)
 
 	RegisterResourceHandler(router, handler)
@@ -490,6 +534,7 @@ func TestApplyMiddleware(t *testing.T) {
 	router := mux.NewRouter()
 
 	handler.On("ResourceName").Return("foo")
+	handler.On("IsAuthorized").Return(true)
 	handler.On("ReadResource").Return(&TestResource{Foo: "hello"}, nil)
 
 	called := false

@@ -85,6 +85,19 @@ func (f FooHandler) DeleteResource(ctx context.RequestContext, id string, versio
 	return foo, nil
 }
 
+// IsAuthorized is logic that is used to authenticate requests. The default behavior
+// of IsAuthorized, seen in server.BaseResourceHandler, always returns true, meaning
+// all requests are authorized.
+func (f FooHandler) IsAuthorized(r http.Request) bool {
+	if secrets, ok := r.Header["Authorization"]; ok {
+		if secrets[0] == "secret" {
+			return true
+		}
+	}
+
+	return false
+}
+
 // Start the REST server.
 func simpleCrudMain() {
 	r := mux.NewRouter()

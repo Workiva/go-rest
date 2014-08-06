@@ -26,6 +26,7 @@ type ResourceHandler interface {
 	ReadResource(context.RequestContext, string, string) (Resource, error)
 	UpdateResource(context.RequestContext, string, Payload, string) (Resource, error)
 	DeleteResource(context.RequestContext, string, string) (Resource, error)
+	IsAuthorized(http.Request) bool
 }
 
 type BaseResourceHandler struct{}
@@ -54,9 +55,26 @@ func (b BaseResourceHandler) DeleteResource(ctx context.RequestContext, id strin
 	panic("DeleteResource not implemented")
 }
 
+func (b BaseResourceHandler) IsAuthorized(r http.Request) bool {
+	return true
+}
+
 // RequestMiddleware is a function that returns a HandlerFunc wrapping the provided HandlerFunc.
 // This allows injecting custom logic to operate on requests (e.g. performing authentication).
 type RequestMiddleware func(http.HandlerFunc) http.HandlerFunc
+
+// newAuthMiddleware returns a RequestMiddleware used to authenticate requests.
+func newAuthMiddleware(isAuthorized func(http.Request) bool) RequestMiddleware {
+	return func(wrapped http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			if !isAuthorized(*r) {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			wrapped(w, r)
+		}
+	}
+}
 
 // RegisterResourceHandler binds the provided ResourceHandler to the appropriate REST endpoints and
 // applies any specified middleware. Endpoints will have the following base URL:
@@ -64,6 +82,7 @@ type RequestMiddleware func(http.HandlerFunc) http.HandlerFunc
 func RegisterResourceHandler(router *mux.Router, r ResourceHandler, middleware ...RequestMiddleware) {
 	urlBase := fmt.Sprintf("/api/v{%s:[^/]+}/%s", context.VersionKey, r.ResourceName())
 	resourceUrl := fmt.Sprintf("%s/{%s}", urlBase, context.ResourceIdKey)
+	middleware = append(middleware, newAuthMiddleware(r.IsAuthorized))
 
 	router.HandleFunc(
 		urlBase,

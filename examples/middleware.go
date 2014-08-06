@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-rest/server"
 	"go-rest/server/context"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -48,16 +49,8 @@ func (e ExampleHandler) ReadResource(ctx context.RequestContext, id string, vers
 // one.
 func ExampleMiddleware(wrapped http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if secrets, ok := r.Header["Authorization"]; ok {
-			if secrets[0] == "secret" {
-				wrapped(w, r)
-				return
-			}
-		}
-
-		w.WriteHeader(401)
-		w.Write([]byte("You shall not pass"))
-		return
+		log.Printf("Request: %s", r.URL.String())
+		wrapped(w, r)
 	}
 }
 

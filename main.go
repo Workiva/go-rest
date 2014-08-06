@@ -34,7 +34,9 @@ func (f Foo) MarshalJSON() ([]byte, error) {
 	})
 }
 
-type FooHandler struct{}
+type FooHandler struct {
+	server.BaseResourceHandler
+}
 
 func (f FooHandler) ResourceName() string {
 	return "foos"
@@ -83,22 +85,10 @@ func MyMiddleware(wrapped http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func OtherMiddleware(wrapped http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		foo := r.Header["Foo"][0]
-		if foo == "bar" {
-			w.WriteHeader(401)
-			w.Write([]byte("not authenticated"))
-			return
-		}
-		wrapped(w, r)
-	}
-}
-
 func main() {
 	if os.Args[1] == "1" {
 		r := mux.NewRouter()
-		server.RegisterResourceHandler(r, FooHandler{}, MyMiddleware, OtherMiddleware)
+		server.RegisterResourceHandler(r, FooHandler{}, MyMiddleware)
 		http.Handle("/", r)
 		http.ListenAndServe(":8080", nil)
 	}
