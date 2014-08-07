@@ -15,7 +15,8 @@ import (
 // API is the top-level interface encapsulating an HTTP REST server. It's responsible for
 // registering ResourceHandlers and routing requests. Use NewAPI to retrieve an instance.
 type API interface {
-	Start(addr string)
+	Start(addr string) error
+	StartTLS(addr, certFile, keyFile string) error
 	RegisterResourceHandler(ResourceHandler, ...RequestMiddleware)
 	AddResponseSerializer(string, ResponseSerializer)
 	RemoveResponseSerializer(string)
@@ -61,9 +62,19 @@ func NewAPI() API {
 	return restAPI
 }
 
-// Start begins serving requests. This will block.
-func (r muxAPI) Start(addr string) {
-	http.ListenAndServe(addr, r.router)
+// Start begins serving requests. This will block unless it fails, in which case an error will be
+// returned.
+func (r muxAPI) Start(addr string) error {
+	return http.ListenAndServe(addr, r.router)
+}
+
+// StartTLS begins serving requests received over HTTPS connections. This will block unless it
+// fails, in which case an error will be returned. Files containing a certificate and matching
+// private key for the server must be provided. If the certificate is signed by a certificate
+// authority, the certFile should be the concatenation of the server's certificate followed by
+// the CA's certificate.
+func (r muxAPI) StartTLS(addr, certFile, keyFile string) error {
+	return http.ListenAndServeTLS(addr, certFile, keyFile, r.router)
 }
 
 // RegisterResourceHandler binds the provided ResourceHandler to the appropriate REST endpoints and
