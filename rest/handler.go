@@ -203,10 +203,10 @@ func (h requestHandler) sendResponse(w http.ResponseWriter, ctx context.RequestC
 				status = http.StatusInternalServerError
 			}
 		}
-		serializer.sendErrorResponse(w, requestError, status)
+		serializer.SendErrorResponse(w, requestError, status)
 		return
 	}
 
 	nextURL, _ := ctx.NextURL()
-	serializer.sendSuccessResponse(w, newSuccessResponse(result, nextURL), status)
+	serializer.SendSuccessResponse(w, NewSuccessResponse(result, nextURL), status)
 }

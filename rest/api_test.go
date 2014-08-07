@@ -565,9 +565,9 @@ func TestApplyMiddleware(t *testing.T) {
 
 type TestResponseSerializer struct{}
 
-func (t TestResponseSerializer) sendSuccessResponse(http.ResponseWriter, response, int) {}
+func (t TestResponseSerializer) SendSuccessResponse(http.ResponseWriter, Response, int) {}
 
-func (t TestResponseSerializer) sendErrorResponse(http.ResponseWriter, error, int) {}
+func (t TestResponseSerializer) SendErrorResponse(http.ResponseWriter, error, int) {}
 
 // Ensures that AddResponseSerializer, RemoveResponseSerializer, and AvailableFormats behave
 // as expected.

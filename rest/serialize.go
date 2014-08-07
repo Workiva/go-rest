@@ -5,25 +5,25 @@ import (
 	"net/http"
 )
 
-// response is a data structure holding the serializable response body for a request.
+// Response is a data structure holding the serializable response body for a request.
 // It should be created using newSuccessResponse or newErrorResponse.
-type response map[string]interface{}
+type Response map[string]interface{}
 
 // ResponseSerializer is responsible for serializing REST responses and sending
 // them back to the client.
 type ResponseSerializer interface {
-	sendSuccessResponse(http.ResponseWriter, response, int)
-	sendErrorResponse(http.ResponseWriter, error, int)
+	SendSuccessResponse(http.ResponseWriter, Response, int)
+	SendErrorResponse(http.ResponseWriter, error, int)
 }
 
 // jsonSerializer is an implementation of ResponseSerializer which serializes responses
 // as JSON.
 type jsonSerializer struct{}
 
-// sendErrorResponse writes a response containing an error message and code to the provided
+// SendErrorResponse writes a response containing an error message and code to the provided
 // http.ResponseWriter.
-func (j jsonSerializer) sendErrorResponse(w http.ResponseWriter, err error, errorCode int) {
-	response := newErrorResponse(err)
+func (j jsonSerializer) SendErrorResponse(w http.ResponseWriter, err error, errorCode int) {
+	response := NewErrorResponse(err)
 	jsonResponse, err := json.Marshal(response)
 	if err != nil {
 		panic(err)
@@ -34,13 +34,13 @@ func (j jsonSerializer) sendErrorResponse(w http.ResponseWriter, err error, erro
 	w.Write(jsonResponse)
 }
 
-// sendSuccessResponse writes a response containing the provided response body and status
+// SendSuccessResponse writes a response containing the provided response body and status
 // code to the http.ResponseWriter. If the body is not serializable, an error response
 // will be written instead.
-func (j jsonSerializer) sendSuccessResponse(w http.ResponseWriter, r response, status int) {
+func (j jsonSerializer) SendSuccessResponse(w http.ResponseWriter, r Response, status int) {
 	jsonResponse, err := json.Marshal(r)
 	if err != nil {
-		j.sendErrorResponse(w, err, http.StatusInternalServerError)
+		j.SendErrorResponse(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -49,10 +49,10 @@ func (j jsonSerializer) sendSuccessResponse(w http.ResponseWriter, r response, s
 	w.Write(jsonResponse)
 }
 
-// newSuccessResponse constructs a new response struct containing the Resource and,
+// NewSuccessResponse constructs a new response struct containing the Resource and,
 // if provided, a "next" URL for retrieving the next page of results.
-func newSuccessResponse(r Resource, nextURL string) response {
-	response := response{
+func NewSuccessResponse(r Resource, nextURL string) Response {
+	response := Response{
 		"success": true,
 		"result":  r,
 	}
@@ -64,9 +64,9 @@ func newSuccessResponse(r Resource, nextURL string) response {
 	return response
 }
 
-// newErrorResponse constructs a new response struct containing the error message.
-func newErrorResponse(err error) response {
-	return response{
+// NewErrorResponse constructs a new response struct containing the error message.
+func NewErrorResponse(err error) Response {
+	return Response{
 		"success": false,
 		"error":   err.Error(),
 	}
