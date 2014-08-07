@@ -15,12 +15,44 @@ type Payload map[string]interface{}
 // ResourceHandler specifies the endpoint handlers for working with a resource. This
 // consists of the business logic for performing CRUD operations.
 type ResourceHandler interface {
+	// ResourceName is used to identify what resource a handler corresponds to and is
+	// used in the endpoint URLs, i.e. /api/:version/resourceName.
 	ResourceName() string
+
+	// CreateResource is the logic that corresponds to creating a new resource at
+	// POST /api/:version/resourceName. Typically, this would insert a record into a
+	// database. It returns the newly created resource or an error if the create failed.
 	CreateResource(RequestContext, Payload, string) (Resource, error)
+
+	// ReadResourceList is the logic that corresponds to reading multiple resources,
+	// perhaps with specified query parameters accessed through the RequestContext. This
+	// is mapped to GET /api/:version/resourceName. Typically, this would make some sort
+	// of database query to fetch the resources. It returns the slice of results, a
+	// cursor (or empty) string, and error (or nil).
 	ReadResourceList(RequestContext, int, string, string) ([]Resource, string, error)
+
+	// ReadResource is the logic that corresponds to reading a single resource by its ID
+	// at GET /api/:version/resourceName/{id}. Typically, this would make some sort of
+	// database query to load the resource. If the resource doesn't exist, nil should be
+	// returned along with an appropriate error.
 	ReadResource(RequestContext, string, string) (Resource, error)
+
+	// UpdateResource is the logic that corresponds to updating an existing resource at
+	// PUT /api/:version/resourceName/{id}. Typically, this would make some sort of
+	// database update call. It returns the updated resource or an error if the update
+	// failed.
 	UpdateResource(RequestContext, string, Payload, string) (Resource, error)
+
+	// DeleteResource is the logic that corresponds to deleting an existing resource at
+	// DELETE /api/:version/resourceName/{id}. Typically, this would make some sort of
+	// database delete call. It returns the deleted resource or an error if the delete
+	// failed.
 	DeleteResource(RequestContext, string, string) (Resource, error)
+
+	// Authenticate is logic that is used to authenticate requests. The default behavior
+	// of Authenticate, seen in BaseResourceHandler, always returns nil, meaning all
+	// requests are authenticated. Returning an error means that the request is
+	// unauthorized and any error message will be sent back with the response.
 	Authenticate(http.Request) error
 }
 
