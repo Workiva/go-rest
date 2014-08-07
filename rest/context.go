@@ -11,17 +11,17 @@ import (
 )
 
 const (
-	// ResourceIDKey is the name of the URL path variable for a resource ID.
-	ResourceIDKey = "resource_id"
+	// resourceIDKey is the name of the URL path variable for a resource ID.
+	resourceIDKey = "resource_id"
 
-	// FormatKey is the name of the query string variable for the response format.
-	FormatKey = "format"
+	// formatKey is the name of the query string variable for the response format.
+	formatKey = "format"
 
-	// VersionKey is the name of the URL path variable for the endpoint version.
-	VersionKey = "version"
+	// versionKey is the name of the URL path variable for the endpoint version.
+	versionKey = "version"
 
-	// CursorKey is the name of the query string variable for the results cursor.
-	CursorKey = "next"
+	// cursorKey is the name of the query string variable for the results cursor.
+	cursorKey = "next"
 
 	requestKey int = iota
 	statusKey
@@ -131,19 +131,19 @@ func (ctx *gorillaRequestContext) ValueWithDefault(key, defaultVal interface{}) 
 // ResponseFormat returns the response format for the request, defaulting to "json"
 // if one is not specified using the "format" query parameter.
 func (ctx *gorillaRequestContext) ResponseFormat() string {
-	return ctx.ValueWithDefault(FormatKey, "json").(string)
+	return ctx.ValueWithDefault(formatKey, "json").(string)
 }
 
 // ResourceID returns the resource id for the request, defaulting to an empty string
 // if there isn't one.
 func (ctx *gorillaRequestContext) ResourceID() string {
-	return ctx.ValueWithDefault(ResourceIDKey, "").(string)
+	return ctx.ValueWithDefault(resourceIDKey, "").(string)
 }
 
 // Version returns the API version for the request, defaulting to an empty string
 // if one is not specified in the request path.
 func (ctx *gorillaRequestContext) Version() string {
-	return ctx.ValueWithDefault(VersionKey, "").(string)
+	return ctx.ValueWithDefault(versionKey, "").(string)
 }
 
 // Status returns the current HTTP status code that will be returned for the request,
@@ -186,12 +186,12 @@ func (ctx *gorillaRequestContext) SetResult(result interface{}) RequestContext {
 // Cursor returns the current result cursor for the request, defaulting to an empty
 // string if one hasn't been set.
 func (ctx *gorillaRequestContext) Cursor() string {
-	return ctx.ValueWithDefault(CursorKey, "").(string)
+	return ctx.ValueWithDefault(cursorKey, "").(string)
 }
 
 // SetCursor sets the current result cursor for the request.
 func (ctx *gorillaRequestContext) SetCursor(cursor string) RequestContext {
-	return ctx.WithValue(CursorKey, cursor)
+	return ctx.WithValue(cursorKey, cursor)
 }
 
 // Request returns the *http.Request associated with context using NewContext, if any.

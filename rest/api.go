@@ -80,8 +80,8 @@ func (r muxAPI) StartTLS(addr, certFile, keyFile string) error {
 // /api/:version/resourceName.
 func (r muxAPI) RegisterResourceHandler(h ResourceHandler, middleware ...RequestMiddleware) {
 	resource := h.ResourceName()
-	urlBase := fmt.Sprintf("/api/v{%s:[^/]+}/%s", VersionKey, resource)
-	resourceURL := fmt.Sprintf("%s/{%s}", urlBase, ResourceIDKey)
+	urlBase := fmt.Sprintf("/api/v{%s:[^/]+}/%s", versionKey, resource)
+	resourceURL := fmt.Sprintf("%s/{%s}", urlBase, resourceIDKey)
 	middleware = append(middleware, newAuthMiddleware(h.Authenticate))
 
 	r.router.HandleFunc(
