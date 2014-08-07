@@ -12,7 +12,14 @@ type Response map[string]interface{}
 // ResponseSerializer is responsible for serializing REST responses and sending
 // them back to the client.
 type ResponseSerializer interface {
+
+	// SendSuccessResponse writes a response containing the provided response body
+	// and status code to the http.ResponseWriter. If the body is not serializable,
+	// an error response will be written instead.
 	SendSuccessResponse(http.ResponseWriter, Response, int)
+
+	// SendErrorResponse writes a response containing an error message and code to
+	// the provided http.ResponseWriter.
 	SendErrorResponse(http.ResponseWriter, error, int)
 }
 
