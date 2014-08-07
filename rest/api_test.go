@@ -567,19 +567,19 @@ func (t TestResponseSerializer) SendSuccessResponse(http.ResponseWriter, Respons
 
 func (t TestResponseSerializer) SendErrorResponse(http.ResponseWriter, error, int) {}
 
-// Ensures that AddResponseSerializer, RemoveResponseSerializer, and AvailableFormats behave
-// as expected.
-func TestAddRemoveResponseSerializer(t *testing.T) {
+// Ensures that RegisterResponseSerializer, UnregisterResponseSerializer, and
+// AvailableFormats behave as expected.
+func TestRegisterUnregisterResponseSerializer(t *testing.T) {
 	assert := assert.New(t)
 	api := NewAPI()
 
 	assert.Equal([]string{"json"}, api.AvailableFormats())
 
-	api.AddResponseSerializer("foo", &TestResponseSerializer{})
+	api.RegisterResponseSerializer("foo", &TestResponseSerializer{})
 
 	assert.Equal([]string{"foo", "json"}, api.AvailableFormats())
 
-	api.RemoveResponseSerializer("foo")
+	api.UnregisterResponseSerializer("foo")
 
 	assert.Equal([]string{"json"}, api.AvailableFormats())
 }
