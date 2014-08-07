@@ -1,11 +1,6 @@
-// Package examples contains example code for using the REST framework.
-package examples
+package rest
 
-import (
-	"fmt"
-
-	"go-rest/rest"
-)
+import "fmt"
 
 // HelloWorldResource represents a domain model for which we want to perform CRUD operations with.
 // Endpoints can operate on any type of entity -- primitive, struct, or composite -- so long
@@ -16,11 +11,11 @@ type HelloWorldResource struct {
 	Foobar string `json:"foobar"`
 }
 
-// HelloWorldHandler implements the rest.ResourceHandler interface. It specifies the business
-// logic for performing CRUD operations. rest.BaseResourceHandler provides stubs for each method
+// HelloWorldHandler implements the ResourceHandler interface. It specifies the business
+// logic for performing CRUD operations. BaseResourceHandler provides stubs for each method
 // if you only need to implement certain operations (as this example illustrates).
 type HelloWorldHandler struct {
-	rest.BaseResourceHandler
+	BaseResourceHandler
 }
 
 // ResourceName is used to identify what resource a handler corresponds to and is used
@@ -33,18 +28,18 @@ func (h HelloWorldHandler) ResourceName() string {
 // GET /api/:version/helloworld/{id}. Typically, this would make some sort of database query to
 // load the resource. If the resource doesn't exist, nil should be returned along with an
 // appropriate error.
-func (h HelloWorldHandler) ReadResource(ctx rest.RequestContext, id string,
-	version string) (rest.Resource, error) {
+func (h HelloWorldHandler) ReadResource(ctx RequestContext, id string,
+	version string) (Resource, error) {
 	// Make a database call here.
 	if id == "42" {
 		return &HelloWorldResource{ID: 42, Foobar: "hello world"}, nil
 	}
-	return nil, rest.ResourceNotFound(fmt.Sprintf("No resource with id %s", id))
+	return nil, ResourceNotFound(fmt.Sprintf("No resource with id %s", id))
 }
 
 // Start the REST server.
-func helloWorldMain() {
-	api := rest.NewAPI()
+func Example_helloWorld() {
+	api := NewAPI()
 
 	// Call RegisterResourceHandler to wire up HelloWorldHandler.
 	api.RegisterResourceHandler(HelloWorldHandler{})
