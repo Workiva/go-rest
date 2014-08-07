@@ -23,11 +23,13 @@ const (
 	// cursorKey is the name of the query string variable for the results cursor.
 	cursorKey = "next"
 
+	// limitKey is the name of the query string variable for the results limit.
+	limitKey = "limit"
+
 	requestKey int = iota
 	statusKey
 	errorKey
 	resultKey
-	limitKey
 )
 
 // RequestContext contains the context information for the current HTTP request. It's a wrapper
@@ -36,23 +38,63 @@ const (
 // across API boundaries to all the goroutines involved in handling a request.
 type RequestContext interface {
 	context.Context
-	WithValue(key, value interface{}) RequestContext
-	ValueWithDefault(key, defaultVal interface{}) interface{}
+
+	// WithValue returns a new RequestContext with the provided key-value pair and this context
+	// as the parent.
+	WithValue(interface{}, interface{}) RequestContext
+
+	// ValueWithDefault returns the context value for the given key. If there's no such value,
+	// the provided default is returned.
+	ValueWithDefault(interface{}, interface{}) interface{}
+
+	// Request returns the *http.Request associated with context using NewContext, if any.
 	Request() (*http.Request, bool)
+
+	// NextURL returns the URL to use to request the next page of results using the current
+	// cursor. If there is no cursor for this request or the URL fails to be built, an empty
+	// string is returned with the error set.
 	NextURL() (string, error)
+
+	// ResponseFormat returns the response format for the request, defaulting to "json" if
+	// one is not specified using the "format" query parameter.
 	ResponseFormat() string
+
+	// ResourceID returns the resource id for the request, defaulting to an empty string if
+	// there isn't one.
 	ResourceID() string
+
+	// Version returns the API version for the request, defaulting to an empty string if
+	// one is not specified in the request path.
 	Version() string
+
+	// Status returns the current HTTP status code that will be returned for the request,
+	// defaulting to 200 if one hasn't been set yet.
 	Status() int
-	SetStatus(int) RequestContext
+
+	// setStatus sets the HTTP status code to be returned for the request.
+	setStatus(int) RequestContext
+
+	// Error returns the current error for the request or nil if no errors have been set.
 	Error() error
-	SetError(error) RequestContext
+
+	// setError sets the current error for the request.
+	setError(error) RequestContext
+
+	// Result returns the result resource for the request or nil if no result has been set.
 	Result() interface{}
-	SetResult(interface{}) RequestContext
+
+	// setResult sets the result resource for the request.
+	setResult(interface{}) RequestContext
+
+	// Cursor returns the current result cursor for the request, defaulting to an empty
+	// string if one hasn't been set.
 	Cursor() string
-	SetCursor(string) RequestContext
+
+	// setCursor sets the current result cursor for the request.
+	setCursor(string) RequestContext
+
+	// Limit returns the maximum number of results that should be fetched.
 	Limit() int
-	SetLimit(int) RequestContext
 }
 
 // gorillaRequestContext is an implementation of the RequestContext interface. It wraps
@@ -152,8 +194,8 @@ func (ctx *gorillaRequestContext) Status() int {
 	return ctx.ValueWithDefault(statusKey, http.StatusOK).(int)
 }
 
-// SetStatus sets the HTTP status code to be returned for the request.
-func (ctx *gorillaRequestContext) SetStatus(status int) RequestContext {
+// setStatus sets the HTTP status code to be returned for the request.
+func (ctx *gorillaRequestContext) setStatus(status int) RequestContext {
 	return ctx.WithValue(statusKey, status)
 }
 
@@ -168,8 +210,8 @@ func (ctx *gorillaRequestContext) Error() error {
 	return err.(error)
 }
 
-// SetError sets the current error for the request.
-func (ctx *gorillaRequestContext) SetError(err error) RequestContext {
+// setError sets the current error for the request.
+func (ctx *gorillaRequestContext) setError(err error) RequestContext {
 	return ctx.WithValue(errorKey, err)
 }
 
@@ -178,8 +220,8 @@ func (ctx *gorillaRequestContext) Result() interface{} {
 	return ctx.ValueWithDefault(resultKey, nil)
 }
 
-// SetResult sets the result resource for the request.
-func (ctx *gorillaRequestContext) SetResult(result interface{}) RequestContext {
+// setResult sets the result resource for the request.
+func (ctx *gorillaRequestContext) setResult(result interface{}) RequestContext {
 	return ctx.WithValue(resultKey, result)
 }
 
@@ -189,8 +231,8 @@ func (ctx *gorillaRequestContext) Cursor() string {
 	return ctx.ValueWithDefault(cursorKey, "").(string)
 }
 
-// SetCursor sets the current result cursor for the request.
-func (ctx *gorillaRequestContext) SetCursor(cursor string) RequestContext {
+// setCursor sets the current result cursor for the request.
+func (ctx *gorillaRequestContext) setCursor(cursor string) RequestContext {
 	return ctx.WithValue(cursorKey, cursor)
 }
 
@@ -206,11 +248,6 @@ func (ctx *gorillaRequestContext) Request() (*http.Request, bool) {
 // Limit returns the maximum number of results that should be fetched.
 func (ctx *gorillaRequestContext) Limit() int {
 	return ctx.ValueWithDefault(limitKey, 100).(int)
-}
-
-// SetLimit sets the maximum number of results that should be fetched.
-func (ctx *gorillaRequestContext) SetLimit(limit int) RequestContext {
-	return ctx.WithValue(limitKey, limit)
 }
 
 // NextURL returns the URL to use to request the next page of results using the current

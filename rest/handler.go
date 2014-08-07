@@ -86,14 +86,14 @@ func (h requestHandler) handleCreate(createFunc func(RequestContext, Payload,
 		decoder := json.NewDecoder(r.Body)
 		var data map[string]interface{}
 		if err := decoder.Decode(&data); err != nil {
-			ctx = ctx.SetError(err)
-			ctx = ctx.SetStatus(http.StatusInternalServerError)
+			ctx = ctx.setError(err)
+			ctx = ctx.setStatus(http.StatusInternalServerError)
 		} else {
 			resource, err := createFunc(ctx, data, ctx.Version())
-			ctx = ctx.SetResult(resource)
-			ctx = ctx.SetStatus(http.StatusCreated)
+			ctx = ctx.setResult(resource)
+			ctx = ctx.setStatus(http.StatusCreated)
 			if err != nil {
-				ctx = ctx.SetError(err)
+				ctx = ctx.setError(err)
 			}
 		}
 
@@ -110,10 +110,10 @@ func (h requestHandler) handleReadList(readFunc func(RequestContext, int,
 		ctx := NewContext(nil, r)
 
 		resources, cursor, err := readFunc(ctx, ctx.Limit(), ctx.Cursor(), ctx.Version())
-		ctx = ctx.SetResult(resources)
-		ctx = ctx.SetCursor(cursor)
-		ctx = ctx.SetError(err)
-		ctx = ctx.SetStatus(http.StatusOK)
+		ctx = ctx.setResult(resources)
+		ctx = ctx.setCursor(cursor)
+		ctx = ctx.setError(err)
+		ctx = ctx.setStatus(http.StatusOK)
 
 		h.sendResponse(w, ctx)
 	}
@@ -128,9 +128,9 @@ func (h requestHandler) handleRead(readFunc func(RequestContext, string,
 		ctx := NewContext(nil, r)
 
 		resource, err := readFunc(ctx, ctx.ResourceID(), ctx.Version())
-		ctx = ctx.SetResult(resource)
-		ctx = ctx.SetError(err)
-		ctx = ctx.SetStatus(http.StatusOK)
+		ctx = ctx.setResult(resource)
+		ctx = ctx.setError(err)
+		ctx = ctx.setStatus(http.StatusOK)
 
 		h.sendResponse(w, ctx)
 	}
@@ -148,13 +148,13 @@ func (h requestHandler) handleUpdate(updateFunc func(RequestContext,
 		decoder := json.NewDecoder(r.Body)
 		var data map[string]interface{}
 		if err := decoder.Decode(&data); err != nil {
-			ctx = ctx.SetError(err)
-			ctx = ctx.SetStatus(http.StatusInternalServerError)
+			ctx = ctx.setError(err)
+			ctx = ctx.setStatus(http.StatusInternalServerError)
 		} else {
 			resource, err := updateFunc(ctx, ctx.ResourceID(), data, ctx.Version())
-			ctx = ctx.SetResult(resource)
-			ctx = ctx.SetError(err)
-			ctx = ctx.SetStatus(http.StatusOK)
+			ctx = ctx.setResult(resource)
+			ctx = ctx.setError(err)
+			ctx = ctx.setStatus(http.StatusOK)
 		}
 
 		h.sendResponse(w, ctx)
@@ -170,9 +170,9 @@ func (h requestHandler) handleDelete(deleteFunc func(RequestContext, string,
 		ctx := NewContext(nil, r)
 
 		resource, err := deleteFunc(ctx, ctx.ResourceID(), ctx.Version())
-		ctx = ctx.SetResult(resource)
-		ctx = ctx.SetError(err)
-		ctx = ctx.SetStatus(http.StatusOK)
+		ctx = ctx.setResult(resource)
+		ctx = ctx.setError(err)
+		ctx = ctx.setStatus(http.StatusOK)
 
 		h.sendResponse(w, ctx)
 	}
