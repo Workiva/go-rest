@@ -563,9 +563,13 @@ func TestApplyMiddleware(t *testing.T) {
 
 type TestResponseSerializer struct{}
 
-func (t TestResponseSerializer) SendSuccessResponse(http.ResponseWriter, Response, int) {}
+func (t TestResponseSerializer) Serialize(map[string]interface{}) ([]byte, error) {
+	return []byte{}, nil
+}
 
-func (t TestResponseSerializer) SendErrorResponse(http.ResponseWriter, error, int) {}
+func (t TestResponseSerializer) ContentType() string {
+	return "application/foo"
+}
 
 // Ensures that RegisterResponseSerializer, UnregisterResponseSerializer, and
 // AvailableFormats behave as expected.

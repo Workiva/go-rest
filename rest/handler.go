@@ -3,6 +3,7 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -225,18 +226,30 @@ func (h requestHandler) sendResponse(w http.ResponseWriter, ctx RequestContext) 
 		requestError = NotImplemented(fmt.Sprintf("Format not implemented: %s", format))
 	}
 
+	var response response
 	if requestError != nil {
-		if status < 400 {
-			if restError, ok := requestError.(Error); ok {
-				status = restError.Status()
-			} else {
-				status = http.StatusInternalServerError
-			}
-		}
-		serializer.SendErrorResponse(w, requestError, status)
-		return
+		response = NewErrorResponse(requestError)
+	} else {
+		nextURL, _ := ctx.NextURL()
+		response = NewSuccessResponse(result, status, nextURL)
 	}
 
-	nextURL, _ := ctx.NextURL()
-	serializer.SendSuccessResponse(w, NewSuccessResponse(result, nextURL), status)
+	sendResponse(w, response, serializer)
+}
+
+// sendResponse writes a response to the http.ResponseWriter.
+func sendResponse(w http.ResponseWriter, r response, serializer ResponseSerializer) {
+	status := r.Status
+	contentType := serializer.ContentType()
+	response, err := serializer.Serialize(r.Payload)
+	if err != nil {
+		log.Printf("Response serialization failed: %s", err)
+		status = http.StatusInternalServerError
+		contentType = "text/plain"
+		response = []byte(err.Error())
+	}
+
+	w.Header().Set("Content-Type", contentType)
+	w.WriteHeader(status)
+	w.Write(response)
 }
