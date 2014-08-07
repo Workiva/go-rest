@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"go-rest/rest"
-	"go-rest/rest/context"
 )
 
 // FooResource represents a domain model for which we want to perform CRUD operations with.
@@ -32,7 +31,7 @@ func (f FooHandler) ResourceName() string {
 // CreateResource is the logic that corresponds to creating a new resource at
 // POST /api/:version/foo. Typically, this would insert a record into a database.
 // It returns the newly created resource or an error if the create failed.
-func (f FooHandler) CreateResource(ctx context.RequestContext, data rest.Payload,
+func (f FooHandler) CreateResource(ctx rest.RequestContext, data rest.Payload,
 	version string) (rest.Resource, error) {
 	// Make a database call here.
 	id := rand.Int()
@@ -44,7 +43,7 @@ func (f FooHandler) CreateResource(ctx context.RequestContext, data rest.Payload
 // GET /api/:version/foo/{id}. Typically, this would make some sort of database query to
 // load the resource. If the resource doesn't exist, nil should be returned along with
 // an appropriate error.
-func (f FooHandler) ReadResource(ctx context.RequestContext, id string,
+func (f FooHandler) ReadResource(ctx rest.RequestContext, id string,
 	version string) (rest.Resource, error) {
 	// Make a database call here.
 	if id == "42" {
@@ -54,11 +53,11 @@ func (f FooHandler) ReadResource(ctx context.RequestContext, id string,
 }
 
 // ReadResourceList is the logic that corresponds to reading multiple resources, perhaps
-// with specified query parameters accessed through the context.RequestContext. This is
+// with specified query parameters accessed through the rest.RequestContext. This is
 // mapped to GET /api/:version/foo. Typically, this would make some sort of database query
 // to fetch the resources. It returns the slice of results, a cursor (or empty) string,
 // and error (or nil).
-func (f FooHandler) ReadResourceList(ctx context.RequestContext, limit int,
+func (f FooHandler) ReadResourceList(ctx rest.RequestContext, limit int,
 	cursor string, version string) ([]rest.Resource, string, error) {
 	// Make a database call here.
 	resources := make([]rest.Resource, 0, limit)
@@ -70,7 +69,7 @@ func (f FooHandler) ReadResourceList(ctx context.RequestContext, limit int,
 // UpdateResource is the logic that corresponds to updating an existing resource at
 // PUT /api/:version/foo/{id}. Typically, this would make some sort of database update
 // call. It returns the updated resource or an error if the update failed.
-func (f FooHandler) UpdateResource(ctx context.RequestContext, id string, data rest.Payload,
+func (f FooHandler) UpdateResource(ctx rest.RequestContext, id string, data rest.Payload,
 	version string) (rest.Resource, error) {
 	// Make a database call here.
 	updateId, _ := strconv.Atoi(id)
@@ -81,7 +80,7 @@ func (f FooHandler) UpdateResource(ctx context.RequestContext, id string, data r
 // DeleteResource is the logic that corresponds to deleting an existing resource at
 // DELETE /api/:version/foo/{id}. Typically, this would make some sort of database
 // delete call. It returns the deleted resource or an error if the delete failed.
-func (f FooHandler) DeleteResource(ctx context.RequestContext, id string,
+func (f FooHandler) DeleteResource(ctx rest.RequestContext, id string,
 	version string) (rest.Resource, error) {
 	// Make a database call here.
 	deleteId, _ := strconv.Atoi(id)

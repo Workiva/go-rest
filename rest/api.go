@@ -8,8 +8,6 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
-
-	"go-rest/rest/context"
 )
 
 // API is the top-level interface encapsulating an HTTP REST server. It's responsible for
@@ -82,8 +80,8 @@ func (r muxAPI) StartTLS(addr, certFile, keyFile string) error {
 // /api/:version/resourceName.
 func (r muxAPI) RegisterResourceHandler(h ResourceHandler, middleware ...RequestMiddleware) {
 	resource := h.ResourceName()
-	urlBase := fmt.Sprintf("/api/v{%s:[^/]+}/%s", context.VersionKey, resource)
-	resourceURL := fmt.Sprintf("%s/{%s}", urlBase, context.ResourceIDKey)
+	urlBase := fmt.Sprintf("/api/v{%s:[^/]+}/%s", VersionKey, resource)
+	resourceURL := fmt.Sprintf("%s/{%s}", urlBase, ResourceIDKey)
 	middleware = append(middleware, newAuthMiddleware(h.Authenticate))
 
 	r.router.HandleFunc(

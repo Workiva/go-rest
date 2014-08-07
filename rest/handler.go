@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-
-	"go-rest/rest/context"
 )
 
 // Resource represents a domain model.
@@ -18,11 +16,11 @@ type Payload map[string]interface{}
 // consists of the business logic for performing CRUD operations.
 type ResourceHandler interface {
 	ResourceName() string
-	CreateResource(context.RequestContext, Payload, string) (Resource, error)
-	ReadResourceList(context.RequestContext, int, string, string) ([]Resource, string, error)
-	ReadResource(context.RequestContext, string, string) (Resource, error)
-	UpdateResource(context.RequestContext, string, Payload, string) (Resource, error)
-	DeleteResource(context.RequestContext, string, string) (Resource, error)
+	CreateResource(RequestContext, Payload, string) (Resource, error)
+	ReadResourceList(RequestContext, int, string, string) ([]Resource, string, error)
+	ReadResource(RequestContext, string, string) (Resource, error)
+	UpdateResource(RequestContext, string, Payload, string) (Resource, error)
+	DeleteResource(RequestContext, string, string) (Resource, error)
 	Authenticate(http.Request) error
 }
 
@@ -37,31 +35,31 @@ func (b BaseResourceHandler) ResourceName() string {
 }
 
 // CreateResource is a stub. Implement if necessary.
-func (b BaseResourceHandler) CreateResource(ctx context.RequestContext, data Payload,
+func (b BaseResourceHandler) CreateResource(ctx RequestContext, data Payload,
 	version string) (Resource, error) {
 	panic("CreateResource not implemented")
 }
 
 // ReadResourceList is a stub. Implement if necessary.
-func (b BaseResourceHandler) ReadResourceList(ctx context.RequestContext, limit int,
+func (b BaseResourceHandler) ReadResourceList(ctx RequestContext, limit int,
 	cursor string, version string) ([]Resource, string, error) {
 	panic("ReadResourceList not implemented")
 }
 
 // ReadResource is a stub. Implement if necessary.
-func (b BaseResourceHandler) ReadResource(ctx context.RequestContext, id string,
+func (b BaseResourceHandler) ReadResource(ctx RequestContext, id string,
 	version string) (Resource, error) {
 	panic("ReadResource not implemented")
 }
 
 // UpdateResource is a stub. Implement if necessary.
-func (b BaseResourceHandler) UpdateResource(ctx context.RequestContext, id string,
+func (b BaseResourceHandler) UpdateResource(ctx RequestContext, id string,
 	data Payload, version string) (Resource, error) {
 	panic("UpdateResource not implemented")
 }
 
 // DeleteResource is a stub. Implement if necessary.
-func (b BaseResourceHandler) DeleteResource(ctx context.RequestContext, id string,
+func (b BaseResourceHandler) DeleteResource(ctx RequestContext, id string,
 	version string) (Resource, error) {
 	panic("DeleteResource not implemented")
 }
@@ -80,10 +78,10 @@ type requestHandler struct {
 // handleCreate returns a HandlerFunc which will deserialize the request payload, pass
 // it to the provided create function, and then serialize and dispatch the response.
 // The serialization mechanism used is specified by the "format" query parameter.
-func (h requestHandler) handleCreate(createFunc func(context.RequestContext, Payload,
+func (h requestHandler) handleCreate(createFunc func(RequestContext, Payload,
 	string) (Resource, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.NewContext(nil, r)
+		ctx := NewContext(nil, r)
 
 		decoder := json.NewDecoder(r.Body)
 		var data map[string]interface{}
@@ -106,10 +104,10 @@ func (h requestHandler) handleCreate(createFunc func(context.RequestContext, Pay
 // handleReadList returns a HandlerFunc which will pass the request context to the
 // provided read function and then serialize and dispatch the response. The
 // serialization mechanism used is specified by the "format" query parameter.
-func (h requestHandler) handleReadList(readFunc func(context.RequestContext, int,
+func (h requestHandler) handleReadList(readFunc func(RequestContext, int,
 	string, string) ([]Resource, string, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.NewContext(nil, r)
+		ctx := NewContext(nil, r)
 
 		resources, cursor, err := readFunc(ctx, ctx.Limit(), ctx.Cursor(), ctx.Version())
 		ctx = ctx.SetResult(resources)
@@ -124,10 +122,10 @@ func (h requestHandler) handleReadList(readFunc func(context.RequestContext, int
 // handleRead returns a HandlerFunc which will pass the resource id to the provided
 // read function and then serialize and dispatch the response. The serialization
 // mechanism used is specified by the "format" query parameter.
-func (h requestHandler) handleRead(readFunc func(context.RequestContext, string,
+func (h requestHandler) handleRead(readFunc func(RequestContext, string,
 	string) (Resource, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.NewContext(nil, r)
+		ctx := NewContext(nil, r)
 
 		resource, err := readFunc(ctx, ctx.ResourceID(), ctx.Version())
 		ctx = ctx.SetResult(resource)
@@ -142,10 +140,10 @@ func (h requestHandler) handleRead(readFunc func(context.RequestContext, string,
 // pass it to the provided update function, and then serialize and dispatch the
 // response. The serialization mechanism used is specified by the "format" query
 // parameter.
-func (h requestHandler) handleUpdate(updateFunc func(context.RequestContext,
+func (h requestHandler) handleUpdate(updateFunc func(RequestContext,
 	string, Payload, string) (Resource, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.NewContext(nil, r)
+		ctx := NewContext(nil, r)
 
 		decoder := json.NewDecoder(r.Body)
 		var data map[string]interface{}
@@ -166,10 +164,10 @@ func (h requestHandler) handleUpdate(updateFunc func(context.RequestContext,
 // handleDelete returns a HandlerFunc which will pass the resource id to the provided
 // delete function and then serialize and dispatch the response. The serialization
 // mechanism used is specified by the "format" query parameter.
-func (h requestHandler) handleDelete(deleteFunc func(context.RequestContext, string,
+func (h requestHandler) handleDelete(deleteFunc func(RequestContext, string,
 	string) (Resource, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.NewContext(nil, r)
+		ctx := NewContext(nil, r)
 
 		resource, err := deleteFunc(ctx, ctx.ResourceID(), ctx.Version())
 		ctx = ctx.SetResult(resource)
@@ -181,8 +179,8 @@ func (h requestHandler) handleDelete(deleteFunc func(context.RequestContext, str
 }
 
 // sendResponse writes a success or error response to the provided http.ResponseWriter
-// based on the contents of the context.RequestContext.
-func (h requestHandler) sendResponse(w http.ResponseWriter, ctx context.RequestContext) {
+// based on the contents of the RequestContext.
+func (h requestHandler) sendResponse(w http.ResponseWriter, ctx RequestContext) {
 	status := ctx.Status()
 	requestError := ctx.Error()
 	result := ctx.Result()

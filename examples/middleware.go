@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"go-rest/rest"
-	"go-rest/rest/context"
 )
 
 // ExampleResource represents a domain model for which we want to perform CRUD operations with.
@@ -36,7 +35,7 @@ func (e ExampleHandler) ResourceName() string {
 // GET /api/:version/example/{id}. Typically, this would make some sort of database query to
 // load the resource. If the resource doesn't exist, nil should be returned along with
 // an appropriate error.
-func (e ExampleHandler) ReadResource(ctx context.RequestContext, id string, version string) (rest.Resource, error) {
+func (e ExampleHandler) ReadResource(ctx rest.RequestContext, id string, version string) (rest.Resource, error) {
 	// Make a database call here.
 	if id == "42" {
 		return &ExampleResource{ID: 42, Foobar: "hello world"}, nil

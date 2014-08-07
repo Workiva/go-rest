@@ -9,8 +9,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-
-	"go-rest/rest/context"
 )
 
 type TestResource struct {
@@ -26,7 +24,7 @@ func (m *MockResourceHandler) ResourceName() string {
 	return args.String(0)
 }
 
-func (m *MockResourceHandler) CreateResource(r context.RequestContext, data Payload,
+func (m *MockResourceHandler) CreateResource(r RequestContext, data Payload,
 	version string) (Resource, error) {
 	args := m.Mock.Called()
 	resource := args.Get(0)
@@ -36,7 +34,7 @@ func (m *MockResourceHandler) CreateResource(r context.RequestContext, data Payl
 	return resource, args.Error(1)
 }
 
-func (m *MockResourceHandler) ReadResource(r context.RequestContext, id string,
+func (m *MockResourceHandler) ReadResource(r RequestContext, id string,
 	version string) (Resource, error) {
 	args := m.Mock.Called()
 	resource := args.Get(0)
@@ -46,7 +44,7 @@ func (m *MockResourceHandler) ReadResource(r context.RequestContext, id string,
 	return resource, args.Error(1)
 }
 
-func (m *MockResourceHandler) ReadResourceList(r context.RequestContext, limit int,
+func (m *MockResourceHandler) ReadResourceList(r RequestContext, limit int,
 	cursor string, version string) ([]Resource, string, error) {
 	args := m.Mock.Called()
 	resources := args.Get(0)
@@ -56,7 +54,7 @@ func (m *MockResourceHandler) ReadResourceList(r context.RequestContext, limit i
 	return nil, args.String(1), args.Error(2)
 }
 
-func (m *MockResourceHandler) UpdateResource(r context.RequestContext, id string, data Payload,
+func (m *MockResourceHandler) UpdateResource(r RequestContext, id string, data Payload,
 	version string) (Resource, error) {
 	args := m.Mock.Called()
 	resource := args.Get(0)
@@ -66,7 +64,7 @@ func (m *MockResourceHandler) UpdateResource(r context.RequestContext, id string
 	return resource, args.Error(1)
 }
 
-func (m *MockResourceHandler) DeleteResource(r context.RequestContext, id string,
+func (m *MockResourceHandler) DeleteResource(r RequestContext, id string,
 	version string) (Resource, error) {
 	args := m.Mock.Called()
 	resource := args.Get(0)

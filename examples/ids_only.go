@@ -4,7 +4,6 @@ import (
 	"strconv"
 
 	"go-rest/rest"
-	"go-rest/rest/context"
 )
 
 // MyResource represents a domain model for which we want to perform CRUD operations with.
@@ -30,12 +29,12 @@ func (h MyResourceHandler) ResourceName() string {
 }
 
 // ReadResourceList is the logic that corresponds to reading multiple resources, perhaps
-// with specified query parameters accessed through the context.RequestContext. This is
+// with specified query parameters accessed through the rest.RequestContext. This is
 // mapped to GET /api/:version/myresource. Typically, this would make some sort of database
 // query to fetch the resources. It returns the slice of results, a cursor (or empty) string,
 // and error (or nil). In this example, we illustrate how to use a query parameter to
 // return only the IDs of our resources.
-func (m MyResourceHandler) ReadResourceList(ctx context.RequestContext, limit int,
+func (m MyResourceHandler) ReadResourceList(ctx rest.RequestContext, limit int,
 	cursor string, version string) ([]rest.Resource, string, error) {
 	// Make a database call here.
 	resources := make([]rest.Resource, 0, limit)

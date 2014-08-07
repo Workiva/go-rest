@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"go-rest/rest"
-	"go-rest/rest/context"
 )
 
 // HelloWorldResource represents a domain model for which we want to perform CRUD operations with.
@@ -34,7 +33,7 @@ func (h HelloWorldHandler) ResourceName() string {
 // GET /api/:version/helloworld/{id}. Typically, this would make some sort of database query to
 // load the resource. If the resource doesn't exist, nil should be returned along with an
 // appropriate error.
-func (h HelloWorldHandler) ReadResource(ctx context.RequestContext, id string,
+func (h HelloWorldHandler) ReadResource(ctx rest.RequestContext, id string,
 	version string) (rest.Resource, error) {
 	// Make a database call here.
 	if id == "42" {
