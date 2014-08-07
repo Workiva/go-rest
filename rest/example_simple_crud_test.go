@@ -70,8 +70,8 @@ func (f FooHandler) ReadResourceList(ctx RequestContext, limit int,
 func (f FooHandler) UpdateResource(ctx RequestContext, id string, data Payload,
 	version string) (Resource, error) {
 	// Make a database call here.
-	updateId, _ := strconv.Atoi(id)
-	foo := &FooResource{ID: updateId, Foobar: data["foobar"].(string)}
+	updateID, _ := strconv.Atoi(id)
+	foo := &FooResource{ID: updateID, Foobar: data["foobar"].(string)}
 	return foo, nil
 }
 
@@ -81,8 +81,8 @@ func (f FooHandler) UpdateResource(ctx RequestContext, id string, data Payload,
 func (f FooHandler) DeleteResource(ctx RequestContext, id string,
 	version string) (Resource, error) {
 	// Make a database call here.
-	deleteId, _ := strconv.Atoi(id)
-	foo := &FooResource{ID: deleteId, Foobar: "Goodbye world"}
+	deleteID, _ := strconv.Atoi(id)
+	foo := &FooResource{ID: deleteID, Foobar: "Goodbye world"}
 	return foo, nil
 }
 

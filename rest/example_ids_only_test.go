@@ -20,7 +20,7 @@ type MyResourceHandler struct {
 
 // ResourceName is used to identify what resource a handler corresponds to and is used
 // in the endpoint URLs, i.e. /api/:version/myresource.
-func (h MyResourceHandler) ResourceName() string {
+func (m MyResourceHandler) ResourceName() string {
 	return "myresource"
 }
 
