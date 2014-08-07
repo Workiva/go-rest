@@ -50,7 +50,9 @@ func ExampleMiddleware(wrapped http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-// Start the REST server.
+// This example shows how to implement request middleware. ResourceHandlers provide the
+// Authenticate method which is used to authenticate requests, but middleware allows
+// you to insert additional authorization, logging, or other AOP-style operations.
 func Example_middleware() {
 	api := NewAPI()
 

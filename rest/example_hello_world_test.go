@@ -37,7 +37,8 @@ func (h HelloWorldHandler) ReadResource(ctx RequestContext, id string,
 	return nil, ResourceNotFound(fmt.Sprintf("No resource with id %s", id))
 }
 
-// Start the REST server.
+// This example shows a minimal implementation of a ResourceHandler by using the
+// BaseResourceHandler. It only implements an endpoint for fetching a resource.
 func Example_helloWorld() {
 	api := NewAPI()
 

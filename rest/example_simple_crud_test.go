@@ -100,7 +100,8 @@ func (f FooHandler) Authenticate(r http.Request) error {
 	return UnauthorizedRequest("You shall not pass")
 }
 
-// Start the REST server.
+// This example shows how to fully implement a basic ResourceHandler for performing
+// CRUD operations.
 func Example_simpleCrud() {
 	api := NewAPI()
 

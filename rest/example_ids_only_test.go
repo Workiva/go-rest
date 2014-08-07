@@ -51,7 +51,8 @@ func (m MyResourceHandler) ReadResourceList(ctx RequestContext, limit int,
 	return resources, "", nil
 }
 
-// Start the REST server.
+// This example shows how to implement a ResourceHandler which has an endpoint for
+// fetching multiple resources and, optionally, retrieving only their IDs.
 func Example_idsOnly() {
 	api := NewAPI()
 

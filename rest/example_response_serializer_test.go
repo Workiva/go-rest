@@ -35,7 +35,10 @@ func (x YAMLSerializer) SendSuccessResponse(w http.ResponseWriter, r Response, s
 	w.Write(yamlResponse)
 }
 
-// Start the REST server.
+// This example shows how to implement a custom ResponseSerializer. The format responses
+// are sent in is specified by the "format" query string parameter. By default, json is
+// the only available format, but the ResponseSerializer interface allows different
+// formats to be implemented.
 func Example_responseSerializer() {
 	api := NewAPI()
 
