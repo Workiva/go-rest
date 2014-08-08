@@ -55,6 +55,11 @@ type ResourceHandler interface {
 	// requests are authenticated. Returning an error means that the request is
 	// unauthorized and any error message will be sent back with the response.
 	Authenticate(http.Request) error
+
+	// Rules returns the resource rules to apply to incoming requests and outgoing
+	// responses. The default behavior, seen in BaseResourceHandler, is to apply no
+	// rules. Different Rules can be returned based on the version provided.
+	Rules(string) []Rule
 }
 
 // BaseResourceHandler is a base implementation of ResourceHandler with stubs for the
@@ -103,6 +108,12 @@ func (b BaseResourceHandler) Authenticate(r http.Request) error {
 	return nil
 }
 
+// Rules returns the resource rules to apply to incoming requests and outgoing
+// responses. No rules are applied by default. Implement if necessary.
+func (b BaseResourceHandler) Rules(version string) []Rule {
+	return []Rule{}
+}
+
 // requestHandler constructs http.HandlerFuncs responsible for handling HTTP requests.
 type requestHandler struct {
 	API
@@ -111,8 +122,7 @@ type requestHandler struct {
 // handleCreate returns a HandlerFunc which will deserialize the request payload, pass
 // it to the provided create function, and then serialize and dispatch the response.
 // The serialization mechanism used is specified by the "format" query parameter.
-func (h requestHandler) handleCreate(createFunc func(RequestContext, Payload,
-	string) (Resource, error)) http.HandlerFunc {
+func (h requestHandler) handleCreate(handler ResourceHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
 
@@ -122,7 +132,8 @@ func (h requestHandler) handleCreate(createFunc func(RequestContext, Payload,
 			ctx = ctx.setError(err)
 			ctx = ctx.setStatus(http.StatusInternalServerError)
 		} else {
-			resource, err := createFunc(ctx, data, ctx.Version())
+			resource, err := handler.CreateResource(ctx, data, ctx.Version())
+			resource = applyOutboundRules(resource, handler.Rules(ctx.Version()))
 			ctx = ctx.setResult(resource)
 			ctx = ctx.setStatus(http.StatusCreated)
 			if err != nil {
@@ -137,12 +148,19 @@ func (h requestHandler) handleCreate(createFunc func(RequestContext, Payload,
 // handleReadList returns a HandlerFunc which will pass the request context to the
 // provided read function and then serialize and dispatch the response. The
 // serialization mechanism used is specified by the "format" query parameter.
-func (h requestHandler) handleReadList(readFunc func(RequestContext, int,
-	string, string) ([]Resource, string, error)) http.HandlerFunc {
+func (h requestHandler) handleReadList(handler ResourceHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
+		version := ctx.Version()
 
-		resources, cursor, err := readFunc(ctx, ctx.Limit(), ctx.Cursor(), ctx.Version())
+		resources, cursor, err := handler.ReadResourceList(
+			ctx, ctx.Limit(), ctx.Cursor(), version)
+
+		// Apply rules to results.
+		for idx, resource := range resources {
+			resources[idx] = applyOutboundRules(resource, handler.Rules(version))
+		}
+
 		ctx = ctx.setResult(resources)
 		ctx = ctx.setCursor(cursor)
 		ctx = ctx.setError(err)
@@ -155,12 +173,15 @@ func (h requestHandler) handleReadList(readFunc func(RequestContext, int,
 // handleRead returns a HandlerFunc which will pass the resource id to the provided
 // read function and then serialize and dispatch the response. The serialization
 // mechanism used is specified by the "format" query parameter.
-func (h requestHandler) handleRead(readFunc func(RequestContext, string,
-	string) (Resource, error)) http.HandlerFunc {
+func (h requestHandler) handleRead(handler ResourceHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
+		version := ctx.Version()
 
-		resource, err := readFunc(ctx, ctx.ResourceID(), ctx.Version())
+		resource, err := handler.ReadResource(ctx, ctx.ResourceID(), version)
+		rules := handler.Rules(version)
+		resource = applyOutboundRules(resource, rules)
+
 		ctx = ctx.setResult(resource)
 		ctx = ctx.setError(err)
 		ctx = ctx.setStatus(http.StatusOK)
@@ -173,10 +194,10 @@ func (h requestHandler) handleRead(readFunc func(RequestContext, string,
 // pass it to the provided update function, and then serialize and dispatch the
 // response. The serialization mechanism used is specified by the "format" query
 // parameter.
-func (h requestHandler) handleUpdate(updateFunc func(RequestContext,
-	string, Payload, string) (Resource, error)) http.HandlerFunc {
+func (h requestHandler) handleUpdate(handler ResourceHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
+		version := ctx.Version()
 
 		decoder := json.NewDecoder(r.Body)
 		var data map[string]interface{}
@@ -184,7 +205,11 @@ func (h requestHandler) handleUpdate(updateFunc func(RequestContext,
 			ctx = ctx.setError(err)
 			ctx = ctx.setStatus(http.StatusInternalServerError)
 		} else {
-			resource, err := updateFunc(ctx, ctx.ResourceID(), data, ctx.Version())
+			resource, err := handler.UpdateResource(
+				ctx, ctx.ResourceID(), data, version)
+			rules := handler.Rules(version)
+			resource = applyOutboundRules(resource, rules)
+
 			ctx = ctx.setResult(resource)
 			ctx = ctx.setError(err)
 			ctx = ctx.setStatus(http.StatusOK)
@@ -197,12 +222,15 @@ func (h requestHandler) handleUpdate(updateFunc func(RequestContext,
 // handleDelete returns a HandlerFunc which will pass the resource id to the provided
 // delete function and then serialize and dispatch the response. The serialization
 // mechanism used is specified by the "format" query parameter.
-func (h requestHandler) handleDelete(deleteFunc func(RequestContext, string,
-	string) (Resource, error)) http.HandlerFunc {
+func (h requestHandler) handleDelete(handler ResourceHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
+		version := ctx.Version()
 
-		resource, err := deleteFunc(ctx, ctx.ResourceID(), ctx.Version())
+		resource, err := handler.DeleteResource(ctx, ctx.ResourceID(), version)
+		rules := handler.Rules(version)
+		resource = applyOutboundRules(resource, rules)
+
 		ctx = ctx.setResult(resource)
 		ctx = ctx.setError(err)
 		ctx = ctx.setStatus(http.StatusOK)

@@ -8,7 +8,7 @@ import (
 // response is a data structure holding the serializable response body for a request and
 // HTTP status code. It should be created using NewSuccessResponse or NewErrorResponse.
 type response struct {
-	Payload map[string]interface{}
+	Payload Payload
 	Status  int
 }
 
@@ -17,7 +17,7 @@ type response struct {
 type ResponseSerializer interface {
 
 	// Serialize marshals a response payload into a byte slice to be sent over the wire.
-	Serialize(map[string]interface{}) ([]byte, error)
+	Serialize(Payload) ([]byte, error)
 
 	// ContentType returns the MIME type of the response.
 	ContentType() string
@@ -28,8 +28,8 @@ type ResponseSerializer interface {
 type jsonSerializer struct{}
 
 // Serialize marshals a response payload into a JSON byte slice to be sent over the wire.
-func (j jsonSerializer) Serialize(r map[string]interface{}) ([]byte, error) {
-	return json.Marshal(r)
+func (j jsonSerializer) Serialize(p Payload) ([]byte, error) {
+	return json.Marshal(p)
 }
 
 // ContentType returns the JSON MIME type of the response.
@@ -40,7 +40,7 @@ func (j jsonSerializer) ContentType() string {
 // NewSuccessResponse constructs a new response struct containing the Resource and,
 // if provided, a "next" URL for retrieving the next page of results.
 func NewSuccessResponse(r Resource, status int, nextURL string) response {
-	payload := map[string]interface{}{
+	payload := Payload{
 		"success": true,
 		"result":  r,
 	}
@@ -59,7 +59,7 @@ func NewSuccessResponse(r Resource, status int, nextURL string) response {
 
 // NewErrorResponse constructs a new response struct containing the error message.
 func NewErrorResponse(err error) response {
-	payload := map[string]interface{}{
+	payload := Payload{
 		"success": false,
 		"error":   err.Error(),
 	}

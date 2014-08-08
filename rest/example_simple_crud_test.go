@@ -100,6 +100,12 @@ func (f FooHandler) Authenticate(r http.Request) error {
 	return UnauthorizedRequest("You shall not pass")
 }
 
+// Rules returns the resource rules to apply to incoming requests and outgoing
+// responses.
+func (f FooHandler) Rules(version string) []Rule {
+	return []Rule{}
+}
+
 // This example shows how to fully implement a basic ResourceHandler for performing
 // CRUD operations.
 func Example_simpleCrud() {

@@ -6,8 +6,8 @@ import "gopkg.in/yaml.v1"
 type YAMLSerializer struct{}
 
 // Serialize marshals a response payload into a byte slice to be sent over the wire.
-func (y YAMLSerializer) Serialize(r map[string]interface{}) ([]byte, error) {
-	return yaml.Marshal(r)
+func (y YAMLSerializer) Serialize(p Payload) ([]byte, error) {
+	return yaml.Marshal(p)
 }
 
 // ContentType returns the MIME type of the response.

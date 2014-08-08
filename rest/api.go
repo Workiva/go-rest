@@ -109,47 +109,28 @@ func (r muxAPI) RegisterResourceHandler(h ResourceHandler, middleware ...Request
 	middleware = append(middleware, newAuthMiddleware(h.Authenticate))
 
 	r.router.HandleFunc(
-		urlBase,
-		applyMiddleware(
-			r.handler.handleCreate(h.CreateResource),
-			middleware,
-		),
+		urlBase, applyMiddleware(r.handler.handleCreate(h), middleware),
 	).Methods("POST").Name(resource + ":create")
 	log.Printf("Registered create handler at POST %s", urlBase)
 
 	r.router.HandleFunc(
-		urlBase,
-		applyMiddleware(
-			r.handler.handleReadList(h.ReadResourceList),
-			middleware,
-		),
+		urlBase, applyMiddleware(r.handler.handleReadList(h), middleware),
 	).Methods("GET").Name(resource + ":readList")
 	log.Printf("Registered read list handler at GET %s", urlBase)
 
 	r.router.HandleFunc(
-		resourceURL,
-		applyMiddleware(
-			r.handler.handleRead(h.ReadResource),
-			middleware,
-		),
+		resourceURL, applyMiddleware(r.handler.handleRead(h), middleware),
 	).Methods("GET").Name(resource + ":read")
 	log.Printf("Registered read handler at GET %s", resourceURL)
 
 	r.router.HandleFunc(
-		resourceURL,
-		applyMiddleware(
-			r.handler.handleUpdate(h.UpdateResource),
-			middleware,
-		),
+		resourceURL, applyMiddleware(r.handler.handleUpdate(h), middleware),
 	).Methods("PUT").Name(resource + ":update")
 	log.Printf("Registered update handler at UPDATE %s", resourceURL)
 
 	r.router.HandleFunc(
 		resourceURL,
-		applyMiddleware(
-			r.handler.handleDelete(h.DeleteResource),
-			middleware,
-		),
+		applyMiddleware(r.handler.handleDelete(h), middleware),
 	).Methods("DELETE").Name(resource + ":delete")
 	log.Printf("Registered delete handler at DELETE %s", resourceURL)
 }
