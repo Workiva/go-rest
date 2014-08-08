@@ -5,14 +5,24 @@ import (
 	"reflect"
 )
 
-// Rules are used to provide fine-grained control over response output.
+// Rule provides fine-grained control over response output.
 // TODO: Currently only supporting outbound Rules. Add support for inbound ones  which
 // coerce types.
 type Rule struct {
-	Field      string
-	ValueName  string
-	InputOnly  bool
+	// Name of the resource field.
+	Field string
+
+	// Name of the input/output field. Defaults to resource field name if not specified.
+	ValueName string
+
+	// Indicates if the Rule should only be applied to requests.
+	InputOnly bool
+
+	// Indicates if the Rule should only be applied to responses.
 	OutputOnly bool
+
+	// Function which produces the field value to send.
+	Handler func(interface{}) interface{}
 }
 
 // applyOutboundRules applies Rules which are not specified as input only to the provided
@@ -58,7 +68,11 @@ func applyOutboundRules(resource Resource, rules []Rule) Resource {
 			valueName = rule.Field
 		}
 
-		payload[valueName] = field.Interface()
+		fieldValue := field.Interface()
+		if rule.Handler != nil {
+			fieldValue = rule.Handler(fieldValue)
+		}
+		payload[valueName] = fieldValue
 	}
 
 	return payload

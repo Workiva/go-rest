@@ -72,3 +72,22 @@ func TestApplyOutboundRulesDefaultName(t *testing.T) {
 		"Incorrect return value",
 	)
 }
+
+// Ensures that rules which specify a Handler function yield the correct value.
+func TestApplyOutboundRulesHandler(t *testing.T) {
+	assert := assert.New(t)
+	resource := &TestResource{Foo: "hello"}
+	rules := []Rule{
+		Rule{
+			Field:     "Foo",
+			ValueName: "foo",
+			Handler:   func(val interface{}) interface{} { return val.(string) + " world" },
+		},
+	}
+
+	assert.Equal(
+		Payload{"foo": "hello world"},
+		applyOutboundRules(resource, rules),
+		"Incorrect return value",
+	)
+}
