@@ -5,9 +5,9 @@ import (
 	"reflect"
 )
 
-// Rule provides fine-grained control over response output.
-// TODO: Currently only supporting outbound Rules. Add support for inbound ones  which
-// coerce types.
+// Rule provides schema validation for request input and fine-grained control over
+// response output.
+// TODO: Implement type coercion for input data.
 type Rule struct {
 	// Name of the resource field.
 	Field string
@@ -21,8 +21,49 @@ type Rule struct {
 	// Indicates if the Rule should only be applied to responses.
 	OutputOnly bool
 
+	// Function which produces the field value to receive.
+	InputHandler func(interface{}) interface{}
+
 	// Function which produces the field value to send.
-	Handler func(interface{}) interface{}
+	OutputHandler func(interface{}) interface{}
+}
+
+// applyInboundRules applies Rules which are not specified as output only to the provided
+// Payload. If the Payload is nil, an empty Payload will be returned. If no Rules are
+// provided, this acts as an identity function. If Rules are provided, any incoming
+// fields which are not specified will be discarded.
+func applyInboundRules(payload Payload, rules []Rule) Payload {
+	if payload == nil {
+		return Payload{}
+	}
+
+	if len(rules) == 0 {
+		return payload
+	}
+
+	newPayload := Payload{}
+
+fieldLoop:
+	for field, value := range payload {
+		for _, rule := range rules {
+			if rule.OutputOnly {
+				// Apply only inbound Rules.
+				continue
+			}
+
+			if rule.ValueName == field {
+				if rule.InputHandler != nil {
+					value = rule.InputHandler(value)
+				}
+				newPayload[field] = value
+				continue fieldLoop
+			}
+		}
+
+		log.Printf("Discarding field '%s'", field)
+	}
+
+	return newPayload
 }
 
 // applyOutboundRules applies Rules which are not specified as input only to the provided
@@ -58,7 +99,7 @@ func applyOutboundRules(resource Resource, rules []Rule) Resource {
 		field := resourceValue.FieldByName(rule.Field)
 		if !field.IsValid() {
 			// The field doesn't exist.
-			log.Printf("%s has no field %s", reflect.TypeOf(resource).Name(), rule.Field)
+			log.Printf("%s has no field '%s'", reflect.TypeOf(resource).Name(), rule.Field)
 			continue
 		}
 
@@ -69,8 +110,8 @@ func applyOutboundRules(resource Resource, rules []Rule) Resource {
 		}
 
 		fieldValue := field.Interface()
-		if rule.Handler != nil {
-			fieldValue = rule.Handler(fieldValue)
+		if rule.OutputHandler != nil {
+			fieldValue = rule.OutputHandler(fieldValue)
 		}
 		payload[valueName] = fieldValue
 	}

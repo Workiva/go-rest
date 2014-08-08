@@ -125,6 +125,7 @@ type requestHandler struct {
 func (h requestHandler) handleCreate(handler ResourceHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
+		version := ctx.Version()
 
 		decoder := json.NewDecoder(r.Body)
 		var data map[string]interface{}
@@ -132,6 +133,7 @@ func (h requestHandler) handleCreate(handler ResourceHandler) http.HandlerFunc {
 			ctx = ctx.setError(err)
 			ctx = ctx.setStatus(http.StatusInternalServerError)
 		} else {
+			data := applyInboundRules(data, handler.Rules(version))
 			resource, err := handler.CreateResource(ctx, data, ctx.Version())
 			resource = applyOutboundRules(resource, handler.Rules(ctx.Version()))
 			ctx = ctx.setResult(resource)
@@ -205,6 +207,7 @@ func (h requestHandler) handleUpdate(handler ResourceHandler) http.HandlerFunc {
 			ctx = ctx.setError(err)
 			ctx = ctx.setStatus(http.StatusInternalServerError)
 		} else {
+			data := applyInboundRules(data, handler.Rules(version))
 			resource, err := handler.UpdateResource(
 				ctx, ctx.ResourceID(), data, version)
 			rules := handler.Rules(version)
