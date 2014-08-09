@@ -10,9 +10,6 @@ import (
 // Resource represents a domain model.
 type Resource interface{}
 
-// Payload is the unmarshalled request body.
-type Payload map[string]interface{}
-
 // ResourceHandler specifies the endpoint handlers for working with a resource. This
 // consists of the business logic for performing CRUD operations.
 type ResourceHandler interface {

@@ -33,7 +33,8 @@ func (f FooHandler) CreateResource(ctx RequestContext, data Payload,
 	version string) (Resource, error) {
 	// Make a database call here.
 	id := rand.Int()
-	created := &FooResource{ID: id, Foobar: data["foobar"].(string)}
+	foobar, _ := data.GetString("foobar")
+	created := &FooResource{ID: id, Foobar: foobar}
 	return created, nil
 }
 
@@ -71,7 +72,8 @@ func (f FooHandler) UpdateResource(ctx RequestContext, id string, data Payload,
 	version string) (Resource, error) {
 	// Make a database call here.
 	updateID, _ := strconv.Atoi(id)
-	foo := &FooResource{ID: updateID, Foobar: data["foobar"].(string)}
+	foobar, _ := data.GetString("foobar")
+	foo := &FooResource{ID: updateID, Foobar: foobar}
 	return foo, nil
 }
 

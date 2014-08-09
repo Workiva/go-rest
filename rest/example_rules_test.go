@@ -1,6 +1,9 @@
 package rest
 
-import "fmt"
+import (
+	"fmt"
+	"math/rand"
+)
 
 // ResourceWithSecret represents a domain model for which we want to perform CRUD operations
 // with. Endpoints can operate on any type of entity -- primitive, struct, or composite -- so
@@ -24,6 +27,19 @@ type ResourceWithSecretHandler struct {
 // in the endpoint URLs, i.e. /api/:version/resource.
 func (r ResourceWithSecretHandler) ResourceName() string {
 	return "resource"
+}
+
+// CreateResource is the logic that corresponds to creating a new resource at
+// POST /api/:version/resource. Typically, this would insert a record into a database.
+// It returns the newly created resource or an error if the create failed. Because our Rules
+// specify types, we can access the Payload data in a type-safe way.
+func (f ResourceWithSecretHandler) CreateResource(ctx RequestContext, data Payload,
+	version string) (Resource, error) {
+	// Make a database call here.
+	id := rand.Int()
+	foobar, _ := data.GetString("foobar")
+	created := &FooResource{ID: id, Foobar: foobar}
+	return created, nil
 }
 
 // ReadResource is the logic that corresponds to reading a single resource by its ID at
