@@ -62,6 +62,9 @@ const (
 	// Map represents the map[string]interface{} data type.
 	Map
 
+	// Byte represents the byte data type.
+	Byte = Uint8
+
 	// Unspecified represents the interface{} data type.
 	Unspecified = Interface
 )
@@ -102,7 +105,8 @@ type Rule struct {
 	ValueName string
 
 	// Type to coerce field value to. If the value cannot be coerced, an error will be
-	// returned in the response.
+	// returned in the response. Defaults to Unspecified, which is the equivalent of
+	// an interface{} value.
 	Type Type
 
 	// Indicates if the Rule should only be applied to requests.
@@ -332,14 +336,14 @@ func coerceFromString(value string, coerceTo Type) (interface{}, error) {
 			return nil, err
 		}
 		return int64(val), nil
+
+	// To unsigned int.
 	case Uint:
-		val, err := strconv.ParseInt(value, 0, 0)
+		val, err := strconv.ParseUint(value, 0, 0)
 		if err != nil {
 			return nil, err
 		}
-		return int(val), nil
-
-	// To unsigned int.
+		return uint(val), nil
 	case Uint8:
 		val, err := strconv.ParseUint(value, 0, 8)
 		if err != nil {
