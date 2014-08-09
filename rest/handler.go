@@ -130,16 +130,22 @@ func (h requestHandler) handleCreate(handler ResourceHandler) http.HandlerFunc {
 		decoder := json.NewDecoder(r.Body)
 		var data map[string]interface{}
 		if err := decoder.Decode(&data); err != nil {
+			// Payload decoding failed.
 			ctx = ctx.setError(err)
 			ctx = ctx.setStatus(http.StatusInternalServerError)
 		} else {
-			data := applyInboundRules(data, handler.Rules(version))
-			resource, err := handler.CreateResource(ctx, data, ctx.Version())
-			resource = applyOutboundRules(resource, handler.Rules(ctx.Version()))
-			ctx = ctx.setResult(resource)
-			ctx = ctx.setStatus(http.StatusCreated)
+			data, err := applyInboundRules(data, handler.Rules(version))
 			if err != nil {
-				ctx = ctx.setError(err)
+				// Type coercion failed.
+				ctx = ctx.setError(UnprocessableRequest(err.Error()))
+			} else {
+				resource, err := handler.CreateResource(ctx, data, ctx.Version())
+				resource = applyOutboundRules(resource, handler.Rules(ctx.Version()))
+				ctx = ctx.setResult(resource)
+				ctx = ctx.setStatus(http.StatusCreated)
+				if err != nil {
+					ctx = ctx.setError(err)
+				}
 			}
 		}
 
@@ -204,18 +210,24 @@ func (h requestHandler) handleUpdate(handler ResourceHandler) http.HandlerFunc {
 		decoder := json.NewDecoder(r.Body)
 		var data map[string]interface{}
 		if err := decoder.Decode(&data); err != nil {
+			// Payload decoding failed.
 			ctx = ctx.setError(err)
 			ctx = ctx.setStatus(http.StatusInternalServerError)
 		} else {
-			data := applyInboundRules(data, handler.Rules(version))
-			resource, err := handler.UpdateResource(
-				ctx, ctx.ResourceID(), data, version)
-			rules := handler.Rules(version)
-			resource = applyOutboundRules(resource, rules)
+			data, err := applyInboundRules(data, handler.Rules(version))
+			if err != nil {
+				// Type coercion failed.
+				ctx = ctx.setError(UnprocessableRequest(err.Error()))
+			} else {
+				resource, err := handler.UpdateResource(
+					ctx, ctx.ResourceID(), data, version)
+				rules := handler.Rules(version)
+				resource = applyOutboundRules(resource, rules)
 
-			ctx = ctx.setResult(resource)
-			ctx = ctx.setError(err)
-			ctx = ctx.setStatus(http.StatusOK)
+				ctx = ctx.setResult(resource)
+				ctx = ctx.setError(err)
+				ctx = ctx.setStatus(http.StatusOK)
+			}
 		}
 
 		h.sendResponse(w, ctx)

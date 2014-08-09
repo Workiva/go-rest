@@ -9,7 +9,11 @@ import (
 // Ensures that an empty Payload is returned by applyInboundRules if nil is passed in.
 func TestApplyInboundRulesNilPayload(t *testing.T) {
 	assert := assert.New(t)
-	assert.Equal(Payload{}, applyInboundRules(nil, []Rule{Rule{}}), "Incorrect return value")
+
+	actual, err := applyInboundRules(nil, []Rule{Rule{}})
+
+	assert.Equal(Payload{}, actual, "Incorrect return value")
+	assert.Nil(err)
 }
 
 // Ensures that payload is returned by applyInboundRules if rules is empty.
@@ -17,7 +21,10 @@ func TestApplyInboundRulesNoRules(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{}
 
-	assert.Equal(payload, applyInboundRules(payload, []Rule{}), "Incorrect return value")
+	actual, err := applyInboundRules(payload, []Rule{})
+
+	assert.Equal(payload, actual, "Incorrect return value")
+	assert.Nil(err)
 }
 
 // Ensures that only inbound rules are applied and unspecified input fields are discarded.
@@ -31,11 +38,10 @@ func TestApplyInboundRules(t *testing.T) {
 		},
 	}
 
-	assert.Equal(
-		Payload{"foo": "bar"},
-		applyInboundRules(payload, rules),
-		"Incorrect return value",
-	)
+	actual, err := applyInboundRules(payload, rules)
+
+	assert.Equal(Payload{"foo": "bar"}, actual, "Incorrect return value")
+	assert.Nil(err)
 }
 
 // Ensures that inbound rules which specify an input handler yield the correct values.
@@ -50,11 +56,10 @@ func TestApplyInboundRulesInputHandler(t *testing.T) {
 		},
 	}
 
-	assert.Equal(
-		Payload{"foo": "bar qux"},
-		applyInboundRules(payload, rules),
-		"Incorrect return value",
-	)
+	actual, err := applyInboundRules(payload, rules)
+
+	assert.Equal(Payload{"foo": "bar qux"}, actual, "Incorrect return value")
+	assert.Nil(err)
 }
 
 // Ensures that nil is returned by applyOutboundRules if nil is passed in.
