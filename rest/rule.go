@@ -222,6 +222,8 @@ func applyOutboundRules(resource Resource, rules []Rule) Resource {
 	return payload
 }
 
+// coerceType attempts to convert the given value to the specified Type. If it cannot
+// be coerced, nil will be returned along with an error.
 func coerceType(value interface{}, coerceTo Type) (interface{}, error) {
 	if coerceTo == Interface {
 		return value, nil
@@ -247,6 +249,8 @@ func coerceType(value interface{}, coerceTo Type) (interface{}, error) {
 	}
 }
 
+// coerceFromBool attempts to convert the given bool to the specified Type. If it
+// cannot be coerced, nil will be returned along with an error.
 func coerceFromBool(value bool, coerceTo Type) (interface{}, error) {
 	if coerceTo == Bool {
 		return value, nil
@@ -261,6 +265,8 @@ func coerceFromBool(value bool, coerceTo Type) (interface{}, error) {
 	return nil, fmt.Errorf("Unable to coerce bool to %s", typeName[coerceTo])
 }
 
+// coerceFromFloat attempts to convert the given float64 to the specified Type.
+// If it cannot be coerced, nil will be returned along with an error.
 func coerceFromFloat(value float64, coerceTo Type) (interface{}, error) {
 	switch coerceTo {
 	// To int.
@@ -303,6 +309,8 @@ func coerceFromFloat(value float64, coerceTo Type) (interface{}, error) {
 	}
 }
 
+// coerceFromString attempts to convert the given string to the specified Type. If
+// it cannot be coerced, nil will be returned along with an error.
 func coerceFromString(value string, coerceTo Type) (interface{}, error) {
 	switch coerceTo {
 	// To int.
@@ -400,6 +408,9 @@ func coerceFromString(value string, coerceTo Type) (interface{}, error) {
 	}
 }
 
+// coerceFromArray attempts to convert the given array to the specified Type. Currently,
+// arrays can only be coerced to arrays (identity). If it cannot be coerced, nil will be
+// returned along with an error.
 func coerceFromArray(value []interface{}, coerceTo Type) (interface{}, error) {
 	if coerceTo == Array {
 		return value, nil
@@ -408,6 +419,9 @@ func coerceFromArray(value []interface{}, coerceTo Type) (interface{}, error) {
 	return nil, fmt.Errorf("Unable to coerce array to %s", typeName[coerceTo])
 }
 
+// coerceFromMap attempts to convert the given map to the specified Type. Currently,
+// maps can only be coerced to maps (identity). If it cannot be coerced, nil will be
+// returned along with an error.
 func coerceFromMap(value map[string]interface{}, coerceTo Type) (interface{}, error) {
 	if coerceTo == Map {
 		return value, nil
