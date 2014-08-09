@@ -9,7 +9,7 @@ import "fmt"
 // want to include in REST responses.
 type ResourceWithSecret struct {
 	ID     int    `json:"id"`
-	Foobar string `json:"foobar"`
+	Foo    string `json:"foo"`
 	Secret string
 }
 
@@ -36,7 +36,7 @@ func (r ResourceWithSecretHandler) ReadResource(ctx RequestContext, id string,
 	if id == "42" {
 		return &ResourceWithSecret{
 			ID:     42,
-			Foobar: "hello world",
+			Foo:    "hello world",
 			Secret: "keep it secret, keep it safe",
 		}, nil
 	}
@@ -47,18 +47,20 @@ func (r ResourceWithSecretHandler) ReadResource(ctx RequestContext, id string,
 // default behavior, seen in BaseResourceHandler, is to apply no rules. In this example,
 // different Rules are returned based on the version provided. Note that a Rule is not
 // specified for the "Secret" field. This means that field will not be included in the
-// response.
+// response. The "Type" field on a Rule indicates the type the incoming data should be
+// coerced to. If coercion fails, an error indicating this will be sent back in the response.
+// If no type is specified, no coercion will be performed.
 func (r ResourceWithSecretHandler) Rules(version string) []Rule {
 	rules := []Rule{}
 	if version == "1" {
 		rules = append(rules,
-			Rule{Field: "ID", ValueName: "id"},
-			Rule{Field: "Foo", ValueName: "f"},
+			Rule{Field: "ID", ValueName: "id", Type: Int},
+			Rule{Field: "Foo", ValueName: "f", Type: String},
 		)
 	} else if version == "2" {
 		rules = append(rules,
-			Rule{Field: "ID", ValueName: "id"},
-			Rule{Field: "Foo", ValueName: "foo"},
+			Rule{Field: "ID", ValueName: "id", Type: Int},
+			Rule{Field: "Foo", ValueName: "foo", Type: String},
 		)
 	}
 	return rules
