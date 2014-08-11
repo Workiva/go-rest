@@ -3,6 +3,7 @@ package rest
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -369,6 +370,24 @@ func TestApplyInboundRulesCoerceFloatToString(t *testing.T) {
 	assert.Nil(err, "Error should be nil")
 }
 
+// Ensures that inbound rules which specify time.Duration correctly coerce float64.
+func TestApplyInboundRulesCoerceFloatToDuration(t *testing.T) {
+	assert := assert.New(t)
+	payload := Payload{"foo": float64(42)}
+	rules := []Rule{
+		Rule{
+			Field:     "foo",
+			ValueName: "foo",
+			Type:      Duration,
+		},
+	}
+
+	actual, err := applyInboundRules(payload, rules)
+
+	assert.Equal(Payload{"foo": time.Duration(42)}, actual, "Incorrect return value")
+	assert.Nil(err, "Error should be nil")
+}
+
 // Ensure that if type coercion from string fails, the error is returned.
 func TestApplyInboundRulesCoerceStringError(t *testing.T) {
 	assert := assert.New(t)
@@ -713,6 +732,81 @@ func TestApplyInboundRulesCoerceStringToBool(t *testing.T) {
 	actual, err := applyInboundRules(payload, rules)
 
 	assert.Equal(Payload{"foo": true}, actual, "Incorrect return value")
+	assert.Nil(err, "Error should be nil")
+}
+
+// Ensures that inbound rules which specify time.Duration correctly coerce string.
+func TestApplyInboundRulesCoerceStringToDurationError(t *testing.T) {
+	assert := assert.New(t)
+	payload := Payload{"foo": "hello"}
+	rules := []Rule{
+		Rule{
+			Field:     "foo",
+			ValueName: "foo",
+			Type:      Duration,
+		},
+	}
+
+	actual, err := applyInboundRules(payload, rules)
+
+	assert.Nil(actual, "Return value should be nil")
+	assert.Equal("time: invalid duration hello", err.Error(), "Incorrect error")
+}
+
+// Ensures that inbound rules which specify time.Duration correctly coerce string.
+func TestApplyInboundRulesCoerceStringToDuration(t *testing.T) {
+	assert := assert.New(t)
+	payload := Payload{"foo": "100ns"}
+	rules := []Rule{
+		Rule{
+			Field:     "foo",
+			ValueName: "foo",
+			Type:      Duration,
+		},
+	}
+
+	actual, err := applyInboundRules(payload, rules)
+
+	assert.Equal(Payload{"foo": time.Duration(100)}, actual, "Incorrect return value")
+	assert.Nil(err, "Error should be nil")
+}
+
+// Ensures that inbound rules which specify time.Time correctly coerce string.
+func TestApplyInboundRulesCoerceStringToTimeError(t *testing.T) {
+	assert := assert.New(t)
+	payload := Payload{"foo": "hello"}
+	rules := []Rule{
+		Rule{
+			Field:     "foo",
+			ValueName: "foo",
+			Type:      Time,
+		},
+	}
+
+	actual, err := applyInboundRules(payload, rules)
+
+	assert.Nil(actual, "Return value should be nil")
+	assert.Equal(
+		"parsing time \"hello\" as \"2006-01-02T15:04:05Z\": "+
+			"cannot parse \"hello\" as \"2006\"", err.Error(), "Incorrect error")
+}
+
+// Ensures that inbound rules which specify time.Time correctly coerce string.
+func TestApplyInboundRulesCoerceStringToTime(t *testing.T) {
+	assert := assert.New(t)
+	payload := Payload{"foo": "2014-08-11T15:46:02Z"}
+	rules := []Rule{
+		Rule{
+			Field:     "foo",
+			ValueName: "foo",
+			Type:      Time,
+		},
+	}
+
+	actual, err := applyInboundRules(payload, rules)
+
+	assert.Equal(Payload{"foo": time.Date(2014, 8, 11, 15, 46, 2, 0, time.UTC)},
+		actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
 }
 

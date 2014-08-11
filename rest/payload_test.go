@@ -3,6 +3,7 @@ package rest
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -400,5 +401,53 @@ func TestGetMap(t *testing.T) {
 	actual, err := payload.GetMap("foo")
 
 	assert.Equal(map[string]interface{}{"a": 1}, actual, "Incorrect return value")
+	assert.Nil(err, "Error should be nil")
+}
+
+// Ensures that GetDuration returns zero value and an error if the value isn't a
+// time.Duration.
+func TestGetDurationBadValue(t *testing.T) {
+	assert := assert.New(t)
+	payload := Payload{"foo": "bar"}
+
+	actual, err := payload.GetDuration("foo")
+
+	assert.Equal(0, actual, "Incorrect return value")
+	assert.Equal(fmt.Errorf("Value with key 'foo' not a time.Duration"),
+		err, "Incorrect error value")
+}
+
+// Ensures that GetDuration returns the correct value.
+func TestGetDuration(t *testing.T) {
+	assert := assert.New(t)
+	payload := Payload{"foo": time.Duration(100)}
+
+	actual, err := payload.GetDuration("foo")
+
+	assert.Equal(time.Duration(100), actual, "Incorrect return value")
+	assert.Nil(err, "Error should be nil")
+}
+
+// Ensures that GetTime returns zero value and an error if the value isn't a time.Time.
+func TestGetTimeBadValue(t *testing.T) {
+	assert := assert.New(t)
+	payload := Payload{"foo": "bar"}
+
+	actual, err := payload.GetTime("foo")
+
+	assert.Equal(time.Time{}, actual, "Incorrect return value")
+	assert.Equal(fmt.Errorf("Value with key 'foo' not a time.Time"),
+		err, "Incorrect error value")
+}
+
+// Ensures that GetTime returns the correct value.
+func TestGetTime(t *testing.T) {
+	assert := assert.New(t)
+	now := time.Now()
+	payload := Payload{"foo": now}
+
+	actual, err := payload.GetTime("foo")
+
+	assert.Equal(now, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
 }

@@ -1,6 +1,9 @@
 package rest
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 // Payload is the unmarshalled request body.
 type Payload map[string]interface{}
@@ -234,4 +237,31 @@ func (p Payload) GetMap(key string) (map[string]interface{}, error) {
 		return value, nil
 	}
 	return nil, fmt.Errorf("Value with key '%s' not a map", key)
+}
+
+// GetDuration returns the value with the given key as a time.Duration. If the key
+// doesn't exist or is not a time.Duration, the zero value is returned with an
+// error.
+func (p Payload) GetDuration(key string) (time.Duration, error) {
+	value, err := p.Get(key)
+	if err != nil {
+		return 0, err
+	}
+	if value, ok := value.(time.Duration); ok {
+		return value, nil
+	}
+	return 0, fmt.Errorf("Value with key '%s' not a time.Duration", key)
+}
+
+// GetTime returns the value with the given key as a time.Time. If the key doesn't
+// exist or is not a time.Time, the zero value is returned with an error.
+func (p Payload) GetTime(key string) (time.Time, error) {
+	value, err := p.Get(key)
+	if err != nil {
+		return time.Time{}, err
+	}
+	if value, ok := value.(time.Time); ok {
+		return value, nil
+	}
+	return time.Time{}, fmt.Errorf("Value with key '%s' not a time.Time", key)
 }

@@ -5,6 +5,7 @@ import (
 	"log"
 	"reflect"
 	"strconv"
+	"time"
 )
 
 // TODO:
@@ -13,7 +14,9 @@ import (
 //    This would allow for semantic validation and custom validation logic.
 //    For now, we are only providing type validation.
 //
-//  - Add support for date/times.
+//  - Make type coercion pluggable.
+//
+//  - Add required option to Rule.
 
 // Type is a data type to coerce a value to specified with a Rule.
 type Type uint
@@ -70,6 +73,12 @@ const (
 	// Map represents the map[string]interface{} data type.
 	Map
 
+	// Duration represents the time.Duration data type.
+	Duration
+
+	// Time represents the time.Time data type.
+	Time
+
 	// Byte represents the byte data type.
 	Byte = Uint8
 
@@ -96,7 +105,12 @@ var typeName = map[Type]string{
 	Bool:      "bool",
 	Array:     "[]interface{}",
 	Map:       "map[string]interface{}",
+	Duration:  "time.Duration",
+	Time:      "time.Time",
 }
+
+// timeLayout is the format in which strings are parsed as time.Time (ISO 8601).
+const timeLayout = "2006-01-02T15:04:05Z"
 
 // Rule provides schema validation and type coercion for request input and fine-grained
 // control over response output. If a ResourceHandler provides input Rules which specify
@@ -327,7 +341,11 @@ func coerceFromFloat(value float64, coerceTo Type) (interface{}, error) {
 	case String:
 		return strconv.FormatFloat(value, 'f', -1, 64), nil
 
-	// Bool case left off intentionally.
+	// To Duration.
+	case Duration:
+		return time.Duration(int64(value)), nil
+
+	// Bool and Time cases left off intentionally.
 	default:
 		return nil, fmt.Errorf("Unable to coerce float to %s", typeName[coerceTo])
 	}
@@ -422,6 +440,22 @@ func coerceFromString(value string, coerceTo Type) (interface{}, error) {
 	// To bool.
 	case Bool:
 		val, err := strconv.ParseBool(value)
+		if err != nil {
+			return nil, err
+		}
+		return val, nil
+
+	// To Duration.
+	case Duration:
+		val, err := time.ParseDuration(value)
+		if err != nil {
+			return nil, err
+		}
+		return val, nil
+
+	// To Time.
+	case Time:
+		val, err := time.Parse(timeLayout, value)
 		if err != nil {
 			return nil, err
 		}
