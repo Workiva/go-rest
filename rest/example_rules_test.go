@@ -33,7 +33,7 @@ func (r ResourceWithSecretHandler) ResourceName() string {
 // POST /api/:version/resource. Typically, this would insert a record into a database.
 // It returns the newly created resource or an error if the create failed. Because our Rules
 // specify types, we can access the Payload data in a type-safe way.
-func (f ResourceWithSecretHandler) CreateResource(ctx RequestContext, data Payload,
+func (r ResourceWithSecretHandler) CreateResource(ctx RequestContext, data Payload,
 	version string) (Resource, error) {
 	// Make a database call here.
 	id := rand.Int()
