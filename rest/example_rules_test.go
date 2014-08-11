@@ -70,13 +70,13 @@ func (r ResourceWithSecretHandler) Rules(version string) []Rule {
 	rules := []Rule{}
 	if version == "1" {
 		rules = append(rules,
-			Rule{Field: "ID", ValueName: "id", Type: Int},
-			Rule{Field: "Foo", ValueName: "f", Type: String},
+			Rule{Field: "ID", FieldAlias: "id", Type: Int, OutputOnly: true},
+			Rule{Field: "Foo", FieldAlias: "f", Type: String, Required: true},
 		)
 	} else if version == "2" {
 		rules = append(rules,
-			Rule{Field: "ID", ValueName: "id", Type: Int},
-			Rule{Field: "Foo", ValueName: "foo", Type: String},
+			Rule{Field: "ID", FieldAlias: "id", Type: Int, OutputOnly: true},
+			Rule{Field: "Foo", FieldAlias: "foo", Type: String, Required: true},
 		)
 	}
 	return rules

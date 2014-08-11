@@ -14,9 +14,7 @@ import (
 //    This would allow for semantic validation and custom validation logic.
 //    For now, we are only providing type validation.
 //
-//  - Make type coercion pluggable.
-//
-//  - Add required option to Rule.
+//  - Make type coercion pluggable (i.e. conversion/validation of custom types).
 
 // Type is a data type to coerce a value to specified with a Rule.
 type Type uint
@@ -113,23 +111,27 @@ var typeName = map[Type]string{
 const timeLayout = "2006-01-02T15:04:05Z"
 
 // Rule provides schema validation and type coercion for request input and fine-grained
-// control over response output. If a ResourceHandler provides input Rules which specify
-// types, input fields will attempt to be coerced to those types. If coercion fails, an
-// error will be returned in the response. If a ResourceHandler provides output Rules,
-// only the fields corresponding to those Rules will be sent back. This prevents new
-// fields from leaking into old API versions.
+// control over response output. If a ResourceHandler provides input Rules which
+// specify types, input fields will attempt to be coerced to those types. If coercion
+// fails, an error will be returned in the response. If a ResourceHandler provides
+// output Rules, only the fields corresponding to those Rules will be sent back. This
+// prevents new fields from leaking into old API versions.
 type Rule struct {
 	// Name of the resource field. This is the name as it appears in the struct
 	// definition.
 	Field string
 
-	// Name of the input/output field. Defaults to resource field name if not specified.
-	ValueName string
+	// Name of the input/output field. Use Name() to retrieve the field alias while
+	// falling back to the field name if it's not specified.
+	FieldAlias string
 
 	// Type to coerce field value to. If the value cannot be coerced, an error will be
 	// returned in the response. Defaults to Unspecified, which is the equivalent of
 	// an interface{} value.
 	Type Type
+
+	// Indicates if the field must have a value. Defaults to false.
+	Required bool
 
 	// Indicates if the Rule should only be applied to requests.
 	InputOnly bool
@@ -144,11 +146,22 @@ type Rule struct {
 	OutputHandler func(interface{}) interface{}
 }
 
-// applyInboundRules applies Rules which are not specified as output only to the provided
-// Payload. If the Payload is nil, an empty Payload will be returned. If no Rules are
-// provided, this acts as an identity function. If Rules are provided, any incoming
-// fields which are not specified will be discarded. If Rules specify types, incoming
-// values will attempted to be coerced. If coercion fails, an error will be returned.
+// Name returns the name of the input/output field alias. It defaults to the field
+// name if the alias was not specified.
+func (r Rule) Name() string {
+	alias := r.FieldAlias
+	if alias == "" {
+		alias = r.Field
+	}
+	return alias
+}
+
+// applyInboundRules applies Rules which are not specified as output only to the
+// provided Payload. If the Payload is nil, an empty Payload will be returned. If no
+// Rules are provided, this acts as an identity function. If Rules are provided, any
+// incoming fields which are not specified will be discarded. If Rules specify types,
+// incoming values will attempted to be coerced. If coercion fails, an error will be
+// returned.
 func applyInboundRules(payload Payload, rules []Rule) (Payload, error) {
 	if payload == nil {
 		return Payload{}, nil
@@ -166,7 +179,7 @@ func applyInboundRules(payload Payload, rules []Rule) (Payload, error) {
 fieldLoop:
 	for field, value := range payload {
 		for _, rule := range rules {
-			if rule.ValueName == field {
+			if rule.FieldAlias == field {
 				if rule.Type != Unspecified {
 					// Coerce to specified type.
 					coerced, err := coerceType(value, rule.Type)
@@ -186,14 +199,20 @@ fieldLoop:
 		log.Printf("Discarding field '%s'", field)
 	}
 
+	// Ensure no required fields are missing.
+	if err := enforceRequiredFields(rules, newPayload); err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
 	return newPayload, nil
 }
 
-// applyOutboundRules applies Rules which are not specified as input only to the provided
-// Resource. If the Resource is nil, not a struct, or no Rules are provided, this acts as
-// an identity function. If Rules are provided, only the fields specified by them will be
-// included in the returned Resource. This is to prevent new fields from leaking into old
-// API versions.
+// applyOutboundRules applies Rules which are not specified as input only to the
+// provided Resource. If the Resource is nil, not a struct, or no Rules are provided,
+// this acts as an identity function. If Rules are provided, only the fields specified
+// by them will be included in the returned Resource. This is to prevent new fields
+// from leaking into old API versions.
 func applyOutboundRules(resource Resource, rules []Rule) Resource {
 	// Apply only outbound Rules.
 	rules = filterRules(rules, false)
@@ -220,21 +239,16 @@ func applyOutboundRules(resource Resource, rules []Rule) Resource {
 		field := resourceValue.FieldByName(rule.Field)
 		if !field.IsValid() {
 			// The field doesn't exist.
-			log.Printf("%s has no field '%s'", reflect.TypeOf(resource).Name(), rule.Field)
+			log.Printf("%s has no field '%s'", reflect.TypeOf(resource).Name(),
+				rule.Field)
 			continue
-		}
-
-		valueName := rule.ValueName
-		if valueName == "" {
-			// Use field name if value name isn't specified.
-			valueName = rule.Field
 		}
 
 		fieldValue := field.Interface()
 		if rule.OutputHandler != nil {
 			fieldValue = rule.OutputHandler(fieldValue)
 		}
-		payload[valueName] = fieldValue
+		payload[rule.Name()] = fieldValue
 	}
 
 	return payload
@@ -258,6 +272,28 @@ func filterRules(rules []Rule, inbound bool) []Rule {
 	}
 
 	return filtered
+}
+
+// enforceRequiredFields verifies that the provided Payload has values for any Rules
+// with the Required flag set to true. If any required fields are missing, an error
+// will be returned. Otherwise nil is returned.
+func enforceRequiredFields(rules []Rule, payload Payload) error {
+ruleLoop:
+	for _, rule := range rules {
+		if !rule.Required {
+			continue
+		}
+
+		for field, _ := range payload {
+			if rule.Name() == field {
+				continue ruleLoop
+			}
+		}
+
+		return fmt.Errorf("Missing required field '%s'", rule.Name())
+	}
+
+	return nil
 }
 
 // coerceType attempts to convert the given value to the specified Type. If it cannot

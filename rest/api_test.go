@@ -592,7 +592,7 @@ func TestOutboundRules(t *testing.T) {
 	api := NewAPI()
 	rule := Rule{
 		Field:      "Foo",
-		ValueName:  "f",
+		FieldAlias: "f",
 		OutputOnly: true,
 	}
 

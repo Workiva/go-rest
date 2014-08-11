@@ -29,14 +29,35 @@ func TestApplyInboundRulesNoRules(t *testing.T) {
 	assert.Nil(err, "Error should be nil")
 }
 
+// Ensures that an error is returned by applyInboundRules if a required field is
+// missing.
+func TestApplyInboundRulesMissingRequiredField(t *testing.T) {
+	assert := assert.New(t)
+	payload := Payload{"foo": "bar"}
+
+	actual, err := applyInboundRules(payload, []Rule{
+		Rule{
+			Field:    "baz",
+			Required: true,
+		},
+		Rule{
+			Field:    "foo",
+			Required: true,
+		},
+	})
+
+	assert.Nil(actual, "Return value should be nil")
+	assert.Equal(fmt.Errorf("Missing required field 'baz'"), err, "Incorrect error")
+}
+
 // Ensures that only inbound rules are applied and unspecified input fields are discarded.
 func TestApplyInboundRules(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "bar", "baz": 1}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
+			Field:      "foo",
+			FieldAlias: "foo",
 		},
 	}
 
@@ -53,7 +74,7 @@ func TestApplyInboundRulesInputHandler(t *testing.T) {
 	rules := []Rule{
 		Rule{
 			Field:        "foo",
-			ValueName:    "foo",
+			FieldAlias:   "foo",
 			InputHandler: func(val interface{}) interface{} { return val.(string) + " qux" },
 		},
 	}
@@ -70,9 +91,9 @@ func TestApplyInboundRulesCoerceBoolError(t *testing.T) {
 	payload := Payload{"foo": true}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Float32,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Float32,
 		},
 	}
 
@@ -88,9 +109,9 @@ func TestApplyInboundRulesCoerceBoolToBool(t *testing.T) {
 	payload := Payload{"foo": true}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Bool,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Bool,
 		},
 	}
 
@@ -106,9 +127,9 @@ func TestApplyInboundRulesCoerceBoolToString(t *testing.T) {
 	payload := Payload{"foo": true}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      String,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       String,
 		},
 	}
 
@@ -124,9 +145,9 @@ func TestApplyInboundRulesCoerceFloatError(t *testing.T) {
 	payload := Payload{"foo": float64(42)}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Bool,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Bool,
 		},
 	}
 
@@ -142,9 +163,9 @@ func TestApplyInboundRulesCoerceFloatToInt(t *testing.T) {
 	payload := Payload{"foo": float64(42)}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Int,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Int,
 		},
 	}
 
@@ -160,9 +181,9 @@ func TestApplyInboundRulesCoerceFloatToInt8(t *testing.T) {
 	payload := Payload{"foo": float64(42)}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Int8,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Int8,
 		},
 	}
 
@@ -178,9 +199,9 @@ func TestApplyInboundRulesCoerceFloatToInt16(t *testing.T) {
 	payload := Payload{"foo": float64(42)}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Int16,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Int16,
 		},
 	}
 
@@ -196,9 +217,9 @@ func TestApplyInboundRulesCoerceFloatToInt32(t *testing.T) {
 	payload := Payload{"foo": float64(42)}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Int32,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Int32,
 		},
 	}
 
@@ -214,9 +235,9 @@ func TestApplyInboundRulesCoerceFloatToInt64(t *testing.T) {
 	payload := Payload{"foo": float64(42)}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Int64,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Int64,
 		},
 	}
 
@@ -232,9 +253,9 @@ func TestApplyInboundRulesCoerceFloatToUint(t *testing.T) {
 	payload := Payload{"foo": float64(42)}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Uint,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Uint,
 		},
 	}
 
@@ -250,9 +271,9 @@ func TestApplyInboundRulesCoerceFloatToUint8(t *testing.T) {
 	payload := Payload{"foo": float64(42)}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Uint8,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Uint8,
 		},
 	}
 
@@ -268,9 +289,9 @@ func TestApplyInboundRulesCoerceFloatToUint16(t *testing.T) {
 	payload := Payload{"foo": float64(42)}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Uint16,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Uint16,
 		},
 	}
 
@@ -286,9 +307,9 @@ func TestApplyInboundRulesCoerceFloatToUint32(t *testing.T) {
 	payload := Payload{"foo": float64(42)}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Uint32,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Uint32,
 		},
 	}
 
@@ -304,9 +325,9 @@ func TestApplyInboundRulesCoerceFloatToUint64(t *testing.T) {
 	payload := Payload{"foo": float64(42)}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Uint64,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Uint64,
 		},
 	}
 
@@ -322,9 +343,9 @@ func TestApplyInboundRulesCoerceFloatToFloat32(t *testing.T) {
 	payload := Payload{"foo": float64(42)}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Float32,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Float32,
 		},
 	}
 
@@ -340,9 +361,9 @@ func TestApplyInboundRulesCoerceFloatToFloat64(t *testing.T) {
 	payload := Payload{"foo": float64(42)}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Float64,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Float64,
 		},
 	}
 
@@ -358,9 +379,9 @@ func TestApplyInboundRulesCoerceFloatToString(t *testing.T) {
 	payload := Payload{"foo": float64(42)}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      String,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       String,
 		},
 	}
 
@@ -376,9 +397,9 @@ func TestApplyInboundRulesCoerceFloatToDuration(t *testing.T) {
 	payload := Payload{"foo": float64(42)}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Duration,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Duration,
 		},
 	}
 
@@ -394,9 +415,9 @@ func TestApplyInboundRulesCoerceStringError(t *testing.T) {
 	payload := Payload{"foo": "hello"}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Map,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Map,
 		},
 	}
 
@@ -413,9 +434,9 @@ func TestApplyInboundRulesCoerceStringIntError(t *testing.T) {
 	payload := Payload{"foo": "hello"}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Int,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Int,
 		},
 	}
 
@@ -432,9 +453,9 @@ func TestApplyInboundRulesCoerceStringToInt(t *testing.T) {
 	payload := Payload{"foo": "42"}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Int,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Int,
 		},
 	}
 
@@ -450,9 +471,9 @@ func TestApplyInboundRulesCoerceStringToInt8(t *testing.T) {
 	payload := Payload{"foo": "42"}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Int8,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Int8,
 		},
 	}
 
@@ -468,9 +489,9 @@ func TestApplyInboundRulesCoerceStringToInt16(t *testing.T) {
 	payload := Payload{"foo": "42"}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Int16,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Int16,
 		},
 	}
 
@@ -486,9 +507,9 @@ func TestApplyInboundRulesCoerceStringToInt32(t *testing.T) {
 	payload := Payload{"foo": "42"}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Int32,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Int32,
 		},
 	}
 
@@ -504,9 +525,9 @@ func TestApplyInboundRulesCoerceStringToInt64(t *testing.T) {
 	payload := Payload{"foo": "42"}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Int64,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Int64,
 		},
 	}
 
@@ -522,9 +543,9 @@ func TestApplyInboundRulesCoerceStringUintError(t *testing.T) {
 	payload := Payload{"foo": "hello"}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Uint,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Uint,
 		},
 	}
 
@@ -541,9 +562,9 @@ func TestApplyInboundRulesCoerceStringToUint(t *testing.T) {
 	payload := Payload{"foo": "42"}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Uint,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Uint,
 		},
 	}
 
@@ -559,9 +580,9 @@ func TestApplyInboundRulesCoerceStringToUint8(t *testing.T) {
 	payload := Payload{"foo": "42"}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Uint8,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Uint8,
 		},
 	}
 
@@ -577,9 +598,9 @@ func TestApplyInboundRulesCoerceStringToUint16(t *testing.T) {
 	payload := Payload{"foo": "42"}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Uint16,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Uint16,
 		},
 	}
 
@@ -595,9 +616,9 @@ func TestApplyInboundRulesCoerceStringToUint32(t *testing.T) {
 	payload := Payload{"foo": "42"}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Uint32,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Uint32,
 		},
 	}
 
@@ -613,9 +634,9 @@ func TestApplyInboundRulesCoerceStringToUint64(t *testing.T) {
 	payload := Payload{"foo": "42"}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Uint64,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Uint64,
 		},
 	}
 
@@ -631,9 +652,9 @@ func TestApplyInboundRulesCoerceStringFloatError(t *testing.T) {
 	payload := Payload{"foo": "hello"}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Float32,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Float32,
 		},
 	}
 
@@ -650,9 +671,9 @@ func TestApplyInboundRulesCoerceStringToFloat32(t *testing.T) {
 	payload := Payload{"foo": "42"}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Float32,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Float32,
 		},
 	}
 
@@ -668,9 +689,9 @@ func TestApplyInboundRulesCoerceStringToFloat64(t *testing.T) {
 	payload := Payload{"foo": "42"}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Float64,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Float64,
 		},
 	}
 
@@ -686,9 +707,9 @@ func TestApplyInboundRulesCoerceStringToString(t *testing.T) {
 	payload := Payload{"foo": "42"}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      String,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       String,
 		},
 	}
 
@@ -704,9 +725,9 @@ func TestApplyInboundRulesCoerceStringBoolError(t *testing.T) {
 	payload := Payload{"foo": "hello"}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Bool,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Bool,
 		},
 	}
 
@@ -723,9 +744,9 @@ func TestApplyInboundRulesCoerceStringToBool(t *testing.T) {
 	payload := Payload{"foo": "true"}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Bool,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Bool,
 		},
 	}
 
@@ -741,9 +762,9 @@ func TestApplyInboundRulesCoerceStringToDurationError(t *testing.T) {
 	payload := Payload{"foo": "hello"}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Duration,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Duration,
 		},
 	}
 
@@ -759,9 +780,9 @@ func TestApplyInboundRulesCoerceStringToDuration(t *testing.T) {
 	payload := Payload{"foo": "100ns"}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Duration,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Duration,
 		},
 	}
 
@@ -777,9 +798,9 @@ func TestApplyInboundRulesCoerceStringToTimeError(t *testing.T) {
 	payload := Payload{"foo": "hello"}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Time,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Time,
 		},
 	}
 
@@ -797,9 +818,9 @@ func TestApplyInboundRulesCoerceStringToTime(t *testing.T) {
 	payload := Payload{"foo": "2014-08-11T15:46:02Z"}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Time,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Time,
 		},
 	}
 
@@ -816,9 +837,9 @@ func TestApplyInboundRulesCoerceArrayError(t *testing.T) {
 	payload := Payload{"foo": []interface{}{1, 2, 3}}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Bool,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Bool,
 		},
 	}
 
@@ -834,9 +855,9 @@ func TestApplyInboundRulesCoerceArrayToArray(t *testing.T) {
 	payload := Payload{"foo": []interface{}{1, 2, 3}}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Array,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Array,
 		},
 	}
 
@@ -852,9 +873,9 @@ func TestApplyInboundRulesCoerceMapError(t *testing.T) {
 	payload := Payload{"foo": map[string]interface{}{"a": 1}}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Bool,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Bool,
 		},
 	}
 
@@ -870,9 +891,9 @@ func TestApplyInboundRulesCoerceMapToMap(t *testing.T) {
 	payload := Payload{"foo": map[string]interface{}{"a": 1}}
 	rules := []Rule{
 		Rule{
-			Field:     "foo",
-			ValueName: "foo",
-			Type:      Map,
+			Field:      "foo",
+			FieldAlias: "foo",
+			Type:       Map,
 		},
 	}
 
@@ -913,17 +934,17 @@ func TestApplyOutboundRulesIgnoreBadRules(t *testing.T) {
 	resource := &TestResource{Foo: "hello"}
 	rules := []Rule{
 		Rule{
-			Field:     "Foo",
-			ValueName: "f",
+			Field:      "Foo",
+			FieldAlias: "f",
 		},
 		Rule{
-			Field:     "Foo",
-			ValueName: "FOO",
-			InputOnly: true,
+			Field:      "Foo",
+			FieldAlias: "FOO",
+			InputOnly:  true,
 		},
 		Rule{
-			Field:     "bar",
-			ValueName: "b",
+			Field:      "bar",
+			FieldAlias: "b",
 		},
 	}
 
@@ -957,8 +978,8 @@ func TestApplyOutboundRulesOutputHandler(t *testing.T) {
 	resource := &TestResource{Foo: "hello"}
 	rules := []Rule{
 		Rule{
-			Field:     "Foo",
-			ValueName: "foo",
+			Field:      "Foo",
+			FieldAlias: "foo",
 			OutputHandler: func(val interface{}) interface{} {
 				return val.(string) + " world"
 			},
