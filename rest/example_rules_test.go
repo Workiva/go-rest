@@ -37,8 +37,8 @@ func (r ResourceWithSecretHandler) CreateResource(ctx RequestContext, data Paylo
 	version string) (Resource, error) {
 	// Make a database call here.
 	id := rand.Int()
-	foobar, _ := data.GetString("foobar")
-	created := &FooResource{ID: id, Foobar: foobar}
+	foo, _ := data.GetString("foo")
+	created := &ResourceWithSecret{ID: id, Foo: foo, Secret: "secret"}
 	return created, nil
 }
 
