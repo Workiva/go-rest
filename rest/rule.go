@@ -132,6 +132,9 @@ func applyInboundRules(payload Payload, rules []Rule) (Payload, error) {
 		return Payload{}, nil
 	}
 
+	// Apply only inbound Rules.
+	rules = filterRules(rules, true)
+
 	if len(rules) == 0 {
 		return payload, nil
 	}
@@ -141,11 +144,6 @@ func applyInboundRules(payload Payload, rules []Rule) (Payload, error) {
 fieldLoop:
 	for field, value := range payload {
 		for _, rule := range rules {
-			if rule.OutputOnly {
-				// Apply only inbound Rules.
-				continue
-			}
-
 			if rule.ValueName == field {
 				if rule.Type != Unspecified {
 					// Coerce to specified type.
@@ -175,6 +173,9 @@ fieldLoop:
 // included in the returned Resource. This is to prevent new fields from leaking into old
 // API versions.
 func applyOutboundRules(resource Resource, rules []Rule) Resource {
+	// Apply only outbound Rules.
+	rules = filterRules(rules, false)
+
 	if resource == nil || len(rules) == 0 {
 		// Return resource as-is if no Rules are provided.
 		return resource
@@ -194,11 +195,6 @@ func applyOutboundRules(resource Resource, rules []Rule) Resource {
 	payload := Payload{}
 
 	for _, rule := range rules {
-		if rule.InputOnly {
-			// Apply only outbound Rules.
-			continue
-		}
-
 		field := resourceValue.FieldByName(rule.Field)
 		if !field.IsValid() {
 			// The field doesn't exist.
@@ -220,6 +216,26 @@ func applyOutboundRules(resource Resource, rules []Rule) Resource {
 	}
 
 	return payload
+}
+
+// filterRules filters the array of Rules based on the specified bool. True means to
+// filter out outbound Rules such that the returned array contains only inbound Rules.
+// False means to filter out inbound Rules such that the returned array contains only
+// outbound Rules.
+func filterRules(rules []Rule, inbound bool) []Rule {
+	filtered := make([]Rule, 0, len(rules))
+	for _, rule := range rules {
+		if inbound && rule.OutputOnly {
+			// Filter out outbound Rules.
+			continue
+		} else if !inbound && rule.InputOnly {
+			// Filter out inbound Rules.
+			continue
+		}
+		filtered = append(filtered, rule)
+	}
+
+	return filtered
 }
 
 // coerceType attempts to convert the given value to the specified Type. If it cannot
