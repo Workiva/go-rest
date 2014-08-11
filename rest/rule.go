@@ -141,6 +141,11 @@ func applyInboundRules(payload Payload, rules []Rule) (Payload, error) {
 
 	newPayload := Payload{}
 
+	// TODO: Consider using/writing a more robust data validation library.
+	// E.g. https://github.com/Assembli/beautiful-validity
+	// This would allow for semantic validation and custom validation logic.
+	// For now, we are only providing type validation.
+
 fieldLoop:
 	for field, value := range payload {
 		for _, rule := range rules {
