@@ -831,8 +831,8 @@ func TestApplyInboundRulesCoerceStringToTime(t *testing.T) {
 	assert.Nil(err, "Error should be nil")
 }
 
-// Ensure that if type coercion from array fails, the error is returned.
-func TestApplyInboundRulesCoerceArrayError(t *testing.T) {
+// Ensure that if type coercion from slice fails, the error is returned.
+func TestApplyInboundRulesCoerceSliceError(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": []interface{}{1, 2, 3}}
 	rules := []Rule{
@@ -846,18 +846,18 @@ func TestApplyInboundRulesCoerceArrayError(t *testing.T) {
 	actual, err := applyInboundRules(payload, rules)
 
 	assert.Nil(actual, "Return value should be nil")
-	assert.Equal(fmt.Errorf("Unable to coerce array to bool"), err, "Incorrect error")
+	assert.Equal(fmt.Errorf("Unable to coerce slice to bool"), err, "Incorrect error")
 }
 
-// Ensures that inbound rules which specify array correctly coerce array.
-func TestApplyInboundRulesCoerceArrayToArray(t *testing.T) {
+// Ensures that inbound rules which specify slice correctly coerce slice.
+func TestApplyInboundRulesCoerceSliceToSlice(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": []interface{}{1, 2, 3}}
 	rules := []Rule{
 		Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
-			Type:       Array,
+			Type:       Slice,
 		},
 	}
 

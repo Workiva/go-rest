@@ -36,7 +36,7 @@ const (
 	Float64
 	String
 	Bool
-	Array
+	Slice
 	Map
 	Duration
 	Time
@@ -61,7 +61,7 @@ var typeName = map[Type]string{
 	Float64:   "float64",
 	String:    "string",
 	Bool:      "bool",
-	Array:     "[]interface{}",
+	Slice:     "[]interface{}",
 	Map:       "map[string]interface{}",
 	Duration:  "time.Duration",
 	Time:      "time.Time",
@@ -214,9 +214,9 @@ func applyOutboundRules(resource Resource, rules []Rule) Resource {
 	return payload
 }
 
-// filterRules filters the array of Rules based on the specified bool. True means to
-// filter out outbound Rules such that the returned array contains only inbound Rules.
-// False means to filter out inbound Rules such that the returned array contains only
+// filterRules filters the slice of Rules based on the specified bool. True means to
+// filter out outbound Rules such that the returned slice contains only inbound Rules.
+// False means to filter out inbound Rules such that the returned slice contains only
 // outbound Rules.
 func filterRules(rules []Rule, inbound bool) []Rule {
 	filtered := make([]Rule, 0, len(rules))
@@ -263,7 +263,7 @@ func coerceType(value interface{}, coerceTo Type) (interface{}, error) {
 		return value, nil
 	}
 
-	// json.Unmarshal converts values to bool, float64, string, nil, array, and map.
+	// json.Unmarshal converts values to bool, float64, string, nil, slice, and map.
 	switch value.(type) {
 	case bool:
 		return coerceFromBool(value.(bool), coerceTo)
@@ -274,7 +274,7 @@ func coerceType(value interface{}, coerceTo Type) (interface{}, error) {
 	case nil:
 		return value, nil
 	case []interface{}:
-		return coerceFromArray(value.([]interface{}), coerceTo)
+		return coerceFromSlice(value.([]interface{}), coerceTo)
 	case map[string]interface{}:
 		return coerceFromMap(value.(map[string]interface{}), coerceTo)
 	default:
@@ -462,15 +462,15 @@ func coerceFromString(value string, coerceTo Type) (interface{}, error) {
 	}
 }
 
-// coerceFromArray attempts to convert the given array to the specified Type. Currently,
-// arrays can only be coerced to arrays (identity). If it cannot be coerced, nil will be
+// coerceFromSlice attempts to convert the given slice to the specified Type. Currently,
+// slices can only be coerced to slices (identity). If it cannot be coerced, nil will be
 // returned along with an error.
-func coerceFromArray(value []interface{}, coerceTo Type) (interface{}, error) {
-	if coerceTo == Array {
+func coerceFromSlice(value []interface{}, coerceTo Type) (interface{}, error) {
+	if coerceTo == Slice {
 		return value, nil
 	}
 
-	return nil, fmt.Errorf("Unable to coerce array to %s", typeName[coerceTo])
+	return nil, fmt.Errorf("Unable to coerce slice to %s", typeName[coerceTo])
 }
 
 // coerceFromMap attempts to convert the given map to the specified Type. Currently,
