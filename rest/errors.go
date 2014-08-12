@@ -15,73 +15,41 @@ func (r Error) Error() string { return r.reason }
 func (r Error) Status() int { return r.status }
 
 // ResourceNotFound returns a Error for a 404 Not Found error.
-func ResourceNotFound(message ...string) Error {
-	reason := "Resource not found"
-	if len(message) > 0 {
-		reason = message[0]
-	}
+func ResourceNotFound(reason string) Error {
 	return Error{reason, http.StatusNotFound}
 }
 
 // ResourceNotPermitted returns a Error for a 403 Forbidden error.
-func ResourceNotPermitted(message ...string) Error {
-	reason := "Resource forbidden"
-	if len(message) > 0 {
-		reason = message[0]
-	}
+func ResourceNotPermitted(reason string) Error {
 	return Error{reason, http.StatusForbidden}
 }
 
 // ResourceConflict returns a Error for a 409 Conflict error.
-func ResourceConflict(message ...string) Error {
-	reason := "Resource conflict"
-	if len(message) > 0 {
-		reason = message[0]
-	}
+func ResourceConflict(reason string) Error {
 	return Error{reason, http.StatusConflict}
 }
 
 // BadRequest returns a Error for a 400 Bad Request error.
-func BadRequest(message ...string) Error {
-	reason := "Bad request"
-	if len(message) > 0 {
-		reason = message[0]
-	}
+func BadRequest(reason string) Error {
 	return Error{reason, http.StatusBadRequest}
 }
 
 // UnprocessableRequest returns a Error for a 422 Unprocessable Entity error.
-func UnprocessableRequest(message ...string) Error {
-	reason := "Unprocessable request"
-	if len(message) > 0 {
-		reason = message[0]
-	}
+func UnprocessableRequest(reason string) Error {
 	return Error{reason, 422}
 }
 
 // UnauthorizedRequest returns a Error for a 401 Unauthorized error.
-func UnauthorizedRequest(message ...string) Error {
-	reason := "Unauthorized request"
-	if len(message) > 0 {
-		reason = message[0]
-	}
+func UnauthorizedRequest(reason string) Error {
 	return Error{reason, http.StatusUnauthorized}
 }
 
 // NotImplemented returns a Error for a 501 Not Implemented error.
-func NotImplemented(message ...string) Error {
-	reason := "Not implemented"
-	if len(message) > 0 {
-		reason = message[0]
-	}
+func NotImplemented(reason string) Error {
 	return Error{reason, http.StatusNotImplemented}
 }
 
 // InternalServerError returns a Error for a 500 Internal Server error.
-func InternalServerError(message ...string) Error {
-	reason := "Internal server error"
-	if len(message) > 0 {
-		reason = message[0]
-	}
+func InternalServerError(reason string) Error {
 	return Error{reason, http.StatusInternalServerError}
 }
