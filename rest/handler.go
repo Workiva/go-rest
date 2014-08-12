@@ -66,37 +66,37 @@ type BaseResourceHandler struct{}
 
 // ResourceName is a stub. It must be implemented.
 func (b BaseResourceHandler) ResourceName() string {
-	panic("ResourceName not implemented")
+	return ""
 }
 
 // CreateResource is a stub. Implement if necessary.
 func (b BaseResourceHandler) CreateResource(ctx RequestContext, data Payload,
 	version string) (Resource, error) {
-	panic("CreateResource not implemented")
+	return nil, NotImplemented("CreateResource is not implemented")
 }
 
 // ReadResourceList is a stub. Implement if necessary.
 func (b BaseResourceHandler) ReadResourceList(ctx RequestContext, limit int,
 	cursor string, version string) ([]Resource, string, error) {
-	panic("ReadResourceList not implemented")
+	return nil, "", NotImplemented("ReadResourceList not implemented")
 }
 
 // ReadResource is a stub. Implement if necessary.
 func (b BaseResourceHandler) ReadResource(ctx RequestContext, id string,
 	version string) (Resource, error) {
-	panic("ReadResource not implemented")
+	return nil, NotImplemented("ReadResource not implemented")
 }
 
 // UpdateResource is a stub. Implement if necessary.
 func (b BaseResourceHandler) UpdateResource(ctx RequestContext, id string,
 	data Payload, version string) (Resource, error) {
-	panic("UpdateResource not implemented")
+	return nil, NotImplemented("UpdateResource not implemented")
 }
 
 // DeleteResource is a stub. Implement if necessary.
 func (b BaseResourceHandler) DeleteResource(ctx RequestContext, id string,
 	version string) (Resource, error) {
-	panic("DeleteResource not implemented")
+	return nil, NotImplemented("DeleteResource not implemented")
 }
 
 // Authenticate is the default authentication logic. All requests are authorized.
