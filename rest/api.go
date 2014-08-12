@@ -10,19 +10,25 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// Address is the address and port to bind to (e.g. ":8080").
+type Address string
+
+// File represents a file path.
+type File string
+
 // API is the top-level interface encapsulating an HTTP REST server. It's responsible for
 // registering ResourceHandlers and routing requests. Use NewAPI to retrieve an instance.
 type API interface {
 	// Start begins serving requests. This will block unless it fails, in which case an
 	// error will be returned.
-	Start(string) error
+	Start(Address) error
 
 	// StartTLS begins serving requests received over HTTPS connections. This will block
 	// unless it fails, in which case an error will be returned. Files containing a
 	// certificate and matching private key for the server must be provided. If the
 	// certificate is signed by a certificate authority, the certFile should be the
 	// concatenation of the server's certificate followed by the CA's certificate.
-	StartTLS(string, string, string) error
+	StartTLS(Address, File, File) error
 
 	// RegisterResourceHandler binds the provided ResourceHandler to the appropriate REST
 	// endpoints and applies any specified middleware. Endpoints will have the following
@@ -86,8 +92,8 @@ func NewAPI() API {
 
 // Start begins serving requests. This will block unless it fails, in which case an error will be
 // returned.
-func (r muxAPI) Start(addr string) error {
-	return http.ListenAndServe(addr, r.router)
+func (r muxAPI) Start(addr Address) error {
+	return http.ListenAndServe(string(addr), r.router)
 }
 
 // StartTLS begins serving requests received over HTTPS connections. This will block unless it
@@ -95,8 +101,8 @@ func (r muxAPI) Start(addr string) error {
 // private key for the server must be provided. If the certificate is signed by a certificate
 // authority, the certFile should be the concatenation of the server's certificate followed by
 // the CA's certificate.
-func (r muxAPI) StartTLS(addr, certFile, keyFile string) error {
-	return http.ListenAndServeTLS(addr, certFile, keyFile, r.router)
+func (r muxAPI) StartTLS(addr Address, certFile, keyFile File) error {
+	return http.ListenAndServeTLS(string(addr), string(certFile), string(keyFile), r.router)
 }
 
 // RegisterResourceHandler binds the provided ResourceHandler to the appropriate REST endpoints and
