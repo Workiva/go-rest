@@ -284,7 +284,7 @@ ruleLoop:
 			continue
 		}
 
-		for field, _ := range payload {
+		for field := range payload {
 			if rule.Name() == field {
 				continue ruleLoop
 			}
