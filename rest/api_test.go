@@ -84,6 +84,17 @@ func (m *MockResourceHandler) Rules(version string) []Rule {
 	return args.Get(0).([]Rule)
 }
 
+// getRouteHandler returns the http.Handler for the API route with the given name.
+// This is purely for testing purposes and shouldn't be used elsewhere.
+func (r muxAPI) getRouteHandler(name string) (http.Handler, error) {
+	route := r.router.Get(name)
+	if route == nil {
+		return nil, fmt.Errorf("No API route with name %s", name)
+	}
+
+	return route.GetHandler(), nil
+}
+
 // Ensures that the create handler returns a Not Implemented code if an invalid response
 // format is provided.
 func TestHandleCreateBadFormat(t *testing.T) {
