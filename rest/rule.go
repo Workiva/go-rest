@@ -19,68 +19,28 @@ import (
 // Type is a data type to coerce a value to specified with a Rule.
 type Type uint
 
+// Type constants define the data types that Rules can specify for coercion.
 const (
-	// Interface represents the interface{} data type.
 	Interface Type = iota
-
-	// Int represents the int data type.
 	Int
-
-	// Int8 represents the int8 data type.
 	Int8
-
-	// Int16 represents the int16 data type.
 	Int16
-
-	// Int32 represents the int32 data type.
 	Int32
-
-	// Int64 represents the int64 data type.
 	Int64
-
-	// Uint represents the uint data type.
 	Uint
-
-	// Uint8 represents the uint8 data type.
 	Uint8
-
-	// Uint16 represents the uint16 data type.
 	Uint16
-
-	// Uint32 represents the uint32 data type.
 	Uint32
-
-	// Uint64 represents the uint64 data type.
 	Uint64
-
-	// Float32 represents the float32 data type.
 	Float32
-
-	// Float64 represents the float64 data type.
 	Float64
-
-	// String represents the string data type.
 	String
-
-	// Bool represents the bool data type.
 	Bool
-
-	// Array represents the []interface{} data type.
 	Array
-
-	// Map represents the map[string]interface{} data type.
 	Map
-
-	// Duration represents the time.Duration data type.
 	Duration
-
-	// Time represents the time.Time data type.
 	Time
-
-	// Byte represents the byte data type.
-	Byte = Uint8
-
-	// Unspecified represents the interface{} data type.
+	Byte        = Uint8
 	Unspecified = Interface
 )
 
