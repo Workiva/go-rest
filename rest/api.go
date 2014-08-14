@@ -21,14 +21,16 @@ type FilePath string
 // registering ResourceHandlers and routing requests. Use NewAPI to retrieve an instance.
 type API interface {
 	// Start begins serving requests. This will block unless it fails, in which case an
-	// error will be returned.
+	// error will be returned. This will validate any defined Rules. If any Rules are
+	// invalid, it will panic.
 	Start(Address) error
 
 	// StartTLS begins serving requests received over HTTPS connections. This will block
 	// unless it fails, in which case an error will be returned. Files containing a
 	// certificate and matching private key for the server must be provided. If the
 	// certificate is signed by a certificate authority, the certFile should be the
-	// concatenation of the server's certificate followed by the CA's certificate.
+	// concatenation of the server's certificate followed by the CA's certificate. This
+	// will validate any defined Rules. If any Rules are invalid, it will panic.
 	StartTLS(Address, FilePath, FilePath) error
 
 	// RegisterResourceHandler binds the provided ResourceHandler to the appropriate REST
@@ -114,6 +116,7 @@ func (r muxAPI) StartTLS(addr Address, certFile, keyFile FilePath) error {
 // applies any specified middleware. Endpoints will have the following base URL:
 // /api/:version/resourceName.
 func (r *muxAPI) RegisterResourceHandler(h ResourceHandler, middleware ...RequestMiddleware) {
+	h = resourceHandlerProxy{h}
 	resource := h.ResourceName()
 	urlBase := fmt.Sprintf("/api/v{%s:[^/]+}/%s", versionKey, resource)
 	resourceURL := fmt.Sprintf("%s/{%s}", urlBase, resourceIDKey)
@@ -216,11 +219,6 @@ func (r muxAPI) validateRules() {
 		resourceType := reflect.TypeOf(emptyResource)
 		if resourceType.Kind() != reflect.Struct {
 			panic(fmt.Sprintf("EmptyResource must return a struct, got %s", resourceType))
-		}
-
-		// Associate Rules with their respective types.
-		for _, rule := range rules {
-			rule.resourceType = resourceType
 		}
 
 		validateRules(rules)

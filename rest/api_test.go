@@ -618,6 +618,7 @@ func TestOutboundRules(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("EmptyResource").Return(TestResource{})
 	handler.On("Rules").Return(Rules{rule})
 	handler.On("ReadResource").Return(&TestResource{Foo: "hello"}, nil)
 

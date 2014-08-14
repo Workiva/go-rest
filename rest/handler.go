@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"reflect"
 )
 
 // Resource represents a domain model.
@@ -14,7 +15,8 @@ type Resource interface{}
 // consists of the business logic for performing CRUD operations.
 type ResourceHandler interface {
 	// ResourceName is used to identify what resource a handler corresponds to and is
-	// used in the endpoint URLs, i.e. /api/:version/resourceName.
+	// used in the endpoint URLs, i.e. /api/:version/resourceName. This should be
+	// unique across all ResourceHandlers.
 	ResourceName() string
 
 	// EmptyResource returns a zero-value instance of the resource type this
@@ -125,6 +127,25 @@ func (b BaseResourceHandler) Rules() Rules {
 // requestHandler constructs http.HandlerFuncs responsible for handling HTTP requests.
 type requestHandler struct {
 	API
+}
+
+// resourceHandlerProxy wraps a ResourceHandler and injects the resource type into its
+// Rules. This also allows the framework to provide additional logic around the
+// proxied ResourceHandler.
+type resourceHandlerProxy struct {
+	ResourceHandler
+}
+
+// Rules returns the wrapped ResourceHandler's Rules after injecting them with the
+// resource type.
+func (r resourceHandlerProxy) Rules() Rules {
+	rules := r.ResourceHandler.Rules()
+	for _, rule := range rules {
+		// Associate Rules with their respective type.
+		rule.resourceType = reflect.TypeOf(r.EmptyResource())
+	}
+
+	return rules
 }
 
 // handleCreate returns a HandlerFunc which will deserialize the request payload, pass
