@@ -109,8 +109,8 @@ func (f FooHandler) Authenticate(r http.Request) error {
 
 // Rules returns the resource rules to apply to incoming requests and outgoing
 // responses.
-func (f FooHandler) Rules() []Rule {
-	return []Rule{}
+func (f FooHandler) Rules() Rules {
+	return Rules{}
 }
 
 // This example shows how to fully implement a basic ResourceHandler for performing

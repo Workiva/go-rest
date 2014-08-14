@@ -62,7 +62,7 @@ type ResourceHandler interface {
 	// responses. The default behavior, seen in BaseResourceHandler, is to apply no
 	// rules. If this does not return an empty slice and EmptyResource does not return
 	// a struct, API will panic on start.
-	Rules() []Rule
+	Rules() Rules
 }
 
 // BaseResourceHandler is a base implementation of ResourceHandler with stubs for the
@@ -118,8 +118,8 @@ func (b BaseResourceHandler) Authenticate(r http.Request) error {
 
 // Rules returns the resource rules to apply to incoming requests and outgoing
 // responses. No rules are applied by default. Implement if necessary.
-func (b BaseResourceHandler) Rules() []Rule {
-	return []Rule{}
+func (b BaseResourceHandler) Rules() Rules {
+	return Rules{}
 }
 
 // requestHandler constructs http.HandlerFuncs responsible for handling HTTP requests.
@@ -308,8 +308,8 @@ func sendResponse(w http.ResponseWriter, r response, serializer ResponseSerializ
 }
 
 // rulesForVersion returns a slice of Rules which apply to the given version.
-func rulesForVersion(rules []Rule, version string) []Rule {
-	filtered := make([]Rule, 0, len(rules))
+func rulesForVersion(rules Rules, version string) Rules {
+	filtered := make(Rules, 0, len(rules))
 	for _, rule := range rules {
 		if rule.Applies(version) {
 			filtered = append(filtered, rule)

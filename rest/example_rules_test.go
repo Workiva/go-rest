@@ -72,30 +72,30 @@ func (r ResourceWithSecretHandler) ReadResource(ctx RequestContext, id string,
 // coerced to. If coercion fails, an error indicating this will be sent back in the response.
 // If no type is specified, no coercion will be performed. When Rules are defined,
 // EmptyResource must be implemented.
-func (r ResourceWithSecretHandler) Rules() []Rule {
-	return []Rule{
-		Rule{
+func (r ResourceWithSecretHandler) Rules() Rules {
+	return Rules{
+		&Rule{
 			Field:      "ID",
 			FieldAlias: "id",
 			Type:       Int,
 			Versions:   []string{"1"},
 			OutputOnly: true,
 		},
-		Rule{
+		&Rule{
 			Field:      "Foo",
 			FieldAlias: "f",
 			Type:       String,
 			Versions:   []string{"1"},
 			Required:   true,
 		},
-		Rule{
+		&Rule{
 			Field:      "ID",
 			FieldAlias: "id",
 			Type:       Int,
 			Versions:   []string{"2"},
 			OutputOnly: true,
 		},
-		Rule{
+		&Rule{
 			Field:      "Foo",
 			FieldAlias: "foo",
 			Type:       String,

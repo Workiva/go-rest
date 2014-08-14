@@ -218,6 +218,11 @@ func (r muxAPI) validateRules() {
 			panic(fmt.Sprintf("EmptyResource must return a struct, got %s", resourceType))
 		}
 
-		validateRules(resourceType, rules)
+		// Associate Rules with their respective types.
+		for _, rule := range rules {
+			rule.resourceType = resourceType
+		}
+
+		validateRules(rules)
 	}
 }

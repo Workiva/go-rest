@@ -2,6 +2,7 @@ package rest
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
@@ -12,7 +13,7 @@ import (
 func TestApplyInboundRulesNilPayload(t *testing.T) {
 	assert := assert.New(t)
 
-	actual, err := applyInboundRules(nil, []Rule{Rule{}})
+	actual, err := applyInboundRules(nil, Rules{&Rule{}})
 
 	assert.Equal(Payload{}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -23,7 +24,7 @@ func TestApplyInboundRulesNoRules(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{}
 
-	actual, err := applyInboundRules(payload, []Rule{})
+	actual, err := applyInboundRules(payload, Rules{})
 
 	assert.Equal(payload, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -35,12 +36,12 @@ func TestApplyInboundRulesMissingRequiredField(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "bar"}
 
-	actual, err := applyInboundRules(payload, []Rule{
-		Rule{
+	actual, err := applyInboundRules(payload, Rules{
+		&Rule{
 			Field:    "baz",
 			Required: true,
 		},
-		Rule{
+		&Rule{
 			Field:    "foo",
 			Required: true,
 		},
@@ -54,8 +55,8 @@ func TestApplyInboundRulesMissingRequiredField(t *testing.T) {
 func TestApplyInboundRules(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "bar", "baz": 1}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 		},
@@ -71,8 +72,8 @@ func TestApplyInboundRules(t *testing.T) {
 func TestApplyInboundRulesInputHandler(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "bar", "baz": 1}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:        "foo",
 			FieldAlias:   "foo",
 			InputHandler: func(val interface{}) interface{} { return val.(string) + " qux" },
@@ -89,8 +90,8 @@ func TestApplyInboundRulesInputHandler(t *testing.T) {
 func TestApplyInboundRulesCoerceBoolError(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": true}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Float32,
@@ -107,8 +108,8 @@ func TestApplyInboundRulesCoerceBoolError(t *testing.T) {
 func TestApplyInboundRulesCoerceBoolToBool(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": true}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Bool,
@@ -125,8 +126,8 @@ func TestApplyInboundRulesCoerceBoolToBool(t *testing.T) {
 func TestApplyInboundRulesCoerceBoolToString(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": true}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       String,
@@ -143,8 +144,8 @@ func TestApplyInboundRulesCoerceBoolToString(t *testing.T) {
 func TestApplyInboundRulesCoerceFloatError(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": float64(42)}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Bool,
@@ -161,8 +162,8 @@ func TestApplyInboundRulesCoerceFloatError(t *testing.T) {
 func TestApplyInboundRulesCoerceFloatToInt(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": float64(42)}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Int,
@@ -179,8 +180,8 @@ func TestApplyInboundRulesCoerceFloatToInt(t *testing.T) {
 func TestApplyInboundRulesCoerceFloatToInt8(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": float64(42)}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Int8,
@@ -197,8 +198,8 @@ func TestApplyInboundRulesCoerceFloatToInt8(t *testing.T) {
 func TestApplyInboundRulesCoerceFloatToInt16(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": float64(42)}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Int16,
@@ -215,8 +216,8 @@ func TestApplyInboundRulesCoerceFloatToInt16(t *testing.T) {
 func TestApplyInboundRulesCoerceFloatToInt32(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": float64(42)}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Int32,
@@ -233,8 +234,8 @@ func TestApplyInboundRulesCoerceFloatToInt32(t *testing.T) {
 func TestApplyInboundRulesCoerceFloatToInt64(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": float64(42)}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Int64,
@@ -251,8 +252,8 @@ func TestApplyInboundRulesCoerceFloatToInt64(t *testing.T) {
 func TestApplyInboundRulesCoerceFloatToUint(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": float64(42)}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Uint,
@@ -269,8 +270,8 @@ func TestApplyInboundRulesCoerceFloatToUint(t *testing.T) {
 func TestApplyInboundRulesCoerceFloatToUint8(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": float64(42)}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Uint8,
@@ -287,8 +288,8 @@ func TestApplyInboundRulesCoerceFloatToUint8(t *testing.T) {
 func TestApplyInboundRulesCoerceFloatToUint16(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": float64(42)}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Uint16,
@@ -305,8 +306,8 @@ func TestApplyInboundRulesCoerceFloatToUint16(t *testing.T) {
 func TestApplyInboundRulesCoerceFloatToUint32(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": float64(42)}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Uint32,
@@ -323,8 +324,8 @@ func TestApplyInboundRulesCoerceFloatToUint32(t *testing.T) {
 func TestApplyInboundRulesCoerceFloatToUint64(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": float64(42)}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Uint64,
@@ -341,8 +342,8 @@ func TestApplyInboundRulesCoerceFloatToUint64(t *testing.T) {
 func TestApplyInboundRulesCoerceFloatToFloat32(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": float64(42)}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Float32,
@@ -359,8 +360,8 @@ func TestApplyInboundRulesCoerceFloatToFloat32(t *testing.T) {
 func TestApplyInboundRulesCoerceFloatToFloat64(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": float64(42)}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Float64,
@@ -377,8 +378,8 @@ func TestApplyInboundRulesCoerceFloatToFloat64(t *testing.T) {
 func TestApplyInboundRulesCoerceFloatToString(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": float64(42)}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       String,
@@ -395,8 +396,8 @@ func TestApplyInboundRulesCoerceFloatToString(t *testing.T) {
 func TestApplyInboundRulesCoerceFloatToDuration(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": float64(42)}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Duration,
@@ -413,8 +414,8 @@ func TestApplyInboundRulesCoerceFloatToDuration(t *testing.T) {
 func TestApplyInboundRulesCoerceStringError(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "hello"}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Map,
@@ -432,8 +433,8 @@ func TestApplyInboundRulesCoerceStringError(t *testing.T) {
 func TestApplyInboundRulesCoerceStringIntError(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "hello"}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Int,
@@ -451,8 +452,8 @@ func TestApplyInboundRulesCoerceStringIntError(t *testing.T) {
 func TestApplyInboundRulesCoerceStringToInt(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "42"}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Int,
@@ -469,8 +470,8 @@ func TestApplyInboundRulesCoerceStringToInt(t *testing.T) {
 func TestApplyInboundRulesCoerceStringToInt8(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "42"}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Int8,
@@ -487,8 +488,8 @@ func TestApplyInboundRulesCoerceStringToInt8(t *testing.T) {
 func TestApplyInboundRulesCoerceStringToInt16(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "42"}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Int16,
@@ -505,8 +506,8 @@ func TestApplyInboundRulesCoerceStringToInt16(t *testing.T) {
 func TestApplyInboundRulesCoerceStringToInt32(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "42"}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Int32,
@@ -523,8 +524,8 @@ func TestApplyInboundRulesCoerceStringToInt32(t *testing.T) {
 func TestApplyInboundRulesCoerceStringToInt64(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "42"}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Int64,
@@ -541,8 +542,8 @@ func TestApplyInboundRulesCoerceStringToInt64(t *testing.T) {
 func TestApplyInboundRulesCoerceStringUintError(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "hello"}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Uint,
@@ -560,8 +561,8 @@ func TestApplyInboundRulesCoerceStringUintError(t *testing.T) {
 func TestApplyInboundRulesCoerceStringToUint(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "42"}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Uint,
@@ -578,8 +579,8 @@ func TestApplyInboundRulesCoerceStringToUint(t *testing.T) {
 func TestApplyInboundRulesCoerceStringToUint8(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "42"}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Uint8,
@@ -596,8 +597,8 @@ func TestApplyInboundRulesCoerceStringToUint8(t *testing.T) {
 func TestApplyInboundRulesCoerceStringToUint16(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "42"}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Uint16,
@@ -614,8 +615,8 @@ func TestApplyInboundRulesCoerceStringToUint16(t *testing.T) {
 func TestApplyInboundRulesCoerceStringToUint32(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "42"}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Uint32,
@@ -632,8 +633,8 @@ func TestApplyInboundRulesCoerceStringToUint32(t *testing.T) {
 func TestApplyInboundRulesCoerceStringToUint64(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "42"}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Uint64,
@@ -650,8 +651,8 @@ func TestApplyInboundRulesCoerceStringToUint64(t *testing.T) {
 func TestApplyInboundRulesCoerceStringFloatError(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "hello"}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Float32,
@@ -669,8 +670,8 @@ func TestApplyInboundRulesCoerceStringFloatError(t *testing.T) {
 func TestApplyInboundRulesCoerceStringToFloat32(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "42"}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Float32,
@@ -687,8 +688,8 @@ func TestApplyInboundRulesCoerceStringToFloat32(t *testing.T) {
 func TestApplyInboundRulesCoerceStringToFloat64(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "42"}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Float64,
@@ -705,8 +706,8 @@ func TestApplyInboundRulesCoerceStringToFloat64(t *testing.T) {
 func TestApplyInboundRulesCoerceStringToString(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "42"}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       String,
@@ -723,8 +724,8 @@ func TestApplyInboundRulesCoerceStringToString(t *testing.T) {
 func TestApplyInboundRulesCoerceStringBoolError(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "hello"}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Bool,
@@ -742,8 +743,8 @@ func TestApplyInboundRulesCoerceStringBoolError(t *testing.T) {
 func TestApplyInboundRulesCoerceStringToBool(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "true"}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Bool,
@@ -760,8 +761,8 @@ func TestApplyInboundRulesCoerceStringToBool(t *testing.T) {
 func TestApplyInboundRulesCoerceStringToDurationError(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "hello"}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Duration,
@@ -778,8 +779,8 @@ func TestApplyInboundRulesCoerceStringToDurationError(t *testing.T) {
 func TestApplyInboundRulesCoerceStringToDuration(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "100ns"}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Duration,
@@ -796,8 +797,8 @@ func TestApplyInboundRulesCoerceStringToDuration(t *testing.T) {
 func TestApplyInboundRulesCoerceStringToTimeError(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "hello"}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Time,
@@ -816,8 +817,8 @@ func TestApplyInboundRulesCoerceStringToTimeError(t *testing.T) {
 func TestApplyInboundRulesCoerceStringToTime(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": "2014-08-11T15:46:02Z"}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Time,
@@ -835,8 +836,8 @@ func TestApplyInboundRulesCoerceStringToTime(t *testing.T) {
 func TestApplyInboundRulesCoerceSliceError(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": []interface{}{1, 2, 3}}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Bool,
@@ -853,8 +854,8 @@ func TestApplyInboundRulesCoerceSliceError(t *testing.T) {
 func TestApplyInboundRulesCoerceSliceToSlice(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": []interface{}{1, 2, 3}}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Slice,
@@ -871,8 +872,8 @@ func TestApplyInboundRulesCoerceSliceToSlice(t *testing.T) {
 func TestApplyInboundRulesCoerceMapError(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": map[string]interface{}{"a": 1}}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Bool,
@@ -889,8 +890,8 @@ func TestApplyInboundRulesCoerceMapError(t *testing.T) {
 func TestApplyInboundRulesCoerceMapToMap(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": map[string]interface{}{"a": 1}}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "foo",
 			FieldAlias: "foo",
 			Type:       Map,
@@ -907,7 +908,7 @@ func TestApplyInboundRulesCoerceMapToMap(t *testing.T) {
 // Ensures that nil is returned by applyOutboundRules if nil is passed in.
 func TestApplyOutboundRulesNilResource(t *testing.T) {
 	assert := assert.New(t)
-	assert.Nil(applyOutboundRules(nil, []Rule{Rule{}}), "Incorrect return value")
+	assert.Nil(applyOutboundRules(nil, Rules{&Rule{}}), "Incorrect return value")
 }
 
 // Ensures that resource is returned by applyOutboundRules if rules is empty.
@@ -915,7 +916,7 @@ func TestApplyOutboundRulesNoRules(t *testing.T) {
 	assert := assert.New(t)
 	resource := &TestResource{}
 
-	assert.Equal(resource, applyOutboundRules(resource, []Rule{}), "Incorrect return value")
+	assert.Equal(resource, applyOutboundRules(resource, Rules{}), "Incorrect return value")
 }
 
 // Ensures that resource is returned by applyOutboundRules if it's not a struct.
@@ -923,17 +924,97 @@ func TestApplyOutboundRulesNotStruct(t *testing.T) {
 	assert := assert.New(t)
 	resource := "resource"
 
-	assert.Equal(resource, applyOutboundRules(resource, []Rule{Rule{}}),
+	assert.Equal(resource, applyOutboundRules(resource, Rules{&Rule{}}),
 		"Incorrect return value")
+}
+
+// Ensures that applyOutboundRules handles map[string]interface.
+func TestApplyOutboundRulesMap(t *testing.T) {
+	assert := assert.New(t)
+	resource := map[string]interface{}{"Foo": "hello"}
+	rules := Rules{
+		&Rule{
+			Field:        "Foo",
+			resourceType: reflect.TypeOf(TestResource{}),
+		},
+	}
+
+	assert.Equal(
+		Payload{"Foo": "hello"},
+		applyOutboundRules(resource, rules),
+		"Incorrect return value",
+	)
+}
+
+// Ensures that applyOutboundRules handles map[string]interface and missing fields
+// are ignored.
+func TestApplyOutboundRulesMapMissingFields(t *testing.T) {
+	assert := assert.New(t)
+	resource := map[string]interface{}{}
+	rules := Rules{
+		&Rule{
+			Field:        "Foo",
+			resourceType: reflect.TypeOf(TestResource{}),
+		},
+	}
+
+	assert.Equal(
+		Payload{},
+		applyOutboundRules(resource, rules),
+		"Incorrect return value",
+	)
+}
+
+// Ensures that rules which specify an output Handler function yield the correct value
+// for maps.
+func TestApplyOutboundRulesMapOutputHandler(t *testing.T) {
+	assert := assert.New(t)
+	resource := map[string]interface{}{"Foo": "hello"}
+	rules := Rules{
+		&Rule{
+			Field:      "Foo",
+			FieldAlias: "foo",
+			OutputHandler: func(val interface{}) interface{} {
+				return val.(string) + " world"
+			},
+			resourceType: reflect.TypeOf(TestResource{}),
+		},
+	}
+
+	assert.Equal(
+		Payload{"foo": "hello world"},
+		applyOutboundRules(resource, rules),
+		"Incorrect return value",
+	)
+}
+
+// Ensures that resource is returned by applyOutboundRules if it's an incorrect map
+// type.
+func TestApplyOutboundRulesBadMap(t *testing.T) {
+	assert := assert.New(t)
+	resource := map[int]interface{}{}
+	rules := Rules{
+		&Rule{
+			Field:        "Foo",
+			resourceType: reflect.TypeOf(TestResource{}),
+		},
+	}
+
+	assert.Equal(
+		resource,
+		applyOutboundRules(resource, rules),
+		"Incorrect return value",
+	)
 }
 
 // Ensures that rules which don't specify a valueName use the field name by default.
 func TestApplyOutboundRulesDefaultName(t *testing.T) {
 	assert := assert.New(t)
 	resource := &TestResource{Foo: "hello"}
-	rules := []Rule{
-		Rule{
-			Field: "Foo",
+	rules := Rules{
+		&Rule{
+			Field:        "Foo",
+			resourceType: reflect.TypeOf(TestResource{}),
 		},
 	}
 
@@ -948,13 +1029,14 @@ func TestApplyOutboundRulesDefaultName(t *testing.T) {
 func TestApplyOutboundRulesOutputHandler(t *testing.T) {
 	assert := assert.New(t)
 	resource := &TestResource{Foo: "hello"}
-	rules := []Rule{
-		Rule{
+	rules := Rules{
+		&Rule{
 			Field:      "Foo",
 			FieldAlias: "foo",
 			OutputHandler: func(val interface{}) interface{} {
 				return val.(string) + " world"
 			},
+			resourceType: reflect.TypeOf(TestResource{}),
 		},
 	}
 
@@ -968,7 +1050,7 @@ func TestApplyOutboundRulesOutputHandler(t *testing.T) {
 // Ensures that Applies returns true if no versions are specified on the Rule.
 func TestAppliesNoVersions(t *testing.T) {
 	assert := assert.New(t)
-	rule := Rule{}
+	rule := &Rule{}
 
 	assert.True(rule.Applies("v1"), "Incorrect return value")
 }
@@ -976,7 +1058,7 @@ func TestAppliesNoVersions(t *testing.T) {
 // Ensures that Applies returns false if the version is not in the Rule's versions.
 func TestAppliesDoesNotApply(t *testing.T) {
 	assert := assert.New(t)
-	rule := Rule{Versions: []string{"v2"}}
+	rule := &Rule{Versions: []string{"v2"}}
 
 	assert.False(rule.Applies("v1"), "Incorrect return value")
 }
@@ -984,7 +1066,7 @@ func TestAppliesDoesNotApply(t *testing.T) {
 // Ensures that Applies returns true if the version is in the Rule's versions.
 func TestAppliesDoesApply(t *testing.T) {
 	assert := assert.New(t)
-	rule := Rule{Versions: []string{"v1", "v2", "v3"}}
+	rule := &Rule{Versions: []string{"v1", "v2", "v3"}}
 
 	assert.True(rule.Applies("v2"), "Incorrect return value")
 }

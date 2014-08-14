@@ -14,6 +14,9 @@ import (
 //
 //  - Make type coercion pluggable (i.e. conversion/validation of custom types).
 
+// Rules is a slice of Rule pointers.
+type Rules []*Rule
+
 // Rule provides schema validation and type coercion for request input and fine-grained
 // control over response output. If a ResourceHandler provides input Rules which
 // specify types, input fields will attempt to be coerced to those types. If coercion
@@ -52,6 +55,10 @@ type Rule struct {
 
 	// Function which produces the field value to send.
 	OutputHandler func(interface{}) interface{}
+
+	// resourceType is the reflect.Type of the resource this Rule applies to. Set
+	// by the framework.
+	resourceType reflect.Type
 }
 
 // Name returns the name of the input/output field alias. It defaults to the field
@@ -92,12 +99,13 @@ func (r Rule) validType(fieldType reflect.Type) bool {
 // validateRules verifies that the provided Rules for are valid for the given
 // reflect.Type, meaning they specify fields that exist and correct types. If a Rule
 // is invalid, this will panic.
-func validateRules(resourceType reflect.Type, rules []Rule) {
-	if resourceType.Kind() != reflect.Struct && resourceType.Kind() != reflect.Map {
-		panic(fmt.Sprintf("Invalid resource type: must be struct or map, got %s", resourceType))
-	}
-
+func validateRules(rules Rules) {
 	for _, rule := range rules {
+		resourceType := rule.resourceType
+		if resourceType.Kind() != reflect.Struct && resourceType.Kind() != reflect.Map {
+			panic(fmt.Sprintf("Invalid resource type: must be struct or map, got %s", resourceType))
+		}
+
 		field, found := resourceType.FieldByName(rule.Field)
 		if !found {
 			panic(fmt.Sprintf("Invalid Rule for %s: field '%s' does not exist",
@@ -117,7 +125,7 @@ func validateRules(resourceType reflect.Type, rules []Rule) {
 // incoming fields which are not specified will be discarded. If Rules specify types,
 // incoming values will attempted to be coerced. If coercion fails, an error will be
 // returned.
-func applyInboundRules(payload Payload, rules []Rule) (Payload, error) {
+func applyInboundRules(payload Payload, rules Rules) (Payload, error) {
 	if payload == nil {
 		return Payload{}, nil
 	}
@@ -164,11 +172,12 @@ fieldLoop:
 }
 
 // applyOutboundRules applies Rules which are not specified as input only to the
-// provided Resource. If the Resource is nil, not a struct, or no Rules are provided,
-// this acts as an identity function. If Rules are provided, only the fields specified
-// by them will be included in the returned Resource. This is to prevent new fields
-// from leaking into old API versions.
-func applyOutboundRules(resource Resource, rules []Rule) Resource {
+// provided Resource. If the Resource is nil, not a struct or
+// map[string]interface{}, or no Rules are provided, this acts as an identity
+// function. If Rules are provided, only the fields specified by them will be
+// included in the returned Resource. This is to prevent new fields from leaking
+// into old API versions.
+func applyOutboundRules(resource Resource, rules Rules) Resource {
 	// Apply only outbound Rules.
 	rules = filterRules(rules, false)
 
@@ -181,15 +190,44 @@ func applyOutboundRules(resource Resource, rules []Rule) Resource {
 	resourceValue := reflect.Indirect(reflect.ValueOf(resource))
 	resource = resourceValue.Interface()
 	resourceType := reflect.TypeOf(resource)
+	var payload Resource
 
-	if resourceType.Kind() != reflect.Struct {
-		// Only apply Rules to structs.
-		// TODO: Can probably apply them to maps as well.
-		return resource
+	if resourceType.Kind() == reflect.Map {
+		if resourceMap, ok := resource.(map[string]interface{}); ok {
+			payload = applyOutboundRulesForMap(resourceMap, rules)
+		} else {
+			// Nothing we can do if the keys aren't strings.
+			payload = resource
+		}
+	} else if resourceType == rules[0].resourceType {
+		payload = applyOutboundRulesForStruct(resourceValue, rules)
+	} else {
+		// Only apply Rules to resource structs and maps.
+		payload = resource
 	}
 
-	payload := Payload{}
+	return payload
+}
 
+func applyOutboundRulesForMap(resource map[string]interface{}, rules Rules) Payload {
+	payload := Payload{}
+	for _, rule := range rules {
+		fieldValue, ok := resource[rule.Field]
+		if !ok {
+			log.Printf("Map resource missing field '%s'", rule.Field)
+			continue
+		}
+		if rule.OutputHandler != nil {
+			fieldValue = rule.OutputHandler(fieldValue)
+		}
+		payload[rule.Name()] = fieldValue
+	}
+
+	return payload
+}
+
+func applyOutboundRulesForStruct(resourceValue reflect.Value, rules Rules) Payload {
+	payload := Payload{}
 	for _, rule := range rules {
 		// Rule validation occurs at server start. No need to check for field existence.
 		field := resourceValue.FieldByName(rule.Field)
@@ -207,8 +245,8 @@ func applyOutboundRules(resource Resource, rules []Rule) Resource {
 // filter out outbound Rules such that the returned slice contains only inbound Rules.
 // False means to filter out inbound Rules such that the returned slice contains only
 // outbound Rules.
-func filterRules(rules []Rule, inbound bool) []Rule {
-	filtered := make([]Rule, 0, len(rules))
+func filterRules(rules Rules, inbound bool) Rules {
+	filtered := make(Rules, 0, len(rules))
 	for _, rule := range rules {
 		if inbound && rule.OutputOnly {
 			// Filter out outbound Rules.
@@ -226,7 +264,7 @@ func filterRules(rules []Rule, inbound bool) []Rule {
 // enforceRequiredFields verifies that the provided Payload has values for any Rules
 // with the Required flag set to true. If any required fields are missing, an error
 // will be returned. Otherwise nil is returned.
-func enforceRequiredFields(rules []Rule, payload Payload) error {
+func enforceRequiredFields(rules Rules, payload Payload) error {
 ruleLoop:
 	for _, rule := range rules {
 		if !rule.Required {
