@@ -15,7 +15,7 @@ import (
 type Address string
 
 // File represents a file path.
-type File string
+type FilePath string
 
 // API is the top-level interface encapsulating an HTTP REST server. It's responsible for
 // registering ResourceHandlers and routing requests. Use NewAPI to retrieve an instance.
@@ -29,7 +29,7 @@ type API interface {
 	// certificate and matching private key for the server must be provided. If the
 	// certificate is signed by a certificate authority, the certFile should be the
 	// concatenation of the server's certificate followed by the CA's certificate.
-	StartTLS(Address, File, File) error
+	StartTLS(Address, FilePath, FilePath) error
 
 	// RegisterResourceHandler binds the provided ResourceHandler to the appropriate REST
 	// endpoints and applies any specified middleware. Endpoints will have the following
@@ -105,7 +105,7 @@ func (r muxAPI) Start(addr Address) error {
 // private key for the server must be provided. If the certificate is signed by a certificate
 // authority, the certFile should be the concatenation of the server's certificate followed by
 // the CA's certificate.
-func (r muxAPI) StartTLS(addr Address, certFile, keyFile File) error {
+func (r muxAPI) StartTLS(addr Address, certFile, keyFile FilePath) error {
 	r.validateRules()
 	return http.ListenAndServeTLS(string(addr), string(certFile), string(keyFile), r.router)
 }
