@@ -17,6 +17,11 @@ type ResourceHandler interface {
 	// used in the endpoint URLs, i.e. /api/:version/resourceName.
 	ResourceName() string
 
+	// EmptyResource returns a zero-value instance of the resource type this
+	// ResourceHandler corresponds to. If this returns anything other than a struct and
+	// Rules are defined, API will panic on start.
+	EmptyResource() interface{}
+
 	// CreateResource is the logic that corresponds to creating a new resource at
 	// POST /api/:version/resourceName. Typically, this would insert a record into a
 	// database. It returns the newly created resource or an error if the create failed.
@@ -55,8 +60,9 @@ type ResourceHandler interface {
 
 	// Rules returns the resource rules to apply to incoming requests and outgoing
 	// responses. The default behavior, seen in BaseResourceHandler, is to apply no
-	// rules. Different Rules can be returned based on the version provided.
-	Rules(string) []Rule
+	// rules. If this does not return an empty slice and EmptyResource does not return
+	// a struct, API will panic on start.
+	Rules() []Rule
 }
 
 // BaseResourceHandler is a base implementation of ResourceHandler with stubs for the
@@ -67,6 +73,11 @@ type BaseResourceHandler struct{}
 // ResourceName is a stub. It must be implemented.
 func (b BaseResourceHandler) ResourceName() string {
 	return ""
+}
+
+// EmptyResource is a stub. Implement if Rules are defined.
+func (b BaseResourceHandler) EmptyResource() interface{} {
+	return nil
 }
 
 // CreateResource is a stub. Implement if necessary.
@@ -107,7 +118,7 @@ func (b BaseResourceHandler) Authenticate(r http.Request) error {
 
 // Rules returns the resource rules to apply to incoming requests and outgoing
 // responses. No rules are applied by default. Implement if necessary.
-func (b BaseResourceHandler) Rules(version string) []Rule {
+func (b BaseResourceHandler) Rules() []Rule {
 	return []Rule{}
 }
 
@@ -123,6 +134,7 @@ func (h requestHandler) handleCreate(handler ResourceHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
 		version := ctx.Version()
+		rules := rulesForVersion(handler.Rules(), version)
 
 		decoder := json.NewDecoder(r.Body)
 		var data map[string]interface{}
@@ -131,13 +143,13 @@ func (h requestHandler) handleCreate(handler ResourceHandler) http.HandlerFunc {
 			ctx = ctx.setError(err)
 			ctx = ctx.setStatus(http.StatusInternalServerError)
 		} else {
-			data, err := applyInboundRules(data, handler.Rules(version))
+			data, err := applyInboundRules(data, rules)
 			if err != nil {
 				// Type coercion failed.
 				ctx = ctx.setError(UnprocessableRequest(err.Error()))
 			} else {
 				resource, err := handler.CreateResource(ctx, data, ctx.Version())
-				resource = applyOutboundRules(resource, handler.Rules(ctx.Version()))
+				resource = applyOutboundRules(resource, rules)
 				ctx = ctx.setResult(resource)
 				ctx = ctx.setStatus(http.StatusCreated)
 				if err != nil {
@@ -157,13 +169,14 @@ func (h requestHandler) handleReadList(handler ResourceHandler) http.HandlerFunc
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
 		version := ctx.Version()
+		rules := rulesForVersion(handler.Rules(), version)
 
 		resources, cursor, err := handler.ReadResourceList(
 			ctx, ctx.Limit(), ctx.Cursor(), version)
 
 		// Apply rules to results.
 		for idx, resource := range resources {
-			resources[idx] = applyOutboundRules(resource, handler.Rules(version))
+			resources[idx] = applyOutboundRules(resource, rules)
 		}
 
 		ctx = ctx.setResult(resources)
@@ -182,9 +195,9 @@ func (h requestHandler) handleRead(handler ResourceHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
 		version := ctx.Version()
+		rules := rulesForVersion(handler.Rules(), version)
 
 		resource, err := handler.ReadResource(ctx, ctx.ResourceID(), version)
-		rules := handler.Rules(version)
 		resource = applyOutboundRules(resource, rules)
 
 		ctx = ctx.setResult(resource)
@@ -203,6 +216,7 @@ func (h requestHandler) handleUpdate(handler ResourceHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
 		version := ctx.Version()
+		rules := rulesForVersion(handler.Rules(), version)
 
 		decoder := json.NewDecoder(r.Body)
 		var data map[string]interface{}
@@ -211,14 +225,13 @@ func (h requestHandler) handleUpdate(handler ResourceHandler) http.HandlerFunc {
 			ctx = ctx.setError(err)
 			ctx = ctx.setStatus(http.StatusInternalServerError)
 		} else {
-			data, err := applyInboundRules(data, handler.Rules(version))
+			data, err := applyInboundRules(data, rules)
 			if err != nil {
 				// Type coercion failed.
 				ctx = ctx.setError(UnprocessableRequest(err.Error()))
 			} else {
 				resource, err := handler.UpdateResource(
 					ctx, ctx.ResourceID(), data, version)
-				rules := handler.Rules(version)
 				resource = applyOutboundRules(resource, rules)
 
 				ctx = ctx.setResult(resource)
@@ -238,9 +251,9 @@ func (h requestHandler) handleDelete(handler ResourceHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
 		version := ctx.Version()
+		rules := rulesForVersion(handler.Rules(), version)
 
 		resource, err := handler.DeleteResource(ctx, ctx.ResourceID(), version)
-		rules := handler.Rules(version)
 		resource = applyOutboundRules(resource, rules)
 
 		ctx = ctx.setResult(resource)
@@ -292,4 +305,16 @@ func sendResponse(w http.ResponseWriter, r response, serializer ResponseSerializ
 	w.Header().Set("Content-Type", contentType)
 	w.WriteHeader(status)
 	w.Write(response)
+}
+
+// rulesForVersion returns a slice of Rules which apply to the given version.
+func rulesForVersion(rules []Rule, version string) []Rule {
+	filtered := make([]Rule, 0, len(rules))
+	for _, rule := range rules {
+		if rule.Applies(version) {
+			filtered = append(filtered, rule)
+		}
+	}
+
+	return filtered
 }

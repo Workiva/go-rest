@@ -44,8 +44,8 @@ const (
 	Unspecified = Interface
 )
 
-// typeName maps Types to their human-readable names.
-var typeName = map[Type]string{
+// typeToName maps Types to their human-readable names.
+var typeToName = map[Type]string{
 	Interface: "interface{}",
 	Int:       "int",
 	Int8:      "int8",
@@ -65,6 +65,29 @@ var typeName = map[Type]string{
 	Map:       "map[string]interface{}",
 	Duration:  "time.Duration",
 	Time:      "time.Time",
+}
+
+// typeToKind maps Types to their reflect Kind.
+var typeToKind = map[Type]reflect.Kind{
+	Interface: reflect.Interface,
+	Int:       reflect.Int,
+	Int8:      reflect.Int8,
+	Int16:     reflect.Int16,
+	Int32:     reflect.Int32,
+	Int64:     reflect.Int64,
+	Uint:      reflect.Uint,
+	Uint8:     reflect.Uint8,
+	Uint16:    reflect.Uint16,
+	Uint32:    reflect.Uint32,
+	Uint64:    reflect.Uint64,
+	Float32:   reflect.Float32,
+	Float64:   reflect.Float64,
+	String:    reflect.String,
+	Bool:      reflect.Bool,
+	Slice:     reflect.Slice,
+	Map:       reflect.Map,
+	Duration:  reflect.Int64,
+	Time:      reflect.Struct,
 }
 
 // timeLayout is the format in which strings are parsed as time.Time (ISO 8601).
@@ -93,6 +116,10 @@ type Rule struct {
 	// Indicates if the field must have a value. Defaults to false.
 	Required bool
 
+	// Versions is a list of the API versions this Rule applies to. If empty, it will
+	// be applied to all versions.
+	Versions []string
+
 	// Indicates if the Rule should only be applied to requests.
 	InputOnly bool
 
@@ -114,6 +141,53 @@ func (r Rule) Name() string {
 		alias = r.Field
 	}
 	return alias
+}
+
+// Applies returns whether or not the Rule applies to the given version.
+func (r Rule) Applies(version string) bool {
+	if r.Versions == nil {
+		return true
+	}
+
+	for _, v := range r.Versions {
+		if v == version {
+			return true
+		}
+	}
+
+	return false
+}
+
+// validType returns whether or not the Rule is valid for the given reflect.Type.
+func (r Rule) validType(fieldType reflect.Type) bool {
+	if r.Type == Unspecified {
+		return true
+	}
+
+	kind := typeToKind[r.Type]
+	return fieldType.Kind() == kind
+}
+
+// validateRules verifies that the provided Rules for are valid for the given
+// reflect.Type, meaning they specify fields that exist and correct types. If a Rule
+// is invalid, this will panic.
+func validateRules(resourceType reflect.Type, rules []Rule) {
+	if resourceType.Kind() != reflect.Struct && resourceType.Kind() != reflect.Map {
+		panic(fmt.Sprintf("Invalid resource type: must be struct or map, got %s", resourceType))
+	}
+
+	for _, rule := range rules {
+		field, found := resourceType.FieldByName(rule.Field)
+		if !found {
+			panic(fmt.Sprintf("Invalid Rule for %s: field '%s' does not exist",
+				resourceType, rule.Field))
+		}
+
+		if !rule.validType(field.Type) {
+			panic(fmt.Sprintf("Invalid Rule for %s: field '%s' is type %s, not %s",
+				resourceType, rule.Field, field.Type, typeToName[rule.Type]))
+		}
+	}
 }
 
 // applyInboundRules applies Rules which are not specified as output only to the
@@ -196,14 +270,8 @@ func applyOutboundRules(resource Resource, rules []Rule) Resource {
 	payload := Payload{}
 
 	for _, rule := range rules {
+		// Rule validation occurs at server start. No need to check for field existence.
 		field := resourceValue.FieldByName(rule.Field)
-		if !field.IsValid() {
-			// The field doesn't exist.
-			log.Printf("%s has no field '%s'", reflect.TypeOf(resource).Name(),
-				rule.Field)
-			continue
-		}
-
 		fieldValue := field.Interface()
 		if rule.OutputHandler != nil {
 			fieldValue = rule.OutputHandler(fieldValue)
@@ -279,7 +347,7 @@ func coerceType(value interface{}, coerceTo Type) (interface{}, error) {
 		return coerceFromMap(value.(map[string]interface{}), coerceTo)
 	default:
 		return nil, fmt.Errorf("Unable to coerce %s to %s",
-			reflect.TypeOf(value), typeName[coerceTo])
+			reflect.TypeOf(value), typeToName[coerceTo])
 	}
 }
 
@@ -296,7 +364,7 @@ func coerceFromBool(value bool, coerceTo Type) (interface{}, error) {
 		return "false", nil
 	}
 
-	return nil, fmt.Errorf("Unable to coerce bool to %s", typeName[coerceTo])
+	return nil, fmt.Errorf("Unable to coerce bool to %s", typeToName[coerceTo])
 }
 
 // coerceFromFloat attempts to convert the given float64 to the specified Type.
@@ -343,7 +411,7 @@ func coerceFromFloat(value float64, coerceTo Type) (interface{}, error) {
 
 	// Bool and Time cases left off intentionally.
 	default:
-		return nil, fmt.Errorf("Unable to coerce float to %s", typeName[coerceTo])
+		return nil, fmt.Errorf("Unable to coerce float to %s", typeToName[coerceTo])
 	}
 }
 
@@ -458,7 +526,7 @@ func coerceFromString(value string, coerceTo Type) (interface{}, error) {
 		return val, nil
 
 	default:
-		return nil, fmt.Errorf("Unable to coerce string to %s", typeName[coerceTo])
+		return nil, fmt.Errorf("Unable to coerce string to %s", typeToName[coerceTo])
 	}
 }
 
@@ -470,7 +538,7 @@ func coerceFromSlice(value []interface{}, coerceTo Type) (interface{}, error) {
 		return value, nil
 	}
 
-	return nil, fmt.Errorf("Unable to coerce slice to %s", typeName[coerceTo])
+	return nil, fmt.Errorf("Unable to coerce slice to %s", typeToName[coerceTo])
 }
 
 // coerceFromMap attempts to convert the given map to the specified Type. Currently,
@@ -481,5 +549,5 @@ func coerceFromMap(value map[string]interface{}, coerceTo Type) (interface{}, er
 		return value, nil
 	}
 
-	return nil, fmt.Errorf("Unable to coerce map to %s", typeName[coerceTo])
+	return nil, fmt.Errorf("Unable to coerce map to %s", typeToName[coerceTo])
 }

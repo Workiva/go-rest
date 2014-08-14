@@ -26,6 +26,11 @@ func (f FooHandler) ResourceName() string {
 	return "foo"
 }
 
+// EmptyResource returns a zero-value resource instance.
+func (f FooHandler) EmptyResource() interface{} {
+	return FooResource{}
+}
+
 // CreateResource is the logic that corresponds to creating a new resource at
 // POST /api/:version/foo. Typically, this would insert a record into a database.
 // It returns the newly created resource or an error if the create failed.
@@ -104,7 +109,7 @@ func (f FooHandler) Authenticate(r http.Request) error {
 
 // Rules returns the resource rules to apply to incoming requests and outgoing
 // responses.
-func (f FooHandler) Rules(version string) []Rule {
+func (f FooHandler) Rules() []Rule {
 	return []Rule{}
 }
 

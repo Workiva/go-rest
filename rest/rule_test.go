@@ -927,34 +927,6 @@ func TestApplyOutboundRulesNotStruct(t *testing.T) {
 		"Incorrect return value")
 }
 
-// Ensures that only outbound rules are applied and rules containing a field which
-// doesn't exist are ignored.
-func TestApplyOutboundRulesIgnoreBadRules(t *testing.T) {
-	assert := assert.New(t)
-	resource := &TestResource{Foo: "hello"}
-	rules := []Rule{
-		Rule{
-			Field:      "Foo",
-			FieldAlias: "f",
-		},
-		Rule{
-			Field:      "Foo",
-			FieldAlias: "FOO",
-			InputOnly:  true,
-		},
-		Rule{
-			Field:      "bar",
-			FieldAlias: "b",
-		},
-	}
-
-	assert.Equal(
-		Payload{"f": "hello"},
-		applyOutboundRules(resource, rules),
-		"Incorrect return value",
-	)
-}
-
 // Ensures that rules which don't specify a valueName use the field name by default.
 func TestApplyOutboundRulesDefaultName(t *testing.T) {
 	assert := assert.New(t)
@@ -991,4 +963,28 @@ func TestApplyOutboundRulesOutputHandler(t *testing.T) {
 		applyOutboundRules(resource, rules),
 		"Incorrect return value",
 	)
+}
+
+// Ensures that Applies returns true if no versions are specified on the Rule.
+func TestAppliesNoVersions(t *testing.T) {
+	assert := assert.New(t)
+	rule := Rule{}
+
+	assert.True(rule.Applies("v1"), "Incorrect return value")
+}
+
+// Ensures that Applies returns false if the version is not in the Rule's versions.
+func TestAppliesDoesNotApply(t *testing.T) {
+	assert := assert.New(t)
+	rule := Rule{Versions: []string{"v2"}}
+
+	assert.False(rule.Applies("v1"), "Incorrect return value")
+}
+
+// Ensures that Applies returns true if the version is in the Rule's versions.
+func TestAppliesDoesApply(t *testing.T) {
+	assert := assert.New(t)
+	rule := Rule{Versions: []string{"v1", "v2", "v3"}}
+
+	assert.True(rule.Applies("v2"), "Incorrect return value")
 }

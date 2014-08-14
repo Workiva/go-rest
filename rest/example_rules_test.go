@@ -29,6 +29,12 @@ func (r ResourceWithSecretHandler) ResourceName() string {
 	return "resource"
 }
 
+// EmptyResource returns a zero-value resource instance. If must be implemented if Rules are
+// defined.
+func (r ResourceWithSecretHandler) EmptyResource() interface{} {
+	return ResourceWithSecret{}
+}
+
 // CreateResource is the logic that corresponds to creating a new resource at
 // POST /api/:version/resource. Typically, this would insert a record into a database.
 // It returns the newly created resource or an error if the create failed. Because our Rules
@@ -60,26 +66,43 @@ func (r ResourceWithSecretHandler) ReadResource(ctx RequestContext, id string,
 }
 
 // Rules returns the resource rules to apply to incoming requests and outgoing responses. The
-// default behavior, seen in BaseResourceHandler, is to apply no rules. In this example,
-// different Rules are returned based on the version provided. Note that a Rule is not
-// specified for the "Secret" field. This means that field will not be included in the
+// default behavior, seen in BaseResourceHandler, is to apply no rules. Note that a Rule is
+// not specified for the "Secret" field. This means that field will not be included in the
 // response. The "Type" field on a Rule indicates the type the incoming data should be
 // coerced to. If coercion fails, an error indicating this will be sent back in the response.
-// If no type is specified, no coercion will be performed.
-func (r ResourceWithSecretHandler) Rules(version string) []Rule {
-	rules := []Rule{}
-	if version == "1" {
-		rules = append(rules,
-			Rule{Field: "ID", FieldAlias: "id", Type: Int, OutputOnly: true},
-			Rule{Field: "Foo", FieldAlias: "f", Type: String, Required: true},
-		)
-	} else if version == "2" {
-		rules = append(rules,
-			Rule{Field: "ID", FieldAlias: "id", Type: Int, OutputOnly: true},
-			Rule{Field: "Foo", FieldAlias: "foo", Type: String, Required: true},
-		)
+// If no type is specified, no coercion will be performed. When Rules are defined,
+// EmptyResource must be implemented.
+func (r ResourceWithSecretHandler) Rules() []Rule {
+	return []Rule{
+		Rule{
+			Field:      "ID",
+			FieldAlias: "id",
+			Type:       Int,
+			Versions:   []string{"1"},
+			OutputOnly: true,
+		},
+		Rule{
+			Field:      "Foo",
+			FieldAlias: "f",
+			Type:       String,
+			Versions:   []string{"1"},
+			Required:   true,
+		},
+		Rule{
+			Field:      "ID",
+			FieldAlias: "id",
+			Type:       Int,
+			Versions:   []string{"2"},
+			OutputOnly: true,
+		},
+		Rule{
+			Field:      "Foo",
+			FieldAlias: "foo",
+			Type:       String,
+			Versions:   []string{"2"},
+			Required:   true,
+		},
 	}
-	return rules
 }
 
 // This example shows how Rules are used to provide fine-grained control over response

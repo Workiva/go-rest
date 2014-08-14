@@ -24,6 +24,11 @@ func (m *MockResourceHandler) ResourceName() string {
 	return args.String(0)
 }
 
+func (m *MockResourceHandler) EmptyResource() interface{} {
+	args := m.Mock.Called()
+	return args.Get(0)
+}
+
 func (m *MockResourceHandler) CreateResource(r RequestContext, data Payload,
 	version string) (Resource, error) {
 	args := m.Mock.Called()
@@ -79,7 +84,7 @@ func (m *MockResourceHandler) Authenticate(r http.Request) error {
 	return args.Error(0)
 }
 
-func (m *MockResourceHandler) Rules(version string) []Rule {
+func (m *MockResourceHandler) Rules() []Rule {
 	args := m.Mock.Called()
 	return args.Get(0).([]Rule)
 }
@@ -222,6 +227,7 @@ func TestHandleReadListBadFormat(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("Rules").Return([]Rule{})
 	handler.On("ReadResourceList").Return([]Resource{}, "", nil)
 
 	api.RegisterResourceHandler(handler)
@@ -250,6 +256,7 @@ func TestHandleReadListBadRead(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("Rules").Return([]Rule{})
 	handler.On("ReadResourceList").Return(nil, "", fmt.Errorf("no resource"))
 
 	api.RegisterResourceHandler(handler)
@@ -654,4 +661,121 @@ func TestRegisterUnregisterResponseSerializer(t *testing.T) {
 	api.UnregisterResponseSerializer("foo")
 
 	assert.Equal([]string{"json"}, api.AvailableFormats())
+}
+
+// Ensures that validateRules panics when the empty resource is not a struct.
+func TestValidateRulesBadResourceType(t *testing.T) {
+	assert := assert.New(t)
+	api := NewAPI()
+	handler := new(MockResourceHandler)
+	handler.On("ResourceName").Return("foo")
+	handler.On("Rules").Return([]Rule{Rule{}})
+	handler.On("EmptyResource").Return(5)
+	api.RegisterResourceHandler(handler)
+
+	defer func() {
+		r := recover()
+		assert.NotNil(r, "Should have panicked")
+	}()
+	api.(*muxAPI).validateRules()
+}
+
+// Ensures that validateRules panics when the empty resource is nil.
+func TestValidateRulesNilResource(t *testing.T) {
+	assert := assert.New(t)
+	api := NewAPI()
+	handler := new(MockResourceHandler)
+	handler.On("ResourceName").Return("foo")
+	handler.On("Rules").Return([]Rule{Rule{}})
+	handler.On("EmptyResource").Return(nil)
+	api.RegisterResourceHandler(handler)
+
+	defer func() {
+		r := recover()
+		assert.NotNil(r, "Should have panicked")
+	}()
+	api.(*muxAPI).validateRules()
+}
+
+// Ensures that validateRules panics when the resource doesn't have a Rule field.
+func TestValidateRulesBadField(t *testing.T) {
+	assert := assert.New(t)
+	api := NewAPI()
+	handler := new(MockResourceHandler)
+	handler.On("ResourceName").Return("foo")
+	handler.On("Rules").Return([]Rule{Rule{Field: "bar"}})
+	handler.On("EmptyResource").Return(TestResource{})
+	api.RegisterResourceHandler(handler)
+
+	defer func() {
+		r := recover()
+		assert.NotNil(r, "Should have panicked")
+	}()
+	api.(*muxAPI).validateRules()
+}
+
+// Ensures that validateRules panics when a Rule has an incorrect type.
+func TestValidateRulesBadType(t *testing.T) {
+	assert := assert.New(t)
+	api := NewAPI()
+	handler := new(MockResourceHandler)
+	handler.On("ResourceName").Return("foo")
+	handler.On("Rules").Return([]Rule{Rule{Field: "Foo", Type: Int}})
+	api.RegisterResourceHandler(handler)
+
+	defer func() {
+		r := recover()
+		assert.NotNil(r, "Should have panicked")
+	}()
+	api.(*muxAPI).validateRules()
+}
+
+// Ensures that validateRules doesn't panic when the Rules are valid.
+func TestValidateRulesHappyPath(t *testing.T) {
+	assert := assert.New(t)
+	api := NewAPI()
+	handler := new(MockResourceHandler)
+	handler.On("ResourceName").Return("foo")
+	handler.On("Rules").Return([]Rule{Rule{Field: "Foo", Type: String}})
+	handler.On("EmptyResource").Return(TestResource{})
+	api.RegisterResourceHandler(handler)
+
+	defer func() {
+		r := recover()
+		assert.Nil(r, "Should not have panicked")
+	}()
+	api.(*muxAPI).validateRules()
+}
+
+// Ensures that validateRules doesn't panic when a Rule has an unspecified type.
+func TestValidateRulesUnspecifiedType(t *testing.T) {
+	assert := assert.New(t)
+	api := NewAPI()
+	handler := new(MockResourceHandler)
+	handler.On("ResourceName").Return("foo")
+	handler.On("Rules").Return([]Rule{Rule{Field: "Foo"}})
+	handler.On("EmptyResource").Return(TestResource{})
+	api.RegisterResourceHandler(handler)
+
+	defer func() {
+		r := recover()
+		assert.Nil(r, "Should not have panicked")
+	}()
+	api.(*muxAPI).validateRules()
+}
+
+// Ensures that validateRules doesn't panic when there are no Rules.
+func TestValidateRulesNoRules(t *testing.T) {
+	assert := assert.New(t)
+	api := NewAPI()
+	handler := new(MockResourceHandler)
+	handler.On("ResourceName").Return("foo")
+	handler.On("Rules").Return([]Rule{})
+	api.RegisterResourceHandler(handler)
+
+	defer func() {
+		r := recover()
+		assert.Nil(r, "Should not have panicked")
+	}()
+	api.(*muxAPI).validateRules()
 }

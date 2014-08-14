@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"reflect"
 	"sort"
 	"sync"
 
@@ -77,6 +78,7 @@ type muxAPI struct {
 	mu                 sync.RWMutex
 	handler            *requestHandler
 	serializerRegistry map[string]ResponseSerializer
+	resourceHandlers   []ResourceHandler
 }
 
 // NewAPI returns a newly allocated API instance.
@@ -85,6 +87,7 @@ func NewAPI() API {
 	restAPI := &muxAPI{
 		router:             r,
 		serializerRegistry: map[string]ResponseSerializer{"json": &jsonSerializer{}},
+		resourceHandlers:   make([]ResourceHandler, 0),
 	}
 	restAPI.handler = &requestHandler{restAPI}
 	return restAPI
@@ -93,6 +96,7 @@ func NewAPI() API {
 // Start begins serving requests. This will block unless it fails, in which case an error will be
 // returned.
 func (r muxAPI) Start(addr Address) error {
+	r.validateRules()
 	return http.ListenAndServe(string(addr), r.router)
 }
 
@@ -102,13 +106,14 @@ func (r muxAPI) Start(addr Address) error {
 // authority, the certFile should be the concatenation of the server's certificate followed by
 // the CA's certificate.
 func (r muxAPI) StartTLS(addr Address, certFile, keyFile File) error {
+	r.validateRules()
 	return http.ListenAndServeTLS(string(addr), string(certFile), string(keyFile), r.router)
 }
 
 // RegisterResourceHandler binds the provided ResourceHandler to the appropriate REST endpoints and
 // applies any specified middleware. Endpoints will have the following base URL:
 // /api/:version/resourceName.
-func (r muxAPI) RegisterResourceHandler(h ResourceHandler, middleware ...RequestMiddleware) {
+func (r *muxAPI) RegisterResourceHandler(h ResourceHandler, middleware ...RequestMiddleware) {
 	resource := h.ResourceName()
 	urlBase := fmt.Sprintf("/api/v{%s:[^/]+}/%s", versionKey, resource)
 	resourceURL := fmt.Sprintf("%s/{%s}", urlBase, resourceIDKey)
@@ -139,6 +144,8 @@ func (r muxAPI) RegisterResourceHandler(h ResourceHandler, middleware ...Request
 		applyMiddleware(r.handler.handleDelete(h), middleware),
 	).Methods("DELETE").Name(resource + ":delete")
 	log.Printf("Registered delete handler at DELETE %s", resourceURL)
+
+	r.resourceHandlers = append(r.resourceHandlers, h)
 }
 
 // RegisterResponseSerializer registers the provided ResponseSerializer with the given format. If the
@@ -189,4 +196,28 @@ func applyMiddleware(h http.HandlerFunc, middleware []RequestMiddleware) http.Ha
 	}
 
 	return h
+}
+
+// validateRules verifies that the Rules for each ResourceHandler registered with the muxAPI
+// are valid, meaning they specify fields that exist and correct types. If a Rule is invalid,
+// this will panic.
+func (r muxAPI) validateRules() {
+	for _, handler := range r.resourceHandlers {
+		rules := handler.Rules()
+		if len(rules) == 0 {
+			continue
+		}
+
+		emptyResource := handler.EmptyResource()
+		if emptyResource == nil {
+			panic("EmptyResource may not return nil if Rules are defined")
+		}
+
+		resourceType := reflect.TypeOf(emptyResource)
+		if resourceType.Kind() != reflect.Struct {
+			panic(fmt.Sprintf("EmptyResource must return a struct, got %s", resourceType))
+		}
+
+		validateRules(resourceType, rules)
+	}
 }
