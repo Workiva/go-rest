@@ -96,27 +96,33 @@ func (r Rule) validType(fieldType reflect.Type) bool {
 	return fieldType.Kind() == kind
 }
 
-// validateRules verifies that the provided Rules for are valid for the given
-// reflect.Type, meaning they specify fields that exist and correct types. If a Rule
-// is invalid, this will panic.
-func validateRules(rules Rules) {
-	for _, rule := range rules {
+// validate verifies that the Rules are valid for the given reflect.Type, meaning
+// they specify fields that exist and correct types. If a Rule is invalid, an
+// error is returned. If the Rules are valid, nil is returned.
+func (r Rules) validate() error {
+	for _, rule := range r {
 		resourceType := rule.resourceType
 		if resourceType.Kind() != reflect.Struct && resourceType.Kind() != reflect.Map {
-			panic(fmt.Sprintf("Invalid resource type: must be struct or map, got %s", resourceType))
+			return fmt.Errorf(
+				"Invalid resource type: must be struct or map, got %s",
+				resourceType)
 		}
 
 		field, found := resourceType.FieldByName(rule.Field)
 		if !found {
-			panic(fmt.Sprintf("Invalid Rule for %s: field '%s' does not exist",
-				resourceType, rule.Field))
+			return fmt.Errorf(
+				"Invalid Rule for %s: field '%s' does not exist",
+				resourceType, rule.Field)
 		}
 
 		if !rule.validType(field.Type) {
-			panic(fmt.Sprintf("Invalid Rule for %s: field '%s' is type %s, not %s",
-				resourceType, rule.Field, field.Type, typeToName[rule.Type]))
+			return fmt.Errorf(
+				"Invalid Rule for %s: field '%s' is type %s, not %s",
+				resourceType, rule.Field, field.Type, typeToName[rule.Type])
 		}
 	}
+
+	return nil
 }
 
 // applyInboundRules applies Rules which are not specified as output only to the

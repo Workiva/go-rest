@@ -221,6 +221,8 @@ func (r muxAPI) validateRules() {
 			panic(fmt.Sprintf("EmptyResource must return a struct, got %s", resourceType))
 		}
 
-		validateRules(rules)
+		if err := rules.validate(); err != nil {
+			panic(err)
+		}
 	}
 }
