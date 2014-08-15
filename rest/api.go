@@ -14,7 +14,7 @@ import (
 // Address is the address and port to bind to (e.g. ":8080").
 type Address string
 
-// File represents a file path.
+// FilePath represents a file path.
 type FilePath string
 
 // API is the top-level interface encapsulating an HTTP REST server. It's responsible for
