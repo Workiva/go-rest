@@ -103,21 +103,22 @@ func (r Rules) validate() error {
 	for _, rule := range r {
 		resourceType := rule.resourceType
 		if resourceType.Kind() != reflect.Struct && resourceType.Kind() != reflect.Map {
-			return fmt.Errorf(fmt.Sprintf(
-				"Invalid resource type: must be struct or map, got %s", resourceType))
+			return fmt.Errorf(
+				"Invalid resource type: must be struct or map, got %s",
+				resourceType)
 		}
 
 		field, found := resourceType.FieldByName(rule.Field)
 		if !found {
-			return fmt.Errorf(fmt.Sprintf(
+			return fmt.Errorf(
 				"Invalid Rule for %s: field '%s' does not exist",
-				resourceType, rule.Field))
+				resourceType, rule.Field)
 		}
 
 		if !rule.validType(field.Type) {
-			return fmt.Errorf(fmt.Sprintf(
+			return fmt.Errorf(
 				"Invalid Rule for %s: field '%s' is type %s, not %s",
-				resourceType, rule.Field, field.Type, typeToName[rule.Type]))
+				resourceType, rule.Field, field.Type, typeToName[rule.Type])
 		}
 	}
 
