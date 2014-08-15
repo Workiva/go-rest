@@ -1,5 +1,5 @@
 /*
-Package rest contains the company standard REST API client implementation.
+Package rest contains the company standard REST API client and server implementations.
 
 This package can be used with any type that implements the Consumer interface:
 
