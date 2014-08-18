@@ -170,7 +170,9 @@ func (h requestHandler) handleCreate(handler ResourceHandler) http.HandlerFunc {
 				ctx = ctx.setError(UnprocessableRequest(err.Error()))
 			} else {
 				resource, err := handler.CreateResource(ctx, data, ctx.Version())
-				resource = applyOutboundRules(resource, rules)
+				if err == nil {
+					resource = applyOutboundRules(resource, rules)
+				}
 				ctx = ctx.setResult(resource)
 				ctx = ctx.setStatus(http.StatusCreated)
 				if err != nil {
@@ -195,9 +197,11 @@ func (h requestHandler) handleReadList(handler ResourceHandler) http.HandlerFunc
 		resources, cursor, err := handler.ReadResourceList(
 			ctx, ctx.Limit(), ctx.Cursor(), version)
 
-		// Apply rules to results.
-		for idx, resource := range resources {
-			resources[idx] = applyOutboundRules(resource, rules)
+		if err == nil {
+			// Apply rules to results.
+			for idx, resource := range resources {
+				resources[idx] = applyOutboundRules(resource, rules)
+			}
 		}
 
 		ctx = ctx.setResult(resources)
@@ -219,7 +223,9 @@ func (h requestHandler) handleRead(handler ResourceHandler) http.HandlerFunc {
 		rules := rulesForVersion(handler.Rules(), version)
 
 		resource, err := handler.ReadResource(ctx, ctx.ResourceID(), version)
-		resource = applyOutboundRules(resource, rules)
+		if err == nil {
+			resource = applyOutboundRules(resource, rules)
+		}
 
 		ctx = ctx.setResult(resource)
 		ctx = ctx.setError(err)
@@ -253,7 +259,9 @@ func (h requestHandler) handleUpdate(handler ResourceHandler) http.HandlerFunc {
 			} else {
 				resource, err := handler.UpdateResource(
 					ctx, ctx.ResourceID(), data, version)
-				resource = applyOutboundRules(resource, rules)
+				if err == nil {
+					resource = applyOutboundRules(resource, rules)
+				}
 
 				ctx = ctx.setResult(resource)
 				ctx = ctx.setError(err)
@@ -275,7 +283,9 @@ func (h requestHandler) handleDelete(handler ResourceHandler) http.HandlerFunc {
 		rules := rulesForVersion(handler.Rules(), version)
 
 		resource, err := handler.DeleteResource(ctx, ctx.ResourceID(), version)
-		resource = applyOutboundRules(resource, rules)
+		if err == nil {
+			resource = applyOutboundRules(resource, rules)
+		}
 
 		ctx = ctx.setResult(resource)
 		ctx = ctx.setError(err)
