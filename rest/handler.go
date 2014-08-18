@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"reflect"
 )
 
 // Resource represents a domain model.
@@ -18,6 +17,21 @@ type ResourceHandler interface {
 	// used in the endpoint URLs, i.e. /api/:version/resourceName. This should be
 	// unique across all ResourceHandlers.
 	ResourceName() string
+
+	// CreateURI returns the URI for creating a resource.
+	CreateURI() string
+
+	// ReadURI returns the URI for reading a specific resource.
+	ReadURI() string
+
+	// ReadListURI returns the URI for reading a list of resources.
+	ReadListURI() string
+
+	// UpdateURI returns the URI for updating a specific resource.
+	UpdateURI() string
+
+	// DeleteURI returns the URI for deleting a specific resource.
+	DeleteURI() string
 
 	// EmptyResource returns a zero-value instance of the resource type this
 	// ResourceHandler corresponds to. If this returns anything other than a struct and
@@ -67,85 +81,9 @@ type ResourceHandler interface {
 	Rules() Rules
 }
 
-// BaseResourceHandler is a base implementation of ResourceHandler with stubs for the
-// CRUD operations. This allows ResourceHandler implementations to only implement
-// what they need.
-type BaseResourceHandler struct{}
-
-// ResourceName is a stub. It must be implemented.
-func (b BaseResourceHandler) ResourceName() string {
-	return ""
-}
-
-// EmptyResource is a stub. Implement if Rules are defined.
-func (b BaseResourceHandler) EmptyResource() interface{} {
-	return nil
-}
-
-// CreateResource is a stub. Implement if necessary.
-func (b BaseResourceHandler) CreateResource(ctx RequestContext, data Payload,
-	version string) (Resource, error) {
-	return nil, NotImplemented("CreateResource is not implemented")
-}
-
-// ReadResourceList is a stub. Implement if necessary.
-func (b BaseResourceHandler) ReadResourceList(ctx RequestContext, limit int,
-	cursor string, version string) ([]Resource, string, error) {
-	return nil, "", NotImplemented("ReadResourceList not implemented")
-}
-
-// ReadResource is a stub. Implement if necessary.
-func (b BaseResourceHandler) ReadResource(ctx RequestContext, id string,
-	version string) (Resource, error) {
-	return nil, NotImplemented("ReadResource not implemented")
-}
-
-// UpdateResource is a stub. Implement if necessary.
-func (b BaseResourceHandler) UpdateResource(ctx RequestContext, id string,
-	data Payload, version string) (Resource, error) {
-	return nil, NotImplemented("UpdateResource not implemented")
-}
-
-// DeleteResource is a stub. Implement if necessary.
-func (b BaseResourceHandler) DeleteResource(ctx RequestContext, id string,
-	version string) (Resource, error) {
-	return nil, NotImplemented("DeleteResource not implemented")
-}
-
-// Authenticate is the default authentication logic. All requests are authorized.
-// Implement custom authentication logic if necessary.
-func (b BaseResourceHandler) Authenticate(r http.Request) error {
-	return nil
-}
-
-// Rules returns the resource rules to apply to incoming requests and outgoing
-// responses. No rules are applied by default. Implement if necessary.
-func (b BaseResourceHandler) Rules() Rules {
-	return Rules{}
-}
-
 // requestHandler constructs http.HandlerFuncs responsible for handling HTTP requests.
 type requestHandler struct {
 	API
-}
-
-// resourceHandlerProxy wraps a ResourceHandler and injects the resource type into its
-// Rules. This also allows the framework to provide additional logic around the
-// proxied ResourceHandler.
-type resourceHandlerProxy struct {
-	ResourceHandler
-}
-
-// Rules returns the wrapped ResourceHandler's Rules after injecting them with the
-// resource type.
-func (r resourceHandlerProxy) Rules() Rules {
-	rules := r.ResourceHandler.Rules()
-	for _, rule := range rules {
-		// Associate Rules with their respective type.
-		rule.resourceType = reflect.TypeOf(r.EmptyResource())
-	}
-
-	return rules
 }
 
 // handleCreate returns a HandlerFunc which will deserialize the request payload, pass

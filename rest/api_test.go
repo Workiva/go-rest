@@ -18,6 +18,7 @@ type TestResource struct {
 
 type MockResourceHandler struct {
 	mock.Mock
+	BaseResourceHandler
 }
 
 func (m *MockResourceHandler) ResourceName() string {

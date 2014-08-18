@@ -118,35 +118,32 @@ func (r muxAPI) StartTLS(addr Address, certFile, keyFile FilePath) error {
 func (r *muxAPI) RegisterResourceHandler(h ResourceHandler, middleware ...RequestMiddleware) {
 	h = resourceHandlerProxy{h}
 	resource := h.ResourceName()
-	urlBase := fmt.Sprintf("/api/v{%s:[^/]+}/%s", versionKey, resource)
-	resourceURL := fmt.Sprintf("%s/{%s}", urlBase, resourceIDKey)
 	middleware = append(middleware, newAuthMiddleware(h.Authenticate))
 
 	r.router.HandleFunc(
-		urlBase, applyMiddleware(r.handler.handleCreate(h), middleware),
+		h.CreateURI(), applyMiddleware(r.handler.handleCreate(h), middleware),
 	).Methods("POST").Name(resource + ":create")
-	log.Printf("Registered create handler at POST %s", urlBase)
+	log.Printf("Registered create handler at POST %s", h.CreateURI())
 
 	r.router.HandleFunc(
-		urlBase, applyMiddleware(r.handler.handleReadList(h), middleware),
+		h.ReadListURI(), applyMiddleware(r.handler.handleReadList(h), middleware),
 	).Methods("GET").Name(resource + ":readList")
-	log.Printf("Registered read list handler at GET %s", urlBase)
+	log.Printf("Registered read list handler at GET %s", h.ReadListURI())
 
 	r.router.HandleFunc(
-		resourceURL, applyMiddleware(r.handler.handleRead(h), middleware),
+		h.ReadURI(), applyMiddleware(r.handler.handleRead(h), middleware),
 	).Methods("GET").Name(resource + ":read")
-	log.Printf("Registered read handler at GET %s", resourceURL)
+	log.Printf("Registered read handler at GET %s", h.ReadURI())
 
 	r.router.HandleFunc(
-		resourceURL, applyMiddleware(r.handler.handleUpdate(h), middleware),
+		h.UpdateURI(), applyMiddleware(r.handler.handleUpdate(h), middleware),
 	).Methods("PUT").Name(resource + ":update")
-	log.Printf("Registered update handler at UPDATE %s", resourceURL)
+	log.Printf("Registered update handler at UPDATE %s", h.UpdateURI())
 
 	r.router.HandleFunc(
-		resourceURL,
-		applyMiddleware(r.handler.handleDelete(h), middleware),
+		h.DeleteURI(), applyMiddleware(r.handler.handleDelete(h), middleware),
 	).Methods("DELETE").Name(resource + ":delete")
-	log.Printf("Registered delete handler at DELETE %s", resourceURL)
+	log.Printf("Registered delete handler at DELETE %s", h.DeleteURI())
 
 	r.resourceHandlers = append(r.resourceHandlers, h)
 }
