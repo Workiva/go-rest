@@ -125,52 +125,52 @@ func (r resourceHandlerProxy) Rules() Rules {
 // CreateURI returns the URI for creating a resource using the handler-specified
 // URI while falling back to a sensible default if not provided.
 func (r resourceHandlerProxy) CreateURI() string {
-	url := r.ResourceHandler.CreateURI()
-	if url == "" {
-		url = fmt.Sprintf("/api/v{%s:[^/]+}/%s", versionKey, r.ResourceName())
+	uri := r.ResourceHandler.CreateURI()
+	if uri == "" {
+		uri = fmt.Sprintf("/api/v{%s:[^/]+}/%s", versionKey, r.ResourceName())
 	}
-	return url
+	return uri
 }
 
 // ReadURI returns the URI for reading a specific resource using the handler-specified
 // URI while falling back to a sensible default if not provided.
 func (r resourceHandlerProxy) ReadURI() string {
-	url := r.ResourceHandler.ReadURI()
-	if url == "" {
-		url = fmt.Sprintf("/api/v{%s:[^/]+}/%s/{%s}", versionKey, r.ResourceName(),
+	uri := r.ResourceHandler.ReadURI()
+	if uri == "" {
+		uri = fmt.Sprintf("/api/v{%s:[^/]+}/%s/{%s}", versionKey, r.ResourceName(),
 			resourceIDKey)
 	}
-	return url
+	return uri
 }
 
 // ReadListURI returns the URI for reading a list of resources using the handler-
 // specified URI while falling back to a sensible default if not provided.
 func (r resourceHandlerProxy) ReadListURI() string {
-	url := r.ResourceHandler.ReadListURI()
-	if url == "" {
-		url = fmt.Sprintf("/api/v{%s:[^/]+}/%s", versionKey, r.ResourceName())
+	uri := r.ResourceHandler.ReadListURI()
+	if uri == "" {
+		uri = fmt.Sprintf("/api/v{%s:[^/]+}/%s", versionKey, r.ResourceName())
 	}
-	return url
+	return uri
 }
 
 // UpdateURI returns the URI for updating a specific resource using the handler-
 // specified URI while falling back to a sensible default if not provided.
 func (r resourceHandlerProxy) UpdateURI() string {
-	url := r.ResourceHandler.UpdateURI()
-	if url == "" {
-		url = fmt.Sprintf("/api/v{%s:[^/]+}/%s/{%s}", versionKey, r.ResourceName(),
+	uri := r.ResourceHandler.UpdateURI()
+	if uri == "" {
+		uri = fmt.Sprintf("/api/v{%s:[^/]+}/%s/{%s}", versionKey, r.ResourceName(),
 			resourceIDKey)
 	}
-	return url
+	return uri
 }
 
 // DeleteURI returns the URI for deleting a specific resource using the handler-
 // specified URI while falling back to a sensible default if not provided.
 func (r resourceHandlerProxy) DeleteURI() string {
-	url := r.ResourceHandler.DeleteURI()
-	if url == "" {
-		url = fmt.Sprintf("/api/v{%s:[^/]+}/%s/{%s}", versionKey,
+	uri := r.ResourceHandler.DeleteURI()
+	if uri == "" {
+		uri = fmt.Sprintf("/api/v{%s:[^/]+}/%s/{%s}", versionKey,
 			r.ResourceHandler.ResourceName(), resourceIDKey)
 	}
-	return url
+	return uri
 }
