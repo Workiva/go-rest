@@ -1080,8 +1080,7 @@ func TestIsNilNilValue(t *testing.T) {
 // Ensures that isNil returns true for nil pointer.
 func TestIsNilNilPtr(t *testing.T) {
 	assert := assert.New(t)
-	ptr := &TestResource{}
-	ptr = nil
+	var ptr *TestResource
 	assert.True(isNil(ptr), "Incorrect return value")
 }
 
