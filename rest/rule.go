@@ -187,7 +187,7 @@ func applyOutboundRules(resource Resource, rules Rules) Resource {
 	// Apply only outbound Rules.
 	rules = filterRules(rules, false)
 
-	if resource == nil || len(rules) == 0 {
+	if isNil(resource) || len(rules) == 0 {
 		// Return resource as-is if no Rules are provided.
 		return resource
 	}
@@ -287,4 +287,18 @@ ruleLoop:
 	}
 
 	return nil
+}
+
+// isNil returns true if the given Resource is a nil value or pointer, false if
+// not.
+func isNil(resource Resource) bool {
+	value := reflect.ValueOf(resource)
+	t := value.Kind()
+	switch t {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map,
+		reflect.Ptr, reflect.Slice:
+		return value.IsNil()
+	default:
+		return resource == nil
+	}
 }

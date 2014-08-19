@@ -623,8 +623,7 @@ func TestOutboundRules(t *testing.T) {
 	handler.On("Rules").Return(Rules{rule})
 	handler.On("ReadResource").Return(&TestResource{Foo: "hello"}, nil)
 
-	called := false
-	api.RegisterResourceHandler(handler, getMiddleware(&called))
+	api.RegisterResourceHandler(handler)
 	readHandler, _ := api.(*muxAPI).getRouteHandler("foo:read")
 
 	req, _ := http.NewRequest("GET", "http://foo.com/api/v0.1/foo/1", nil)
@@ -635,6 +634,75 @@ func TestOutboundRules(t *testing.T) {
 	handler.Mock.AssertExpectations(t)
 	assert.Equal(
 		`{"result":{"f":"hello"},"success":true}`,
+		resp.Body.String(),
+		"Incorrect response string",
+	)
+}
+
+// Ensures that outbound rules are not applied if an error is returned by handler.
+func TestOutboundRulesDontApplyOnError(t *testing.T) {
+	assert := assert.New(t)
+	handler := new(MockResourceHandler)
+	api := NewAPI()
+	rule := &Rule{
+		Field:        "Foo",
+		FieldAlias:   "f",
+		OutputOnly:   true,
+		resourceType: reflect.TypeOf(TestResource{}),
+	}
+
+	handler.On("ResourceName").Return("foo")
+	handler.On("Authenticate").Return(nil)
+	handler.On("EmptyResource").Return(TestResource{})
+	handler.On("Rules").Return(Rules{rule})
+	handler.On("ReadResource").Return(nil, fmt.Errorf("oh snap"))
+
+	api.RegisterResourceHandler(handler)
+	readHandler, _ := api.(*muxAPI).getRouteHandler("foo:read")
+
+	req, _ := http.NewRequest("GET", "http://foo.com/api/v0.1/foo/1", nil)
+	resp := httptest.NewRecorder()
+
+	readHandler.ServeHTTP(resp, req)
+
+	handler.Mock.AssertExpectations(t)
+	assert.Equal(
+		`{"error":"oh snap","success":false}`,
+		resp.Body.String(),
+		"Incorrect response string",
+	)
+}
+
+// Ensures that outbound rules are not applied if a nil resource is returned by
+// handler.
+func TestOutboundRulesDontApplyOnNilResource(t *testing.T) {
+	assert := assert.New(t)
+	handler := new(MockResourceHandler)
+	api := NewAPI()
+	rule := &Rule{
+		Field:        "Foo",
+		FieldAlias:   "f",
+		OutputOnly:   true,
+		resourceType: reflect.TypeOf(TestResource{}),
+	}
+
+	handler.On("ResourceName").Return("foo")
+	handler.On("Authenticate").Return(nil)
+	handler.On("EmptyResource").Return(TestResource{})
+	handler.On("Rules").Return(Rules{rule})
+	handler.On("ReadResource").Return(nil, nil)
+
+	api.RegisterResourceHandler(handler)
+	readHandler, _ := api.(*muxAPI).getRouteHandler("foo:read")
+
+	req, _ := http.NewRequest("GET", "http://foo.com/api/v0.1/foo/1", nil)
+	resp := httptest.NewRecorder()
+
+	readHandler.ServeHTTP(resp, req)
+
+	handler.Mock.AssertExpectations(t)
+	assert.Equal(
+		`{"result":null,"success":true}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)

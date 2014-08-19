@@ -1070,3 +1070,28 @@ func TestAppliesDoesApply(t *testing.T) {
 
 	assert.True(rule.Applies("v2"), "Incorrect return value")
 }
+
+// Ensures that isNil returns true for nil value.
+func TestIsNilNilValue(t *testing.T) {
+	assert := assert.New(t)
+	assert.True(isNil(nil), "Incorrect return value")
+}
+
+// Ensures that isNil returns true for nil pointer.
+func TestIsNilNilPtr(t *testing.T) {
+	assert := assert.New(t)
+	var ptr *TestResource
+	assert.True(isNil(ptr), "Incorrect return value")
+}
+
+// Ensures that isNil returns false for non-nil value.
+func TestIsNilNotNilValue(t *testing.T) {
+	assert := assert.New(t)
+	assert.False(isNil(TestResource{}), "Incorrect return value")
+}
+
+// Ensures that isNil returns false for non-nil pointer.
+func TestIsNilNotNilPtr(t *testing.T) {
+	assert := assert.New(t)
+	assert.False(isNil(&TestResource{}), "Incorrect return value")
+}
