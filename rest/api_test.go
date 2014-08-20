@@ -81,7 +81,7 @@ func (m *MockResourceHandler) DeleteResource(r RequestContext, id string,
 	return resource, args.Error(1)
 }
 
-func (m *MockResourceHandler) Authenticate(r http.Request) error {
+func (m *MockResourceHandler) Authenticate(r *http.Request) error {
 	args := m.Mock.Called()
 	return args.Error(0)
 }

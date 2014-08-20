@@ -99,7 +99,7 @@ func (f FooHandler) DeleteResource(ctx RequestContext, id string,
 // of Authenticate, seen in BaseResourceHandler, always returns nil, meaning
 // all requests are authenticated. Returning an error means that the request is
 // unauthorized and any error message will be sent back with the response.
-func (f FooHandler) Authenticate(r http.Request) error {
+func (f FooHandler) Authenticate(r *http.Request) error {
 	if secrets, ok := r.Header["Authorization"]; ok {
 		if secrets[0] == "secret" {
 			return nil

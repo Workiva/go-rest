@@ -83,7 +83,7 @@ func (b BaseResourceHandler) DeleteResource(ctx RequestContext, id string,
 
 // Authenticate is the default authentication logic. All requests are authorized.
 // Implement custom authentication logic if necessary.
-func (b BaseResourceHandler) Authenticate(r http.Request) error {
+func (b BaseResourceHandler) Authenticate(r *http.Request) error {
 	return nil
 }
 

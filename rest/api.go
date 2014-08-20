@@ -60,10 +60,10 @@ type API interface {
 type RequestMiddleware func(http.HandlerFunc) http.HandlerFunc
 
 // newAuthMiddleware returns a RequestMiddleware used to authenticate requests.
-func newAuthMiddleware(authenticate func(http.Request) error) RequestMiddleware {
+func newAuthMiddleware(authenticate func(*http.Request) error) RequestMiddleware {
 	return func(wrapped http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			if err := authenticate(*r); err != nil {
+			if err := authenticate(r); err != nil {
 				w.WriteHeader(http.StatusUnauthorized)
 				w.Write([]byte(err.Error()))
 				return
