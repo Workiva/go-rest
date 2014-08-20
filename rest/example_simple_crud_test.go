@@ -18,7 +18,9 @@ type FooResource struct {
 
 // FooHandler implements the ResourceHandler interface. It specifies the business
 // logic for performing CRUD operations.
-type FooHandler struct{}
+type FooHandler struct {
+	BaseResourceHandler
+}
 
 // ResourceName is used to identify what resource a handler corresponds to and is used
 // in the endpoint URLs, i.e. /api/:version/foo.
