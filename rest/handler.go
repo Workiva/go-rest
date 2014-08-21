@@ -72,7 +72,7 @@ type ResourceHandler interface {
 	// of Authenticate, seen in BaseResourceHandler, always returns nil, meaning all
 	// requests are authenticated. Returning an error means that the request is
 	// unauthorized and any error message will be sent back with the response.
-	Authenticate(http.Request) error
+	Authenticate(*http.Request) error
 
 	// Rules returns the resource rules to apply to incoming requests and outgoing
 	// responses. The default behavior, seen in BaseResourceHandler, is to apply no
