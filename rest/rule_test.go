@@ -932,12 +932,7 @@ func TestApplyOutboundRulesNotStruct(t *testing.T) {
 func TestApplyOutboundRulesMap(t *testing.T) {
 	assert := assert.New(t)
 	resource := map[string]interface{}{"Foo": "hello"}
-	rules := NewRules((*TestResource)(nil),
-		&Rule{
-			Field:        "Foo",
-			resourceType: reflect.TypeOf(TestResource{}),
-		},
-	)
+	rules := NewRules((*TestResource)(nil), &Rule{Field: "Foo"})
 
 	assert.Equal(
 		Payload{"Foo": "hello"},
@@ -951,12 +946,7 @@ func TestApplyOutboundRulesMap(t *testing.T) {
 func TestApplyOutboundRulesMapMissingFields(t *testing.T) {
 	assert := assert.New(t)
 	resource := map[string]interface{}{}
-	rules := NewRules((*TestResource)(nil),
-		&Rule{
-			Field:        "Foo",
-			resourceType: reflect.TypeOf(TestResource{}),
-		},
-	)
+	rules := NewRules((*TestResource)(nil), &Rule{Field: "Foo"})
 
 	assert.Equal(
 		Payload{},
@@ -977,7 +967,6 @@ func TestApplyOutboundRulesMapOutputHandler(t *testing.T) {
 			OutputHandler: func(val interface{}) interface{} {
 				return val.(string) + " world"
 			},
-			resourceType: reflect.TypeOf(TestResource{}),
 		},
 	)
 
@@ -993,15 +982,146 @@ func TestApplyOutboundRulesMapOutputHandler(t *testing.T) {
 func TestApplyOutboundRulesBadMap(t *testing.T) {
 	assert := assert.New(t)
 	resource := map[int]interface{}{}
+	rules := NewRules((*TestResource)(nil), &Rule{Field: "Foo"})
+
+	assert.Equal(
+		resource,
+		applyOutboundRules(resource, rules),
+		"Incorrect return value",
+	)
+}
+
+// Ensures that nested Rules are properly applied to slices by applyOutboundRules
+// when a map is passed in.
+func TestApplyOutboundRulesMapNestedRulesSlice(t *testing.T) {
+	assert := assert.New(t)
+	resource := map[string]interface{}{
+		"Foo": "bar",
+		"Baz": []TestResource{TestResource{Foo: "hello"}},
+	}
 	rules := NewRules((*TestResource)(nil),
 		&Rule{
-			Field:        "Foo",
-			resourceType: reflect.TypeOf(TestResource{}),
+			Field:      "Foo",
+			FieldAlias: "foo",
+		},
+		&Rule{
+			Field:      "Baz",
+			FieldAlias: "baz",
+			Rules: NewRules((*TestResource)(nil),
+				&Rule{
+					Field:      "Foo",
+					FieldAlias: "f",
+				},
+			),
 		},
 	)
 
 	assert.Equal(
-		resource,
+		Payload{"foo": "bar", "baz": []interface{}{Payload{"f": "hello"}}},
+		applyOutboundRules(resource, rules),
+		"Incorrect return value",
+	)
+}
+
+// Ensures that nested Rules are properly applied to non-slice values by
+// applyOutboundRules when a map is passed in.
+func TestApplyOutboundRulesMapNestedRulesValueNonSlice(t *testing.T) {
+	assert := assert.New(t)
+	resource := map[string]interface{}{
+		"Foo": "bar",
+		"Baz": TestResource{Foo: "hello"},
+	}
+	rules := NewRules((*TestResource)(nil),
+		&Rule{
+			Field:      "Foo",
+			FieldAlias: "foo",
+		},
+		&Rule{
+			Field:      "Baz",
+			FieldAlias: "baz",
+			Rules: NewRules((*TestResource)(nil),
+				&Rule{
+					Field:      "Foo",
+					FieldAlias: "f",
+				},
+			),
+		},
+	)
+
+	assert.Equal(
+		Payload{"foo": "bar", "baz": Payload{"f": "hello"}},
+		applyOutboundRules(resource, rules),
+		"Incorrect return value",
+	)
+}
+
+// Ensures that nested Rules are properly applied to slices by applyOutboundRules
+// when a struct is passed in.
+func TestApplyOutboundRulesStructNestedRulesSlice(t *testing.T) {
+	assert := assert.New(t)
+	type nestedResource struct {
+		Foo string
+		Bar []TestResource
+	}
+	resource := nestedResource{
+		Foo: "hello",
+		Bar: []TestResource{TestResource{Foo: "world"}},
+	}
+	rules := NewRules((*nestedResource)(nil),
+		&Rule{
+			Field:      "Foo",
+			FieldAlias: "foo",
+		},
+		&Rule{
+			Field:      "Bar",
+			FieldAlias: "bar",
+			Rules: NewRules((*TestResource)(nil),
+				&Rule{
+					Field:      "Foo",
+					FieldAlias: "f",
+				},
+			),
+		},
+	)
+
+	assert.Equal(
+		Payload{"foo": "hello", "bar": []interface{}{Payload{"f": "world"}}},
+		applyOutboundRules(resource, rules),
+		"Incorrect return value",
+	)
+}
+
+// Ensures that nested Rules are properly applied to non-slice values by
+// applyOutboundRules when a struct is passed in.
+func TestApplyOutboundRulesStructNestedRulesValueNonSlice(t *testing.T) {
+	assert := assert.New(t)
+	type nestedResource struct {
+		Foo string
+		Bar TestResource
+	}
+	resource := nestedResource{
+		Foo: "hello",
+		Bar: TestResource{Foo: "world"},
+	}
+	rules := NewRules((*TestResource)(nil),
+		&Rule{
+			Field:      "Foo",
+			FieldAlias: "foo",
+		},
+		&Rule{
+			Field:      "Bar",
+			FieldAlias: "bar",
+			Rules: NewRules((*TestResource)(nil),
+				&Rule{
+					Field:      "Foo",
+					FieldAlias: "f",
+				},
+			),
+		},
+	)
+
+	assert.Equal(
+		Payload{"foo": "hello", "bar": Payload{"f": "world"}},
 		applyOutboundRules(resource, rules),
 		"Incorrect return value",
 	)
@@ -1011,12 +1131,7 @@ func TestApplyOutboundRulesBadMap(t *testing.T) {
 func TestApplyOutboundRulesDefaultName(t *testing.T) {
 	assert := assert.New(t)
 	resource := &TestResource{Foo: "hello"}
-	rules := NewRules((*TestResource)(nil),
-		&Rule{
-			Field:        "Foo",
-			resourceType: reflect.TypeOf(TestResource{}),
-		},
-	)
+	rules := NewRules((*TestResource)(nil), &Rule{Field: "Foo"})
 
 	assert.Equal(
 		Payload{"Foo": "hello"},
@@ -1036,7 +1151,6 @@ func TestApplyOutboundRulesOutputHandler(t *testing.T) {
 			OutputHandler: func(val interface{}) interface{} {
 				return val.(string) + " world"
 			},
-			resourceType: reflect.TypeOf(TestResource{}),
 		},
 	)
 
@@ -1094,4 +1208,26 @@ func TestIsNilNotNilValue(t *testing.T) {
 func TestIsNilNotNilPtr(t *testing.T) {
 	assert := assert.New(t)
 	assert.False(isNil(&TestResource{}), "Incorrect return value")
+}
+
+// Ensures that NewRules panics if a non-pointer is passed in.
+func TestNewRulesBadPtr(t *testing.T) {
+	assert := assert.New(t)
+	defer func() {
+		r := recover()
+		assert.NotNil(r, "Should have panicked")
+	}()
+
+	NewRules(struct{}{})
+}
+
+// Ensures that NewRules returns a Rules instance.
+func TestNewRulesHappyPath(t *testing.T) {
+	assert := assert.New(t)
+	rule := &Rule{Field: "foo", FieldAlias: "bar"}
+
+	rules := NewRules((*TestResource)(nil), rule)
+
+	assert.Equal(rule, rules.Contents()[0])
+	assert.Equal(reflect.TypeOf((*TestResource)(nil)).Elem(), rules.ResourceType())
 }
