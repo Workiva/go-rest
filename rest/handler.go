@@ -34,11 +34,6 @@ type ResourceHandler interface {
 	// DeleteURI returns the URI for deleting a specific resource.
 	DeleteURI() string
 
-	// EmptyResource returns a zero-value instance of the resource type this
-	// ResourceHandler corresponds to. If this returns anything other than a struct and
-	// Rules are defined, API will panic on start.
-	EmptyResource() interface{}
-
 	// CreateResource is the logic that corresponds to creating a new resource at
 	// POST /api/:version/resourceName. Typically, this would insert a record into a
 	// database. It returns the newly created resource or an error if the create failed.
@@ -77,8 +72,7 @@ type ResourceHandler interface {
 
 	// Rules returns the resource rules to apply to incoming requests and outgoing
 	// responses. The default behavior, seen in BaseResourceHandler, is to apply no
-	// rules. If this does not return an empty slice and EmptyResource does not return
-	// a struct, API will panic on start.
+	// rules.
 	Rules() Rules
 }
 
@@ -276,15 +270,19 @@ func sendResponse(w http.ResponseWriter, r response, serializer ResponseSerializ
 }
 
 // rulesForVersion returns a slice of Rules which apply to the given version.
-func rulesForVersion(rules Rules, version string) Rules {
-	filtered := make(Rules, 0, len(rules))
-	for _, rule := range rules {
+func rulesForVersion(r Rules, version string) Rules {
+	if r == nil {
+		return &rules{}
+	}
+
+	filtered := make([]*Rule, 0, r.Size())
+	for _, rule := range r.Contents() {
 		if rule.Applies(version) {
 			filtered = append(filtered, rule)
 		}
 	}
 
-	return filtered
+	return &rules{contents: filtered, resourceType: r.ResourceType()}
 }
 
 // decodePayload unmarshals the JSON payload and returns the resulting map. If the

@@ -3,7 +3,6 @@ package rest
 import (
 	"fmt"
 	"net/http"
-	"reflect"
 )
 
 // BaseResourceHandler is a base implementation of ResourceHandler with stubs for the
@@ -46,11 +45,6 @@ func (b BaseResourceHandler) DeleteURI() string {
 	return ""
 }
 
-// EmptyResource is a stub. Implement if Rules are defined.
-func (b BaseResourceHandler) EmptyResource() interface{} {
-	return nil
-}
-
 // CreateResource is a stub. Implement if necessary.
 func (b BaseResourceHandler) CreateResource(ctx RequestContext, data Payload,
 	version string) (Resource, error) {
@@ -90,12 +84,12 @@ func (b BaseResourceHandler) Authenticate(r *http.Request) error {
 // Rules returns the resource rules to apply to incoming requests and outgoing
 // responses. No rules are applied by default. Implement if necessary.
 func (b BaseResourceHandler) Rules() Rules {
-	return Rules{}
+	return nil
 }
 
-// resourceHandlerProxy wraps a ResourceHandler and injects the resource type into its
-// Rules. This allows the framework to provide additional logic around the proxied
-// ResourceHandler. It also provides default logic such as REST URIs.
+// resourceHandlerProxy wraps a ResourceHandler and allows the framework to provide
+// additional logic around the proxied ResourceHandler, including default logic such
+// as REST URIs.
 type resourceHandlerProxy struct {
 	ResourceHandler
 }
@@ -108,18 +102,6 @@ func (r resourceHandlerProxy) ResourceName() string {
 		panic("ResourceHandler must implement ResourceName()")
 	}
 	return name
-}
-
-// Rules returns the wrapped ResourceHandler's Rules after injecting them with the
-// resource type.
-func (r resourceHandlerProxy) Rules() Rules {
-	rules := r.ResourceHandler.Rules()
-	for _, rule := range rules {
-		// Associate Rules with their respective type.
-		rule.resourceType = reflect.TypeOf(r.EmptyResource())
-	}
-
-	return rules
 }
 
 // CreateURI returns the URI for creating a resource using the handler-specified
