@@ -11,8 +11,9 @@ import (
 // or JSON struct tags). The resource in this example has a field, "Secret", which we don't
 // want to include in REST responses.
 type ResourceWithSecret struct {
-	ID     int    `json:"id"`
-	Foo    string `json:"foo"`
+	ID     int
+	Foo    string
+	Nested FooResource
 	Secret string
 }
 
@@ -27,12 +28,6 @@ type ResourceWithSecretHandler struct {
 // in the endpoint URLs, i.e. /api/:version/resource.
 func (r ResourceWithSecretHandler) ResourceName() string {
 	return "resource"
-}
-
-// EmptyResource returns a zero-value resource instance. If must be implemented if Rules are
-// defined.
-func (r ResourceWithSecretHandler) EmptyResource() interface{} {
-	return ResourceWithSecret{}
 }
 
 // CreateResource is the logic that corresponds to creating a new resource at
@@ -70,8 +65,9 @@ func (r ResourceWithSecretHandler) ReadResource(ctx RequestContext, id string,
 // not specified for the "Secret" field. This means that field will not be included in the
 // response. The "Type" field on a Rule indicates the type the incoming data should be
 // coerced to. If coercion fails, an error indicating this will be sent back in the response.
-// If no type is specified, no coercion will be performed. When Rules are defined,
-// EmptyResource must be implemented.
+// If no type is specified, no coercion will be performed. Rules may also be nested. NewRules
+// is used to initialize Rules and associate them with the resource type using the nil pointer.
+// This allows Rule validation to occur at startup.
 func (r ResourceWithSecretHandler) Rules() Rules {
 	return NewRules((*ResourceWithSecret)(nil),
 		&Rule{
@@ -102,11 +98,29 @@ func (r ResourceWithSecretHandler) Rules() Rules {
 			Versions:   []string{"2"},
 			Required:   true,
 		},
+		&Rule{
+			Field:      "Nested",
+			FieldAlias: "nested",
+			Versions:   []string{"2"},
+			Rules: NewRules((*FooResource)(nil),
+				&Rule{
+					Field:      "ID",
+					FieldAlias: "id",
+					Type:       Int,
+					OutputOnly: true,
+				},
+				&Rule{
+					Field:      "Foobar",
+					FieldAlias: "foobar",
+					Type:       String,
+				},
+			),
+		},
 	)
 }
 
 // This example shows how Rules are used to provide fine-grained control over response
-// output.
+// input and output.
 func Example_rules() {
 	api := NewAPI()
 
