@@ -905,6 +905,72 @@ func TestApplyInboundRulesCoerceMapToMap(t *testing.T) {
 	assert.Nil(err, "Error should be nil")
 }
 
+// Ensures that nested inbound Rules are not applied if the field value is not a map
+// or slice.
+func TestApplyInboundRulesNestedRulesDontApply(t *testing.T) {
+	assert := assert.New(t)
+	payload := Payload{"foo": 1}
+	rules := NewRules((*TestResource)(nil),
+		&Rule{
+			Field:      "Foo",
+			FieldAlias: "foo",
+			Rules: NewRules((*TestResource)(nil),
+				&Rule{Field: "Bar", FieldAlias: "bar", Type: String}),
+		},
+	)
+
+	actual, err := applyInboundRules(payload, rules)
+
+	assert.Equal(Payload{"foo": 1}, actual, "Incorrect return value")
+	assert.Nil(err, "Error should be nil")
+}
+
+// Ensures that nested inbound Rules are correctly applied to maps.
+func TestApplyInboundRulesNestedRulesMap(t *testing.T) {
+	assert := assert.New(t)
+	payload := Payload{"foo": map[string]interface{}{"bar": "baz"}}
+	rules := NewRules((*TestResource)(nil),
+		&Rule{
+			Field:      "Foo",
+			FieldAlias: "foo",
+			Rules: NewRules((*TestResource)(nil),
+				&Rule{Field: "Bar", FieldAlias: "bar", Type: String}),
+		},
+	)
+
+	actual, err := applyInboundRules(payload, rules)
+
+	assert.Equal(Payload{"foo": map[string]interface{}{"bar": "baz"}}, actual,
+		"Incorrect return value")
+	assert.Nil(err, "Error should be nil")
+}
+
+// Ensures that nested inbound Rules are correctly applied to slices.
+func TestApplyInboundRulesNestedRulesSlice(t *testing.T) {
+	assert := assert.New(t)
+	payload := Payload{"foo": []map[string]interface{}{
+		map[string]interface{}{"bar": "a"},
+		map[string]interface{}{"bar": "b"},
+	}}
+	rules := NewRules((*TestResource)(nil),
+		&Rule{
+			Field:      "Foo",
+			FieldAlias: "foo",
+			Rules: NewRules((*TestResource)(nil),
+				&Rule{Field: "Bar", FieldAlias: "bar", Type: String}),
+		},
+	)
+
+	actual, err := applyInboundRules(payload, rules)
+
+	assert.Equal(Payload{"foo": []interface{}{
+		map[string]interface{}{"bar": "a"},
+		map[string]interface{}{"bar": "b"},
+	}}, actual, "Incorrect return value")
+
+	assert.Nil(err, "Error should be nil")
+}
+
 // Ensures that nil is returned by applyOutboundRules if nil is passed in.
 func TestApplyOutboundRulesNilResource(t *testing.T) {
 	assert := assert.New(t)
