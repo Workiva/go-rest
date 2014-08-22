@@ -276,7 +276,7 @@ func rulesForVersion(r Rules, version string) Rules {
 		return rules{}
 	}
 
-	filtered := make([]*Rule, 0, len(r.Contents()))
+	filtered := make([]*Rule, 0, r.Size())
 	for _, rule := range r.Contents() {
 		if rule.Applies(version) {
 			filtered = append(filtered, rule)
