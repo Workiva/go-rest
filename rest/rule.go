@@ -14,8 +14,103 @@ import (
 //
 //  - Make type coercion pluggable (i.e. conversion/validation of custom types).
 
-// Rules is a slice of Rule pointers.
-type Rules []*Rule
+// Rules is a collection of Rules and a reflect.Type which they correspond to.
+type Rules interface {
+	Contents() []*Rule
+	ResourceType() reflect.Type
+	Validate() error
+	FilterRules(bool) Rules
+}
+
+type rules struct {
+	contents     []*Rule
+	resourceType reflect.Type
+}
+
+func (r rules) Contents() []*Rule {
+	return r.contents
+}
+
+func (r rules) ResourceType() reflect.Type {
+	return r.resourceType
+}
+
+// Validate verifies that the Rules are valid for the given reflect.Type, meaning
+// they specify fields that exist and correct types. If a Rule is invalid, an
+// error is returned. If the Rules are valid, nil is returned. This will
+// recursively validate nested Rules.
+func (r rules) Validate() error {
+	for _, rule := range r.contents {
+		resourceType := rule.resourceType
+		if resourceType.Kind() != reflect.Struct && resourceType.Kind() != reflect.Map {
+			return fmt.Errorf(
+				"Invalid resource type: must be struct or map, got %s",
+				resourceType)
+		}
+
+		field, found := resourceType.FieldByName(rule.Field)
+		if !found {
+			return fmt.Errorf(
+				"Invalid Rule for %s: field '%s' does not exist",
+				resourceType, rule.Field)
+		}
+
+		if !rule.validType(field.Type) {
+			return fmt.Errorf(
+				"Invalid Rule for %s: field '%s' is type %s, not %s",
+				resourceType, rule.Field, field.Type, typeToName[rule.Type])
+		}
+
+		// Validate nested Rules.
+		if rule.Rules != nil {
+			if err := rule.Rules.Validate(); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// FilterRules filters the slice of Rules based on the specified bool. True means to
+// filter out outbound Rules such that the returned slice contains only inbound Rules.
+// False means to filter out inbound Rules such that the returned slice contains only
+// outbound Rules.
+func (r rules) FilterRules(inbound bool) Rules {
+	filtered := make([]*Rule, 0, len(r.contents))
+	for _, rule := range r.contents {
+		if inbound && rule.OutputOnly {
+			// Filter out outbound Rules.
+			continue
+		} else if !inbound && rule.InputOnly {
+			// Filter out inbound Rules.
+			continue
+		}
+		filtered = append(filtered, rule)
+	}
+
+	return rules{contents: filtered, resourceType: r.resourceType}
+}
+
+// NewRules returns a set of Rules for use by a ResourceHandler. The first argument
+// must be a resource pointer (and can be nil) used to associate the Rules with a
+// resource type. If it isn't a pointer, this will panic.
+func NewRules(ptr interface{}, r ...*Rule) Rules {
+	resourceType := reflect.TypeOf(ptr)
+	if resourceType.Kind() != reflect.Ptr {
+		panic(fmt.Sprintf("Must provide resource pointer to NewRules, got %s",
+			resourceType.Kind()))
+	}
+
+	resourceType = resourceType.Elem()
+	for _, rule := range r {
+		rule.resourceType = resourceType
+	}
+	return rules{
+		resourceType: resourceType,
+		contents:     r,
+	}
+}
 
 // Rule provides schema validation and type coercion for request input and fine-grained
 // control over response output. If a ResourceHandler provides input Rules which
@@ -55,6 +150,9 @@ type Rule struct {
 
 	// Function which produces the field value to send.
 	OutputHandler func(interface{}) interface{}
+
+	// Nested Rules to apply to field value. Only applies to values which are slices.
+	Rules Rules
 
 	// resourceType is the reflect.Type of the resource this Rule applies to. Set
 	// by the framework.
@@ -96,35 +194,6 @@ func (r Rule) validType(fieldType reflect.Type) bool {
 	return fieldType.Kind() == kind
 }
 
-// validate verifies that the Rules are valid for the given reflect.Type, meaning
-// they specify fields that exist and correct types. If a Rule is invalid, an
-// error is returned. If the Rules are valid, nil is returned.
-func (r Rules) validate() error {
-	for _, rule := range r {
-		resourceType := rule.resourceType
-		if resourceType.Kind() != reflect.Struct && resourceType.Kind() != reflect.Map {
-			return fmt.Errorf(
-				"Invalid resource type: must be struct or map, got %s",
-				resourceType)
-		}
-
-		field, found := resourceType.FieldByName(rule.Field)
-		if !found {
-			return fmt.Errorf(
-				"Invalid Rule for %s: field '%s' does not exist",
-				resourceType, rule.Field)
-		}
-
-		if !rule.validType(field.Type) {
-			return fmt.Errorf(
-				"Invalid Rule for %s: field '%s' is type %s, not %s",
-				resourceType, rule.Field, field.Type, typeToName[rule.Type])
-		}
-	}
-
-	return nil
-}
-
 // applyInboundRules applies Rules which are not specified as output only to the
 // provided Payload. If the Payload is nil, an empty Payload will be returned. If no
 // Rules are provided, this acts as an identity function. If Rules are provided, any
@@ -137,9 +206,9 @@ func applyInboundRules(payload Payload, rules Rules) (Payload, error) {
 	}
 
 	// Apply only inbound Rules.
-	rules = filterRules(rules, true)
+	rules = rules.FilterRules(true)
 
-	if len(rules) == 0 {
+	if len(rules.Contents()) == 0 {
 		return payload, nil
 	}
 
@@ -147,7 +216,7 @@ func applyInboundRules(payload Payload, rules Rules) (Payload, error) {
 
 fieldLoop:
 	for field, value := range payload {
-		for _, rule := range rules {
+		for _, rule := range rules.Contents() {
 			if rule.FieldAlias == field {
 				if rule.Type != Unspecified {
 					// Coerce to specified type.
@@ -185,9 +254,9 @@ fieldLoop:
 // into old API versions.
 func applyOutboundRules(resource Resource, rules Rules) Resource {
 	// Apply only outbound Rules.
-	rules = filterRules(rules, false)
+	rules = rules.FilterRules(false)
 
-	if isNil(resource) || len(rules) == 0 {
+	if isNil(resource) || len(rules.Contents()) == 0 {
 		// Return resource as-is if no Rules are provided.
 		return resource
 	}
@@ -205,7 +274,7 @@ func applyOutboundRules(resource Resource, rules Rules) Resource {
 			// Nothing we can do if the keys aren't strings.
 			payload = resource
 		}
-	} else if resourceType == rules[0].resourceType {
+	} else if resourceType.Kind() == reflect.Struct {
 		payload = applyOutboundRulesForStruct(resourceValue, rules)
 	} else {
 		// Only apply Rules to resource structs and maps.
@@ -217,12 +286,23 @@ func applyOutboundRules(resource Resource, rules Rules) Resource {
 
 func applyOutboundRulesForMap(resource map[string]interface{}, rules Rules) Payload {
 	payload := Payload{}
-	for _, rule := range rules {
+	for _, rule := range rules.Contents() {
 		fieldValue, ok := resource[rule.Field]
 		if !ok {
 			log.Printf("Map resource missing field '%s'", rule.Field)
 			continue
 		}
+
+		if rule.Rules != nil && reflect.TypeOf(fieldValue).Kind() == reflect.Slice {
+			s := reflect.ValueOf(fieldValue)
+			nestedValues := make([]interface{}, s.Len())
+			// Apply nested Rules.
+			for i := 0; i < s.Len(); i++ {
+				nestedValues[i] = applyOutboundRules(s.Index(i).Interface(), rule.Rules)
+			}
+			fieldValue = nestedValues
+		}
+
 		if rule.OutputHandler != nil {
 			fieldValue = rule.OutputHandler(fieldValue)
 		}
@@ -234,10 +314,21 @@ func applyOutboundRulesForMap(resource map[string]interface{}, rules Rules) Payl
 
 func applyOutboundRulesForStruct(resourceValue reflect.Value, rules Rules) Payload {
 	payload := Payload{}
-	for _, rule := range rules {
+	for _, rule := range rules.Contents() {
 		// Rule validation occurs at server start. No need to check for field existence.
 		field := resourceValue.FieldByName(rule.Field)
 		fieldValue := field.Interface()
+
+		if rule.Rules != nil && reflect.TypeOf(fieldValue).Kind() == reflect.Slice {
+			s := reflect.ValueOf(fieldValue)
+			nestedValues := make([]interface{}, s.Len())
+			// Apply nested Rules.
+			for i := 0; i < s.Len(); i++ {
+				nestedValues[i] = applyOutboundRules(s.Index(i).Interface(), rule.Rules)
+			}
+			fieldValue = nestedValues
+		}
+
 		if rule.OutputHandler != nil {
 			fieldValue = rule.OutputHandler(fieldValue)
 		}
@@ -247,32 +338,12 @@ func applyOutboundRulesForStruct(resourceValue reflect.Value, rules Rules) Paylo
 	return payload
 }
 
-// filterRules filters the slice of Rules based on the specified bool. True means to
-// filter out outbound Rules such that the returned slice contains only inbound Rules.
-// False means to filter out inbound Rules such that the returned slice contains only
-// outbound Rules.
-func filterRules(rules Rules, inbound bool) Rules {
-	filtered := make(Rules, 0, len(rules))
-	for _, rule := range rules {
-		if inbound && rule.OutputOnly {
-			// Filter out outbound Rules.
-			continue
-		} else if !inbound && rule.InputOnly {
-			// Filter out inbound Rules.
-			continue
-		}
-		filtered = append(filtered, rule)
-	}
-
-	return filtered
-}
-
 // enforceRequiredFields verifies that the provided Payload has values for any Rules
 // with the Required flag set to true. If any required fields are missing, an error
 // will be returned. Otherwise nil is returned.
 func enforceRequiredFields(rules Rules, payload Payload) error {
 ruleLoop:
-	for _, rule := range rules {
+	for _, rule := range rules.Contents() {
 		if !rule.Required {
 			continue
 		}

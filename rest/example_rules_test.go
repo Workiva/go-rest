@@ -73,7 +73,7 @@ func (r ResourceWithSecretHandler) ReadResource(ctx RequestContext, id string,
 // If no type is specified, no coercion will be performed. When Rules are defined,
 // EmptyResource must be implemented.
 func (r ResourceWithSecretHandler) Rules() Rules {
-	return Rules{
+	return NewRules((*ResourceWithSecret)(nil),
 		&Rule{
 			Field:      "ID",
 			FieldAlias: "id",
@@ -102,7 +102,7 @@ func (r ResourceWithSecretHandler) Rules() Rules {
 			Versions:   []string{"2"},
 			Required:   true,
 		},
-	}
+	)
 }
 
 // This example shows how Rules are used to provide fine-grained control over response
