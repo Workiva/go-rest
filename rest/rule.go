@@ -67,25 +67,31 @@ func (r *rules) ResourceType() reflect.Type {
 // and correct types. If a Rule is invalid, an error is returned. If the Rules are
 // valid, nil is returned. This will recursively validate nested Rules.
 func (r *rules) Validate() error {
+	resourceType := r.resourceType
+	if resourceType.Kind() != reflect.Struct && resourceType.Kind() != reflect.Map {
+		return fmt.Errorf(
+			"Invalid resource type: must be struct or map, got %s",
+			resourceType)
+	}
+
 	for _, rule := range r.contents {
-		resourceType := r.resourceType
-		if resourceType.Kind() != reflect.Struct && resourceType.Kind() != reflect.Map {
-			return fmt.Errorf(
-				"Invalid resource type: must be struct or map, got %s",
-				resourceType)
+		if rule.Name() == "" {
+			return fmt.Errorf("Invalid Rule: must have Field or FieldAlias")
 		}
 
-		field, found := resourceType.FieldByName(rule.Field)
-		if !found {
-			return fmt.Errorf(
-				"Invalid Rule for %s: field '%s' does not exist",
-				resourceType, rule.Field)
-		}
+		if rule.isResourceRule() {
+			field, found := resourceType.FieldByName(rule.Field)
+			if !found {
+				return fmt.Errorf(
+					"Invalid Rule for %s: field '%s' does not exist",
+					resourceType, rule.Field)
+			}
 
-		if !rule.validType(field.Type) {
-			return fmt.Errorf(
-				"Invalid Rule for %s: field '%s' is type %s, not %s",
-				resourceType, rule.Field, field.Type, typeToName[rule.Type])
+			if !rule.validType(field.Type) {
+				return fmt.Errorf(
+					"Invalid Rule for %s: field '%s' is type %s, not %s",
+					resourceType, rule.Field, field.Type, typeToName[rule.Type])
+			}
 		}
 
 		// Validate nested Rules.
@@ -214,6 +220,13 @@ func (r Rule) validType(fieldType reflect.Type) bool {
 
 	kind := typeToKind[r.Type]
 	return fieldType.Kind() == kind
+}
+
+// isResourceRule returns true if this Rule corresponds to a resource field, false
+// if not. Non-resource Rules allow you to specify input fields that do not directly
+// correspond to a resource.
+func (r Rule) isResourceRule() bool {
+	return r.Field != ""
 }
 
 // applyInboundRules applies Rules which are not specified as output only to the
@@ -371,6 +384,11 @@ func applyOutboundRules(resource Resource, rules Rules) Resource {
 func applyOutboundRulesForMap(resource map[string]interface{}, rules Rules) Payload {
 	payload := Payload{}
 	for _, rule := range rules.Contents() {
+		if !rule.isResourceRule() {
+			// Non-resource Rules don't apply to output.
+			continue
+		}
+
 		fieldValue, ok := resource[rule.Field]
 		if !ok {
 			log.Printf("Map resource missing field '%s'", rule.Field)
@@ -397,6 +415,11 @@ func applyOutboundRulesForMap(resource map[string]interface{}, rules Rules) Payl
 func applyOutboundRulesForStruct(resourceValue reflect.Value, rules Rules) Payload {
 	payload := Payload{}
 	for _, rule := range rules.Contents() {
+		if !rule.isResourceRule() {
+			// Non-resource Rules don't apply to output.
+			continue
+		}
+
 		// Rule validation occurs at server start. No need to check for field existence.
 		field := resourceValue.FieldByName(rule.Field)
 		fieldValue := field.Interface()
