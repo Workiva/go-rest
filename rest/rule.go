@@ -13,6 +13,10 @@ import (
 //    For now, we are only providing type validation.
 //
 //  - Make type coercion pluggable (i.e. conversion/validation of custom types).
+//
+//  - Apply versioning to nested Rules. Currently, nested Rules are applied if the parent
+//    is applied, even if they specify versions which do not include the requested
+//    version.
 
 // Rules is a collection of Rules and a reflect.Type which they correspond to.
 type Rules interface {
