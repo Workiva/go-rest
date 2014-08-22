@@ -16,10 +16,25 @@ import (
 
 // Rules is a collection of Rules and a reflect.Type which they correspond to.
 type Rules interface {
+	// Contents returns the contained Rules.
 	Contents() []*Rule
+
+	// ResourceType returns the reflect.Type these Rules correspond to.
 	ResourceType() reflect.Type
+
+	// Validate verifies that the Rules are valid, meaning they specify fields that exist
+	// and correct types. If a Rule is invalid, an error is returned. If the Rules are
+	// valid, nil is returned. This will recursively validate nested Rules.
 	Validate() error
-	FilterRules(bool) Rules
+
+	// Filter filters the slice of Rules based on the specified bool. True means to
+	// filter out outbound Rules such that the returned slice contains only inbound Rules.
+	// False means to filter out inbound Rules such that the returned slice contains only
+	// outbound Rules.
+	Filter(bool) Rules
+
+	// Size returns the number of contained Rules.
+	Size() int
 }
 
 type rules struct {
@@ -27,18 +42,19 @@ type rules struct {
 	resourceType reflect.Type
 }
 
+// Contents returns the contained Rules.
 func (r rules) Contents() []*Rule {
 	return r.contents
 }
 
+// ResourceType returns the reflect.Type these Rules correspond to.
 func (r rules) ResourceType() reflect.Type {
 	return r.resourceType
 }
 
-// Validate verifies that the Rules are valid for the given reflect.Type, meaning
-// they specify fields that exist and correct types. If a Rule is invalid, an
-// error is returned. If the Rules are valid, nil is returned. This will
-// recursively validate nested Rules.
+// Validate verifies that the Rules are valid, meaning they specify fields that exist
+// and correct types. If a Rule is invalid, an error is returned. If the Rules are
+// valid, nil is returned. This will recursively validate nested Rules.
 func (r rules) Validate() error {
 	for _, rule := range r.contents {
 		resourceType := r.resourceType
@@ -72,11 +88,11 @@ func (r rules) Validate() error {
 	return nil
 }
 
-// FilterRules filters the slice of Rules based on the specified bool. True means to
+// Filter filters the slice of Rules based on the specified bool. True means to
 // filter out outbound Rules such that the returned slice contains only inbound Rules.
 // False means to filter out inbound Rules such that the returned slice contains only
 // outbound Rules.
-func (r rules) FilterRules(inbound bool) Rules {
+func (r rules) Filter(inbound bool) Rules {
 	filtered := make([]*Rule, 0, len(r.contents))
 	for _, rule := range r.contents {
 		if inbound && rule.OutputOnly {
@@ -90,6 +106,11 @@ func (r rules) FilterRules(inbound bool) Rules {
 	}
 
 	return rules{contents: filtered, resourceType: r.resourceType}
+}
+
+// Size returns the number of contained Rules.
+func (r rules) Size() int {
+	return len(r.contents)
 }
 
 // NewRules returns a set of Rules for use by a ResourceHandler. The first argument
@@ -198,7 +219,7 @@ func applyInboundRules(payload Payload, rules Rules) (Payload, error) {
 	}
 
 	// Apply only inbound Rules.
-	rules = rules.FilterRules(true)
+	rules = rules.Filter(true)
 
 	if len(rules.Contents()) == 0 {
 		return payload, nil
@@ -210,7 +231,14 @@ fieldLoop:
 	for field, value := range payload {
 		for _, rule := range rules.Contents() {
 			if rule.FieldAlias == field {
-				if rule.Type != Unspecified {
+				if nestedInboundRulesApply(value, rule.Rules) {
+					// Nested Rules take precedence over type coercion.
+					v, err := applyNestedInboundRules(value, rule.Rules)
+					if err != nil {
+						return nil, err
+					}
+					value = v
+				} else if rule.Type != Unspecified {
 					// Coerce to specified type.
 					coerced, err := coerceType(value, rule.Type)
 					if err != nil {
@@ -218,9 +246,11 @@ fieldLoop:
 					}
 					value = coerced
 				}
+
 				if rule.InputHandler != nil {
 					value = rule.InputHandler(value)
 				}
+
 				newPayload[field] = value
 				continue fieldLoop
 			}
@@ -238,15 +268,63 @@ fieldLoop:
 	return newPayload, nil
 }
 
+// applyNestedInboundRules recursively applies nested Rules which are not specified as
+// output only to the provided value.
+func applyNestedInboundRules(value interface{}, rules Rules) (interface{}, error) {
+	var fieldValue interface{}
+	valueType := reflect.TypeOf(value).Kind()
+	if valueType == reflect.Slice {
+		// Apply nested Rules to each item in the slice.
+		s := reflect.ValueOf(value)
+		nestedValues := make([]interface{}, s.Len())
+		for i := 0; i < s.Len(); i++ {
+			var payload map[string]interface{}
+			payload, err := applyInboundRules(
+				s.Index(i).Interface().(map[string]interface{}), rules)
+			if err != nil {
+				return nil, err
+			}
+			nestedValues[i] = payload
+		}
+		fieldValue = nestedValues
+	} else {
+		var payload map[string]interface{}
+		payload, err := applyInboundRules(value.(map[string]interface{}), rules)
+		if err != nil {
+			return nil, err
+		}
+		fieldValue = payload
+	}
+
+	return fieldValue, nil
+}
+
+// nestedInboundRulesApply returns true if the Rules contain inbound Rules and
+// the value is a map or slice.
+func nestedInboundRulesApply(value interface{}, rules Rules) bool {
+	if rules == nil || rules.Size() == 0 {
+		return false
+	}
+
+	valueType := reflect.TypeOf(value).Kind()
+	if valueType != reflect.Map && valueType != reflect.Slice {
+		// Only apply nested Rules to maps and slices.
+		return false
+	}
+
+	return rules.Filter(true).Size() > 0
+}
+
 // applyOutboundRules applies Rules which are not specified as input only to the
 // provided Resource. If the Resource is nil, not a struct or
 // map[string]interface{}, or no Rules are provided, this acts as an identity
 // function. If Rules are provided, only the fields specified by them will be
 // included in the returned Resource. This is to prevent new fields from leaking
-// into old API versions.
+// into old API versions. If Rules specify nested Rules, they will be recursively
+// applied to field values.
 func applyOutboundRules(resource Resource, rules Rules) Resource {
 	// Apply only outbound Rules.
-	rules = rules.FilterRules(false)
+	rules = rules.Filter(false)
 
 	if isNil(resource) || len(rules.Contents()) == 0 {
 		// Return resource as-is if no Rules are provided.
