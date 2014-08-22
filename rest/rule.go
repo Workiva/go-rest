@@ -54,19 +54,19 @@ type rules struct {
 }
 
 // Contents returns the contained Rules.
-func (r rules) Contents() []*Rule {
+func (r *rules) Contents() []*Rule {
 	return r.contents
 }
 
 // ResourceType returns the reflect.Type these Rules correspond to.
-func (r rules) ResourceType() reflect.Type {
+func (r *rules) ResourceType() reflect.Type {
 	return r.resourceType
 }
 
 // Validate verifies that the Rules are valid, meaning they specify fields that exist
 // and correct types. If a Rule is invalid, an error is returned. If the Rules are
 // valid, nil is returned. This will recursively validate nested Rules.
-func (r rules) Validate() error {
+func (r *rules) Validate() error {
 	for _, rule := range r.contents {
 		resourceType := r.resourceType
 		if resourceType.Kind() != reflect.Struct && resourceType.Kind() != reflect.Map {
@@ -101,7 +101,7 @@ func (r rules) Validate() error {
 
 // Filter will filter the Rules based on the specified Filter. Only Rules of the
 // specified Filter type will be returned.
-func (r rules) Filter(filter Filter) Rules {
+func (r *rules) Filter(filter Filter) Rules {
 	filtered := make([]*Rule, 0, len(r.contents))
 	for _, rule := range r.contents {
 		if filter == Inbound && rule.OutputOnly {
@@ -114,7 +114,7 @@ func (r rules) Filter(filter Filter) Rules {
 		filtered = append(filtered, rule)
 	}
 
-	return rules{contents: filtered, resourceType: r.resourceType}
+	return &rules{contents: filtered, resourceType: r.resourceType}
 }
 
 // Size returns the number of contained Rules.
@@ -132,7 +132,7 @@ func NewRules(ptr interface{}, r ...*Rule) Rules {
 			resourceType.Kind()))
 	}
 
-	return rules{
+	return &rules{
 		resourceType: resourceType.Elem(),
 		contents:     r,
 	}

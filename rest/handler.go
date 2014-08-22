@@ -273,7 +273,7 @@ func sendResponse(w http.ResponseWriter, r response, serializer ResponseSerializ
 // rulesForVersion returns a slice of Rules which apply to the given version.
 func rulesForVersion(r Rules, version string) Rules {
 	if r == nil {
-		return rules{}
+		return &rules{}
 	}
 
 	filtered := make([]*Rule, 0, r.Size())
@@ -283,5 +283,5 @@ func rulesForVersion(r Rules, version string) Rules {
 		}
 	}
 
-	return rules{contents: filtered, resourceType: r.ResourceType()}
+	return &rules{contents: filtered, resourceType: r.ResourceType()}
 }
