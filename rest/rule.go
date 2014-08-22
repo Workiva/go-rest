@@ -212,7 +212,8 @@ func (r Rule) validType(fieldType reflect.Type) bool {
 // Rules are provided, this acts as an identity function. If Rules are provided, any
 // incoming fields which are not specified will be discarded. If Rules specify types,
 // incoming values will attempted to be coerced. If coercion fails, an error will be
-// returned.
+// returned. If Rules specify nested Rules, they will be recursively applied to the
+// field value, taking precedence over a type coercion.
 func applyInboundRules(payload Payload, rules Rules) (Payload, error) {
 	if payload == nil {
 		return Payload{}, nil
