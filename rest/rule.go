@@ -18,6 +18,15 @@ import (
 //    is applied, even if they specify versions which do not include the requested
 //    version.
 
+// Filter is a category for filtering Rules.
+type Filter bool
+
+// Rule category Filters.
+const (
+	Inbound  Filter = true
+	Outbound Filter = false
+)
+
 // Rules is a collection of Rules and a reflect.Type which they correspond to.
 type Rules interface {
 	// Contents returns the contained Rules.
@@ -31,11 +40,9 @@ type Rules interface {
 	// valid, nil is returned. This will recursively validate nested Rules.
 	Validate() error
 
-	// Filter filters the slice of Rules based on the specified bool. True means to
-	// filter out outbound Rules such that the returned slice contains only inbound Rules.
-	// False means to filter out inbound Rules such that the returned slice contains only
-	// outbound Rules.
-	Filter(bool) Rules
+	// Filter will filter the Rules based on the specified Filter. Only Rules of the
+	// specified Filter type will be returned.
+	Filter(Filter) Rules
 
 	// Size returns the number of contained Rules.
 	Size() int
@@ -92,17 +99,15 @@ func (r rules) Validate() error {
 	return nil
 }
 
-// Filter filters the slice of Rules based on the specified bool. True means to
-// filter out outbound Rules such that the returned slice contains only inbound Rules.
-// False means to filter out inbound Rules such that the returned slice contains only
-// outbound Rules.
-func (r rules) Filter(inbound bool) Rules {
+// Filter will filter the Rules based on the specified Filter. Only Rules of the
+// specified Filter type will be returned.
+func (r rules) Filter(filter Filter) Rules {
 	filtered := make([]*Rule, 0, len(r.contents))
 	for _, rule := range r.contents {
-		if inbound && rule.OutputOnly {
+		if filter == Inbound && rule.OutputOnly {
 			// Filter out outbound Rules.
 			continue
-		} else if !inbound && rule.InputOnly {
+		} else if filter == Outbound && rule.InputOnly {
 			// Filter out inbound Rules.
 			continue
 		}
