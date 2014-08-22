@@ -971,6 +971,23 @@ func TestApplyInboundRulesNestedRulesSlice(t *testing.T) {
 	assert.Nil(err, "Error should be nil")
 }
 
+// Ensures that non-resource Rules are applied correctly.
+func TestApplyInboundRulesNonResourceRule(t *testing.T) {
+	assert := assert.New(t)
+	payload := Payload{"foo": "42"}
+	rules := NewRules((*TestResource)(nil),
+		&Rule{
+			FieldAlias: "foo",
+			Type:       Float32,
+		},
+	)
+
+	actual, err := applyInboundRules(payload, rules)
+
+	assert.Equal(Payload{"foo": float32(42)}, actual, "Incorrect return value")
+	assert.Nil(err, "Error should be nil")
+}
+
 // Ensures that nil is returned by applyOutboundRules if nil is passed in.
 func TestApplyOutboundRulesNilResource(t *testing.T) {
 	assert := assert.New(t)
@@ -1227,6 +1244,19 @@ func TestApplyOutboundRulesOutputHandler(t *testing.T) {
 	)
 }
 
+// Ensures that non-resource Rules are ignored on output.
+func TestApplyOutboundRulesNonResourceRule(t *testing.T) {
+	assert := assert.New(t)
+	resource := &TestResource{Foo: "hello"}
+	rules := NewRules((*TestResource)(nil), &Rule{FieldAlias: "bar"})
+
+	assert.Equal(
+		&TestResource{Foo: "hello"},
+		applyOutboundRules(resource, rules),
+		"Incorrect return value",
+	)
+}
+
 // Ensures that Applies returns true if no versions are specified on the Rule.
 func TestAppliesNoVersions(t *testing.T) {
 	assert := assert.New(t)
@@ -1296,4 +1326,46 @@ func TestNewRulesHappyPath(t *testing.T) {
 
 	assert.Equal(rule, rules.Contents()[0])
 	assert.Equal(reflect.TypeOf((*TestResource)(nil)).Elem(), rules.ResourceType())
+}
+
+// Ensures that Validate returns an error if a Rule doesn't have a Field or FieldAlias.
+func TestValidateNoName(t *testing.T) {
+	assert := assert.New(t)
+	rules := NewRules((*TestResource)(nil), &Rule{})
+
+	assert.NotNil(rules.Validate())
+}
+
+// Ensures that Validate returns an error if a Rule type is not a struct or map.
+func TestValidateBadType(t *testing.T) {
+	assert := assert.New(t)
+	rules := NewRules((*string)(nil), &Rule{})
+
+	assert.NotNil(rules.Validate())
+}
+
+// Ensures that Validate returns an error if a Rule's field type doesn't match the
+// the resource field type.
+func TestValidateBadFieldType(t *testing.T) {
+	assert := assert.New(t)
+	rules := NewRules((*TestResource)(nil), &Rule{Field: "Foo", Type: Int})
+
+	assert.NotNil(rules.Validate())
+}
+
+// Ensures that Validate returns an error if a Rule's field doesn't exist on the
+// the resource.
+func TestValidateBadField(t *testing.T) {
+	assert := assert.New(t)
+	rules := NewRules((*TestResource)(nil), &Rule{Field: "Blah"})
+
+	assert.NotNil(rules.Validate())
+}
+
+// Ensures that Validate does not return an error for non-resource Rules.
+func TestValidateNonResourceRule(t *testing.T) {
+	assert := assert.New(t)
+	rules := NewRules((*TestResource)(nil), &Rule{FieldAlias: "Blah"})
+
+	assert.Nil(rules.Validate())
 }
