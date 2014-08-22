@@ -971,6 +971,23 @@ func TestApplyInboundRulesNestedRulesSlice(t *testing.T) {
 	assert.Nil(err, "Error should be nil")
 }
 
+// Ensures that non-resource Rules are applied correctly.
+func TestApplyInboundRulesNonResourceRule(t *testing.T) {
+	assert := assert.New(t)
+	payload := Payload{"foo": "42"}
+	rules := NewRules((*TestResource)(nil),
+		&Rule{
+			FieldAlias: "foo",
+			Type:       Float32,
+		},
+	)
+
+	actual, err := applyInboundRules(payload, rules)
+
+	assert.Equal(Payload{"foo": float32(42)}, actual, "Incorrect return value")
+	assert.Nil(err, "Error should be nil")
+}
+
 // Ensures that nil is returned by applyOutboundRules if nil is passed in.
 func TestApplyOutboundRulesNilResource(t *testing.T) {
 	assert := assert.New(t)
@@ -1222,6 +1239,19 @@ func TestApplyOutboundRulesOutputHandler(t *testing.T) {
 
 	assert.Equal(
 		Payload{"foo": "hello world"},
+		applyOutboundRules(resource, rules),
+		"Incorrect return value",
+	)
+}
+
+// Ensures that non-resource Rules are ignored on output.
+func TestApplyOutboundRulesNonResourceRule(t *testing.T) {
+	assert := assert.New(t)
+	resource := &TestResource{Foo: "hello"}
+	rules := NewRules((*TestResource)(nil), &Rule{FieldAlias: "bar"})
+
+	assert.Equal(
+		&TestResource{Foo: "hello"},
 		applyOutboundRules(resource, rules),
 		"Incorrect return value",
 	)

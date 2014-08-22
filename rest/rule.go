@@ -113,7 +113,8 @@ func (r *rules) Filter(filter Filter) Rules {
 		if filter == Inbound && rule.OutputOnly {
 			// Filter out outbound Rules.
 			continue
-		} else if filter == Outbound && rule.InputOnly {
+		} else if filter == Outbound && rule.InputOnly ||
+			filter == Outbound && !rule.isResourceRule() {
 			// Filter out inbound Rules.
 			continue
 		}
