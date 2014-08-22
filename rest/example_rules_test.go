@@ -74,7 +74,7 @@ func (r ResourceWithSecretHandler) Rules() Rules {
 			Field:      "ID",
 			FieldAlias: "id",
 			Type:       Int,
-			Versions:   []string{"1"},
+			Versions:   []string{"1, 2"},
 			OutputOnly: true,
 		},
 		&Rule{
@@ -83,13 +83,6 @@ func (r ResourceWithSecretHandler) Rules() Rules {
 			Type:       String,
 			Versions:   []string{"1"},
 			Required:   true,
-		},
-		&Rule{
-			Field:      "ID",
-			FieldAlias: "id",
-			Type:       Int,
-			Versions:   []string{"2"},
-			OutputOnly: true,
 		},
 		&Rule{
 			Field:      "Foo",
