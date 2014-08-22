@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"reflect"
 	"sort"
 	"sync"
 
@@ -204,21 +203,11 @@ func applyMiddleware(h http.HandlerFunc, middleware []RequestMiddleware) http.Ha
 func (r *muxAPI) validateRules() {
 	for _, handler := range r.resourceHandlers {
 		rules := handler.Rules()
-		if len(rules) == 0 {
+		if rules == nil || rules.Size() == 0 {
 			continue
 		}
 
-		emptyResource := handler.EmptyResource()
-		if emptyResource == nil {
-			panic("EmptyResource may not return nil if Rules are defined")
-		}
-
-		resourceType := reflect.TypeOf(emptyResource)
-		if resourceType.Kind() != reflect.Struct {
-			panic(fmt.Sprintf("EmptyResource must return a struct, got %s", resourceType))
-		}
-
-		if err := rules.validate(); err != nil {
+		if err := rules.Validate(); err != nil {
 			panic(err)
 		}
 	}

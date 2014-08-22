@@ -212,9 +212,9 @@ func (p Payload) GetBool(key string) (bool, error) {
 	return false, fmt.Errorf("Value with key '%s' not a bool", key)
 }
 
-// GetArray returns the value with the given key as an []interface{}. If the value
+// GetSlice returns the value with the given key as an []interface{}. If the value
 // doesn't exist or is not an []interface{}, nil is returned with an error.
-func (p Payload) GetArray(key string) ([]interface{}, error) {
+func (p Payload) GetSlice(key string) ([]interface{}, error) {
 	value, err := p.Get(key)
 	if err != nil {
 		return nil, err
@@ -222,7 +222,7 @@ func (p Payload) GetArray(key string) ([]interface{}, error) {
 	if value, ok := value.([]interface{}); ok {
 		return value, nil
 	}
-	return nil, fmt.Errorf("Value with key '%s' not an array", key)
+	return nil, fmt.Errorf("Value with key '%s' not a slice", key)
 }
 
 // GetMap returns the value with the given key as a map[string]interface{}. If the

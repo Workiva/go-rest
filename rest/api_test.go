@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -24,11 +23,6 @@ type MockResourceHandler struct {
 func (m *MockResourceHandler) ResourceName() string {
 	args := m.Mock.Called()
 	return args.String(0)
-}
-
-func (m *MockResourceHandler) EmptyResource() interface{} {
-	args := m.Mock.Called()
-	return args.Get(0)
 }
 
 func (m *MockResourceHandler) CreateResource(r RequestContext, data Payload,
@@ -88,7 +82,11 @@ func (m *MockResourceHandler) Authenticate(r *http.Request) error {
 
 func (m *MockResourceHandler) Rules() Rules {
 	args := m.Mock.Called()
-	return args.Get(0).(Rules)
+	rules := args.Get(0)
+	if rules != nil {
+		return rules.(Rules)
+	}
+	return nil
 }
 
 // getRouteHandler returns the http.Handler for the API route with the given name.
@@ -111,7 +109,7 @@ func TestHandleCreateBadFormat(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
-	handler.On("Rules").Return(Rules{})
+	handler.On("Rules").Return(nil)
 	handler.On("CreateResource").Return(&TestResource{}, nil)
 
 	api.RegisterResourceHandler(handler)
@@ -142,7 +140,7 @@ func TestHandleCreateBadCreate(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
-	handler.On("Rules").Return(Rules{})
+	handler.On("Rules").Return(nil)
 	handler.On("CreateResource").Return(nil, fmt.Errorf("couldn't create"))
 
 	api.RegisterResourceHandler(handler)
@@ -173,7 +171,7 @@ func TestHandleCreateHappyPath(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
-	handler.On("Rules").Return(Rules{})
+	handler.On("Rules").Return(nil)
 	handler.On("CreateResource").Return(&TestResource{Foo: "bar"}, nil)
 
 	api.RegisterResourceHandler(handler)
@@ -229,7 +227,7 @@ func TestHandleReadListBadFormat(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
-	handler.On("Rules").Return(Rules{})
+	handler.On("Rules").Return(nil)
 	handler.On("ReadResourceList").Return([]Resource{}, "", nil)
 
 	api.RegisterResourceHandler(handler)
@@ -258,7 +256,7 @@ func TestHandleReadListBadRead(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
-	handler.On("Rules").Return(Rules{})
+	handler.On("Rules").Return(nil)
 	handler.On("ReadResourceList").Return(nil, "", fmt.Errorf("no resource"))
 
 	api.RegisterResourceHandler(handler)
@@ -286,7 +284,7 @@ func TestHandleReadListHappyPath(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
-	handler.On("Rules").Return(Rules{})
+	handler.On("Rules").Return(nil)
 	handler.On("ReadResourceList").Return([]Resource{&TestResource{Foo: "hello"}}, "cursor123", nil)
 
 	api.RegisterResourceHandler(handler)
@@ -314,7 +312,7 @@ func TestHandleReadBadFormat(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
-	handler.On("Rules").Return(Rules{})
+	handler.On("Rules").Return(nil)
 	handler.On("ReadResource").Return(&TestResource{}, nil)
 
 	api.RegisterResourceHandler(handler)
@@ -342,7 +340,7 @@ func TestHandleReadBadRead(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
-	handler.On("Rules").Return(Rules{})
+	handler.On("Rules").Return(nil)
 	handler.On("ReadResource").Return(nil, fmt.Errorf("no resource"))
 
 	api.RegisterResourceHandler(handler)
@@ -370,7 +368,7 @@ func TestHandleReadHappyPath(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
-	handler.On("Rules").Return(Rules{})
+	handler.On("Rules").Return(nil)
 	handler.On("ReadResource").Return(&TestResource{Foo: "hello"}, nil)
 
 	api.RegisterResourceHandler(handler)
@@ -398,7 +396,7 @@ func TestHandleUpdateBadFormat(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
-	handler.On("Rules").Return(Rules{})
+	handler.On("Rules").Return(nil)
 	handler.On("UpdateResource").Return(&TestResource{}, nil)
 
 	api.RegisterResourceHandler(handler)
@@ -429,7 +427,7 @@ func TestHandleUpdateBadUpdate(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
-	handler.On("Rules").Return(Rules{})
+	handler.On("Rules").Return(nil)
 	handler.On("UpdateResource").Return(nil, fmt.Errorf("couldn't update"))
 
 	api.RegisterResourceHandler(handler)
@@ -459,7 +457,7 @@ func TestHandleUpdateHappyPath(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
-	handler.On("Rules").Return(Rules{})
+	handler.On("Rules").Return(nil)
 	handler.On("UpdateResource").Return(&TestResource{Foo: "bar"}, nil)
 
 	api.RegisterResourceHandler(handler)
@@ -490,7 +488,7 @@ func TestHandleDeleteBadFormat(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
-	handler.On("Rules").Return(Rules{})
+	handler.On("Rules").Return(nil)
 	handler.On("DeleteResource").Return(&TestResource{}, nil)
 
 	api.RegisterResourceHandler(handler)
@@ -519,7 +517,7 @@ func TestHandleDeleteBadDelete(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
-	handler.On("Rules").Return(Rules{})
+	handler.On("Rules").Return(nil)
 	handler.On("DeleteResource").Return(nil, fmt.Errorf("no resource"))
 
 	api.RegisterResourceHandler(handler)
@@ -547,7 +545,7 @@ func TestHandleDeleteHappyPath(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
-	handler.On("Rules").Return(Rules{})
+	handler.On("Rules").Return(nil)
 	handler.On("DeleteResource").Return(&TestResource{Foo: "hello"}, nil)
 
 	api.RegisterResourceHandler(handler)
@@ -584,7 +582,7 @@ func TestApplyMiddleware(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
-	handler.On("Rules").Return(Rules{})
+	handler.On("Rules").Return(nil)
 	handler.On("ReadResource").Return(&TestResource{Foo: "hello"}, nil)
 
 	called := false
@@ -611,16 +609,14 @@ func TestOutboundRules(t *testing.T) {
 	handler := new(MockResourceHandler)
 	api := NewAPI()
 	rule := &Rule{
-		Field:        "Foo",
-		FieldAlias:   "f",
-		OutputOnly:   true,
-		resourceType: reflect.TypeOf(TestResource{}),
+		Field:      "Foo",
+		FieldAlias: "f",
+		OutputOnly: true,
 	}
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
-	handler.On("EmptyResource").Return(TestResource{})
-	handler.On("Rules").Return(Rules{rule})
+	handler.On("Rules").Return(NewRules((*TestResource)(nil), rule))
 	handler.On("ReadResource").Return(&TestResource{Foo: "hello"}, nil)
 
 	api.RegisterResourceHandler(handler)
@@ -645,16 +641,14 @@ func TestOutboundRulesDontApplyOnError(t *testing.T) {
 	handler := new(MockResourceHandler)
 	api := NewAPI()
 	rule := &Rule{
-		Field:        "Foo",
-		FieldAlias:   "f",
-		OutputOnly:   true,
-		resourceType: reflect.TypeOf(TestResource{}),
+		Field:      "Foo",
+		FieldAlias: "f",
+		OutputOnly: true,
 	}
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
-	handler.On("EmptyResource").Return(TestResource{})
-	handler.On("Rules").Return(Rules{rule})
+	handler.On("Rules").Return(NewRules((*TestResource)(nil), rule))
 	handler.On("ReadResource").Return(nil, fmt.Errorf("oh snap"))
 
 	api.RegisterResourceHandler(handler)
@@ -680,16 +674,14 @@ func TestOutboundRulesDontApplyOnNilResource(t *testing.T) {
 	handler := new(MockResourceHandler)
 	api := NewAPI()
 	rule := &Rule{
-		Field:        "Foo",
-		FieldAlias:   "f",
-		OutputOnly:   true,
-		resourceType: reflect.TypeOf(TestResource{}),
+		Field:      "Foo",
+		FieldAlias: "f",
+		OutputOnly: true,
 	}
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
-	handler.On("EmptyResource").Return(TestResource{})
-	handler.On("Rules").Return(Rules{rule})
+	handler.On("Rules").Return(NewRules((*TestResource)(nil), rule))
 	handler.On("ReadResource").Return(nil, nil)
 
 	api.RegisterResourceHandler(handler)
@@ -735,48 +727,13 @@ func TestRegisterUnregisterResponseSerializer(t *testing.T) {
 	assert.Equal([]string{"json"}, api.AvailableFormats())
 }
 
-// Ensures that validateRules panics when the empty resource is not a struct.
-func TestValidateRulesBadResourceType(t *testing.T) {
-	assert := assert.New(t)
-	api := NewAPI()
-	handler := new(MockResourceHandler)
-	handler.On("ResourceName").Return("foo")
-	handler.On("Rules").Return(Rules{&Rule{}})
-	handler.On("EmptyResource").Return(5)
-	api.RegisterResourceHandler(handler)
-
-	defer func() {
-		r := recover()
-		assert.NotNil(r, "Should have panicked")
-	}()
-	api.(*muxAPI).validateRules()
-}
-
-// Ensures that validateRules panics when the empty resource is nil.
-func TestValidateRulesNilResource(t *testing.T) {
-	assert := assert.New(t)
-	api := NewAPI()
-	handler := new(MockResourceHandler)
-	handler.On("ResourceName").Return("foo")
-	handler.On("Rules").Return(Rules{&Rule{}})
-	handler.On("EmptyResource").Return(nil)
-	api.RegisterResourceHandler(handler)
-
-	defer func() {
-		r := recover()
-		assert.NotNil(r, "Should have panicked")
-	}()
-	api.(*muxAPI).validateRules()
-}
-
 // Ensures that validateRules panics when the resource doesn't have a Rule field.
 func TestValidateRulesBadField(t *testing.T) {
 	assert := assert.New(t)
 	api := NewAPI()
 	handler := new(MockResourceHandler)
 	handler.On("ResourceName").Return("foo")
-	handler.On("Rules").Return(Rules{&Rule{Field: "bar"}})
-	handler.On("EmptyResource").Return(TestResource{})
+	handler.On("Rules").Return(NewRules((*TestResource)(nil), &Rule{Field: "bar"}))
 	api.RegisterResourceHandler(handler)
 
 	defer func() {
@@ -792,7 +749,7 @@ func TestValidateRulesBadType(t *testing.T) {
 	api := NewAPI()
 	handler := new(MockResourceHandler)
 	handler.On("ResourceName").Return("foo")
-	handler.On("Rules").Return(Rules{&Rule{Field: "Foo", Type: Int}})
+	handler.On("Rules").Return(NewRules((*TestResource)(nil), &Rule{Field: "Foo", Type: Int}))
 	api.RegisterResourceHandler(handler)
 
 	defer func() {
@@ -808,32 +765,10 @@ func TestValidateRulesHappyPath(t *testing.T) {
 	api := NewAPI()
 	handler := new(MockResourceHandler)
 	handler.On("ResourceName").Return("foo")
-	handler.On("Rules").Return(Rules{&Rule{
-		Field:        "Foo",
-		Type:         String,
-		resourceType: reflect.TypeOf(TestResource{}),
-	}})
-	handler.On("EmptyResource").Return(TestResource{})
-	api.RegisterResourceHandler(handler)
-
-	defer func() {
-		r := recover()
-		assert.Nil(r, "Should not have panicked")
-	}()
-	api.(*muxAPI).validateRules()
-}
-
-// Ensures that validateRules doesn't panic when a Rule has an unspecified type.
-func TestValidateRulesUnspecifiedType(t *testing.T) {
-	assert := assert.New(t)
-	api := NewAPI()
-	handler := new(MockResourceHandler)
-	handler.On("ResourceName").Return("foo")
-	handler.On("Rules").Return(Rules{&Rule{
-		Field:        "Foo",
-		resourceType: reflect.TypeOf(TestResource{}),
-	}})
-	handler.On("EmptyResource").Return(TestResource{})
+	handler.On("Rules").Return(NewRules((*TestResource)(nil), &Rule{
+		Field: "Foo",
+		Type:  String,
+	}))
 	api.RegisterResourceHandler(handler)
 
 	defer func() {
@@ -849,7 +784,7 @@ func TestValidateRulesNoRules(t *testing.T) {
 	api := NewAPI()
 	handler := new(MockResourceHandler)
 	handler.On("ResourceName").Return("foo")
-	handler.On("Rules").Return(Rules{})
+	handler.On("Rules").Return(nil)
 	api.RegisterResourceHandler(handler)
 
 	defer func() {

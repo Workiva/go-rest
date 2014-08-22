@@ -360,23 +360,23 @@ func TestGetBool(t *testing.T) {
 	assert.Nil(err, "Error should be nil")
 }
 
-// Ensures that GetArray returns nil and an error if the value isn't an array.
-func TestGetArrayBadValue(t *testing.T) {
+// Ensures that GetSlice returns nil and an error if the value isn't a slice.
+func TestGetSliceBadValue(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": 1.0}
 
-	actual, err := payload.GetArray("foo")
+	actual, err := payload.GetSlice("foo")
 
 	assert.Equal([]interface{}(nil), actual, "Incorrect return value")
-	assert.Equal(fmt.Errorf("Value with key 'foo' not an array"), err, "Incorrect error value")
+	assert.Equal(fmt.Errorf("Value with key 'foo' not a slice"), err, "Incorrect error value")
 }
 
-// Ensures that GetArray returns the correct value.
-func TestGetArray(t *testing.T) {
+// Ensures that GetSlice returns the correct value.
+func TestGetSlice(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{"foo": []interface{}{1, 2, 3}}
 
-	actual, err := payload.GetArray("foo")
+	actual, err := payload.GetSlice("foo")
 
 	assert.Equal([]interface{}{1, 2, 3}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
