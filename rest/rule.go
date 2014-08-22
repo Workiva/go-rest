@@ -80,14 +80,11 @@ func (r *rules) Validate() error {
 		}
 
 		if rule.isResourceRule() {
-			field, found := resourceType.FieldByName(rule.Field)
-			if !found {
+			if field, ok := resourceType.FieldByName(rule.Field); !ok {
 				return fmt.Errorf(
 					"Invalid Rule for %s: field '%s' does not exist",
 					resourceType, rule.Field)
-			}
-
-			if !rule.validType(field.Type) {
+			} else if !rule.validType(field.Type) {
 				return fmt.Errorf(
 					"Invalid Rule for %s: field '%s' is type %s, not %s",
 					resourceType, rule.Field, field.Type, typeToName[rule.Type])
