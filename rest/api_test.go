@@ -93,7 +93,7 @@ func (m *MockResourceHandler) Rules() Rules {
 
 // getRouteHandler returns the http.Handler for the API route with the given name.
 // This is purely for testing purposes and shouldn't be used elsewhere.
-func (r muxAPI) getRouteHandler(name string) (http.Handler, error) {
+func (r *muxAPI) getRouteHandler(name string) (http.Handler, error) {
 	route := r.router.Get(name)
 	if route == nil {
 		return nil, fmt.Errorf("No API route with name %s", name)
