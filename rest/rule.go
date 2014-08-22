@@ -41,7 +41,7 @@ func (r rules) ResourceType() reflect.Type {
 // recursively validate nested Rules.
 func (r rules) Validate() error {
 	for _, rule := range r.contents {
-		resourceType := rule.resourceType
+		resourceType := r.resourceType
 		if resourceType.Kind() != reflect.Struct && resourceType.Kind() != reflect.Map {
 			return fmt.Errorf(
 				"Invalid resource type: must be struct or map, got %s",
@@ -102,12 +102,8 @@ func NewRules(ptr interface{}, r ...*Rule) Rules {
 			resourceType.Kind()))
 	}
 
-	resourceType = resourceType.Elem()
-	for _, rule := range r {
-		rule.resourceType = resourceType
-	}
 	return rules{
-		resourceType: resourceType,
+		resourceType: resourceType.Elem(),
 		contents:     r,
 	}
 }
@@ -151,12 +147,8 @@ type Rule struct {
 	// Function which produces the field value to send.
 	OutputHandler func(interface{}) interface{}
 
-	// Nested Rules to apply to field value. Only applies to values which are slices.
+	// Nested Rules to apply to field value.
 	Rules Rules
-
-	// resourceType is the reflect.Type of the resource this Rule applies to. Set
-	// by the framework.
-	resourceType reflect.Type
 }
 
 // Name returns the name of the input/output field alias. It defaults to the field
@@ -284,6 +276,10 @@ func applyOutboundRules(resource Resource, rules Rules) Resource {
 	return payload
 }
 
+// applyOutboundRulesForMap applies Rules which are not specified as input only to the
+// provided map. If a Rule specifies a field which is not in the map, it will be skipped.
+// If a Rule specifies nested Rules, they will be recursively applied to the corresponding
+// value.
 func applyOutboundRulesForMap(resource map[string]interface{}, rules Rules) Payload {
 	payload := Payload{}
 	for _, rule := range rules.Contents() {
@@ -293,14 +289,8 @@ func applyOutboundRulesForMap(resource map[string]interface{}, rules Rules) Payl
 			continue
 		}
 
-		if rule.Rules != nil && reflect.TypeOf(fieldValue).Kind() == reflect.Slice {
-			s := reflect.ValueOf(fieldValue)
-			nestedValues := make([]interface{}, s.Len())
-			// Apply nested Rules.
-			for i := 0; i < s.Len(); i++ {
-				nestedValues[i] = applyOutboundRules(s.Index(i).Interface(), rule.Rules)
-			}
-			fieldValue = nestedValues
+		if rule.Rules != nil {
+			fieldValue = applyNestedOutboundRules(fieldValue, rule)
 		}
 
 		if rule.OutputHandler != nil {
@@ -312,6 +302,10 @@ func applyOutboundRulesForMap(resource map[string]interface{}, rules Rules) Payl
 	return payload
 }
 
+// applyOutboundRulesForStruct applies Rules which are not specified as input only to the
+// provided reflect.Value. The precondition for this function is that the value is an
+// instance of the type specified on the Rules. If a Rule specifies nested Rules, they
+// will be recursively applied to the corresponding value.
 func applyOutboundRulesForStruct(resourceValue reflect.Value, rules Rules) Payload {
 	payload := Payload{}
 	for _, rule := range rules.Contents() {
@@ -319,14 +313,8 @@ func applyOutboundRulesForStruct(resourceValue reflect.Value, rules Rules) Paylo
 		field := resourceValue.FieldByName(rule.Field)
 		fieldValue := field.Interface()
 
-		if rule.Rules != nil && reflect.TypeOf(fieldValue).Kind() == reflect.Slice {
-			s := reflect.ValueOf(fieldValue)
-			nestedValues := make([]interface{}, s.Len())
-			// Apply nested Rules.
-			for i := 0; i < s.Len(); i++ {
-				nestedValues[i] = applyOutboundRules(s.Index(i).Interface(), rule.Rules)
-			}
-			fieldValue = nestedValues
+		if rule.Rules != nil {
+			fieldValue = applyNestedOutboundRules(fieldValue, rule)
 		}
 
 		if rule.OutputHandler != nil {
@@ -336,6 +324,26 @@ func applyOutboundRulesForStruct(resourceValue reflect.Value, rules Rules) Paylo
 	}
 
 	return payload
+}
+
+// applyNestedOutboundRules recursively applies nested Rules which are not specified as
+// input only to the provided Resource.
+func applyNestedOutboundRules(resource Resource, rule *Rule) Resource {
+	var fieldValue Resource
+
+	if reflect.TypeOf(resource).Kind() == reflect.Slice {
+		// Apply nested Rules to each item in the slice.
+		s := reflect.ValueOf(resource)
+		nestedValues := make([]interface{}, s.Len())
+		for i := 0; i < s.Len(); i++ {
+			nestedValues[i] = applyOutboundRules(s.Index(i).Interface(), rule.Rules)
+		}
+		fieldValue = nestedValues
+	} else {
+		fieldValue = applyOutboundRules(resource, rule.Rules)
+	}
+
+	return fieldValue
 }
 
 // enforceRequiredFields verifies that the provided Payload has values for any Rules

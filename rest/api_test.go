@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -610,10 +609,9 @@ func TestOutboundRules(t *testing.T) {
 	handler := new(MockResourceHandler)
 	api := NewAPI()
 	rule := &Rule{
-		Field:        "Foo",
-		FieldAlias:   "f",
-		OutputOnly:   true,
-		resourceType: reflect.TypeOf(TestResource{}),
+		Field:      "Foo",
+		FieldAlias: "f",
+		OutputOnly: true,
 	}
 
 	handler.On("ResourceName").Return("foo")
@@ -643,10 +641,9 @@ func TestOutboundRulesDontApplyOnError(t *testing.T) {
 	handler := new(MockResourceHandler)
 	api := NewAPI()
 	rule := &Rule{
-		Field:        "Foo",
-		FieldAlias:   "f",
-		OutputOnly:   true,
-		resourceType: reflect.TypeOf(TestResource{}),
+		Field:      "Foo",
+		FieldAlias: "f",
+		OutputOnly: true,
 	}
 
 	handler.On("ResourceName").Return("foo")
@@ -677,10 +674,9 @@ func TestOutboundRulesDontApplyOnNilResource(t *testing.T) {
 	handler := new(MockResourceHandler)
 	api := NewAPI()
 	rule := &Rule{
-		Field:        "Foo",
-		FieldAlias:   "f",
-		OutputOnly:   true,
-		resourceType: reflect.TypeOf(TestResource{}),
+		Field:      "Foo",
+		FieldAlias: "f",
+		OutputOnly: true,
 	}
 
 	handler.On("ResourceName").Return("foo")
@@ -770,28 +766,8 @@ func TestValidateRulesHappyPath(t *testing.T) {
 	handler := new(MockResourceHandler)
 	handler.On("ResourceName").Return("foo")
 	handler.On("Rules").Return(NewRules((*TestResource)(nil), &Rule{
-		Field:        "Foo",
-		Type:         String,
-		resourceType: reflect.TypeOf(TestResource{}),
-	}))
-	api.RegisterResourceHandler(handler)
-
-	defer func() {
-		r := recover()
-		assert.Nil(r, "Should not have panicked")
-	}()
-	api.(*muxAPI).validateRules()
-}
-
-// Ensures that validateRules doesn't panic when a Rule has an unspecified type.
-func TestValidateRulesUnspecifiedType(t *testing.T) {
-	assert := assert.New(t)
-	api := NewAPI()
-	handler := new(MockResourceHandler)
-	handler.On("ResourceName").Return("foo")
-	handler.On("Rules").Return(NewRules((*TestResource)(nil), &Rule{
-		Field:        "Foo",
-		resourceType: reflect.TypeOf(TestResource{}),
+		Field: "Foo",
+		Type:  String,
 	}))
 	api.RegisterResourceHandler(handler)
 
