@@ -3,6 +3,7 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 )
@@ -98,9 +99,8 @@ func (h requestHandler) handleCreate(handler ResourceHandler) http.HandlerFunc {
 		version := ctx.Version()
 		rules := rulesForVersion(handler.Rules(), version)
 
-		decoder := json.NewDecoder(r.Body)
-		var data map[string]interface{}
-		if err := decoder.Decode(&data); err != nil {
+		data, err := decodePayload(r.Body, r.ContentLength)
+		if err != nil {
 			// Payload decoding failed.
 			ctx = ctx.setError(err)
 			ctx = ctx.setStatus(http.StatusInternalServerError)
@@ -186,9 +186,8 @@ func (h requestHandler) handleUpdate(handler ResourceHandler) http.HandlerFunc {
 		version := ctx.Version()
 		rules := rulesForVersion(handler.Rules(), version)
 
-		decoder := json.NewDecoder(r.Body)
-		var data map[string]interface{}
-		if err := decoder.Decode(&data); err != nil {
+		data, err := decodePayload(r.Body, r.ContentLength)
+		if err != nil {
 			// Payload decoding failed.
 			ctx = ctx.setError(err)
 			ctx = ctx.setStatus(http.StatusInternalServerError)
@@ -331,4 +330,21 @@ func rulesForVersion(r Rules, version string) Rules {
 	}
 
 	return &rules{contents: filtered, resourceType: r.ResourceType()}
+}
+
+// decodePayload unmarshals the JSON payload and returns the resulting map. If the
+// content is empty, an empty map is returned. If decoding fails, nil is returned
+// with an error.
+func decodePayload(payload io.Reader, length int64) (map[string]interface{}, error) {
+	if length == 0 {
+		return map[string]interface{}{}, nil
+	}
+
+	decoder := json.NewDecoder(payload)
+	var data map[string]interface{}
+	if err := decoder.Decode(&data); err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }
