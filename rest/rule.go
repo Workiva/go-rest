@@ -231,7 +231,7 @@ func applyInboundRules(payload Payload, rules Rules) (Payload, error) {
 fieldLoop:
 	for field, value := range payload {
 		for _, rule := range rules.Contents() {
-			if rule.FieldAlias == field {
+			if rule.Name() == field {
 				if nestedInboundRulesApply(value, rule.Rules) {
 					// Nested Rules take precedence over type coercion.
 					v, err := applyNestedInboundRules(value, rule.Rules)
