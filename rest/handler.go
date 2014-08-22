@@ -223,9 +223,8 @@ func (h requestHandler) handleUpdateList(handler ResourceHandler) http.HandlerFu
 		version := ctx.Version()
 		rules := rulesForVersion(handler.Rules(), version)
 
-		decoder := json.NewDecoder(r.Body)
-		var data map[string]interface{}
-		if err := decoder.Decode(&data); err != nil {
+		data, err := decodePayload(r.Body, r.ContentLength)
+		if err != nil {
 			// Payload decoding failed.
 			ctx = ctx.setError(err)
 			ctx = ctx.setStatus(http.StatusInternalServerError)
@@ -235,13 +234,17 @@ func (h requestHandler) handleUpdateList(handler ResourceHandler) http.HandlerFu
 				// Type coercion failed.
 				ctx = ctx.setError(UnprocessableRequest(err.Error()))
 			} else {
-				resource, err := handler.UpdateResource(
+				resources, err := handler.UpdateResourceList(
 					ctx, ctx.ResourceID(), data, version)
+
 				if err == nil {
-					resource = applyOutboundRules(resource, rules)
+					// Apply rules to results.
+					for idx, resource := range resources {
+						resources[idx] = applyOutboundRules(resource, rules)
+					}
 				}
 
-				ctx = ctx.setResult(resource)
+				ctx = ctx.setResult(resources)
 				ctx = ctx.setError(err)
 				ctx = ctx.setStatus(http.StatusOK)
 			}
