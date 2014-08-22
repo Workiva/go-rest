@@ -94,7 +94,7 @@ func TestEverything(t *testing.T) {
 		}
 
 		if resp.Status != 200 {
-			t.Errorf("REST response status %s, want %s", resp.Status, 200)
+			t.Errorf("REST response status %d, want %d", resp.Status, 200)
 		}
 
 		if resp.Reason != "" {
@@ -102,7 +102,7 @@ func TestEverything(t *testing.T) {
 		}
 
 		if len(resp.Messages) != 0 {
-			t.Errorf("REST response message count %s, want %s", len(resp.Messages), 0)
+			t.Errorf("REST response message count %d, want %d", len(resp.Messages), 0)
 		}
 
 		if resp.Next != "" {

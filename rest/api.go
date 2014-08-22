@@ -96,7 +96,7 @@ func NewAPI() API {
 
 // Start begins serving requests. This will block unless it fails, in which case an error will be
 // returned.
-func (r muxAPI) Start(addr Address) error {
+func (r *muxAPI) Start(addr Address) error {
 	r.validateRules()
 	return http.ListenAndServe(string(addr), r.router)
 }
@@ -106,7 +106,7 @@ func (r muxAPI) Start(addr Address) error {
 // private key for the server must be provided. If the certificate is signed by a certificate
 // authority, the certFile should be the concatenation of the server's certificate followed by
 // the CA's certificate.
-func (r muxAPI) StartTLS(addr Address, certFile, keyFile FilePath) error {
+func (r *muxAPI) StartTLS(addr Address, certFile, keyFile FilePath) error {
 	r.validateRules()
 	return http.ListenAndServeTLS(string(addr), string(certFile), string(keyFile), r.router)
 }
@@ -149,7 +149,7 @@ func (r *muxAPI) RegisterResourceHandler(h ResourceHandler, middleware ...Reques
 
 // RegisterResponseSerializer registers the provided ResponseSerializer with the given format. If the
 // format has already been registered, it will be overwritten.
-func (r muxAPI) RegisterResponseSerializer(format string, serializer ResponseSerializer) {
+func (r *muxAPI) RegisterResponseSerializer(format string, serializer ResponseSerializer) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.serializerRegistry[format] = serializer
@@ -157,7 +157,7 @@ func (r muxAPI) RegisterResponseSerializer(format string, serializer ResponseSer
 
 // UnregisterResponseSerializer unregisters the ResponseSerializer with the provided format. If the
 // format hasn't been registered, this is a no-op.
-func (r muxAPI) UnregisterResponseSerializer(format string) {
+func (r *muxAPI) UnregisterResponseSerializer(format string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.serializerRegistry, format)
@@ -165,7 +165,7 @@ func (r muxAPI) UnregisterResponseSerializer(format string) {
 
 // AvailableFormats returns a slice containing all of the available serialization formats
 // currently available.
-func (r muxAPI) AvailableFormats() []string {
+func (r *muxAPI) AvailableFormats() []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	formats := make([]string, 0, len(r.serializerRegistry))
@@ -178,7 +178,7 @@ func (r muxAPI) AvailableFormats() []string {
 
 // responseSerializer returns a ResponseSerializer for the given format type. If the format
 // is not implemented, the returned serializer will be nil and the error set.
-func (r muxAPI) responseSerializer(format string) (ResponseSerializer, error) {
+func (r *muxAPI) responseSerializer(format string) (ResponseSerializer, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	if serializer, ok := r.serializerRegistry[format]; ok {
@@ -200,7 +200,7 @@ func applyMiddleware(h http.HandlerFunc, middleware []RequestMiddleware) http.Ha
 // validateRules verifies that the Rules for each ResourceHandler registered with the muxAPI
 // are valid, meaning they specify fields that exist and correct types. If a Rule is invalid,
 // this will panic.
-func (r muxAPI) validateRules() {
+func (r *muxAPI) validateRules() {
 	for _, handler := range r.resourceHandlers {
 		rules := handler.Rules()
 		if rules == nil || rules.Size() == 0 {
