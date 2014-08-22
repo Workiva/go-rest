@@ -222,7 +222,7 @@ func applyInboundRules(payload Payload, rules Rules) (Payload, error) {
 	// Apply only inbound Rules.
 	rules = rules.Filter(true)
 
-	if len(rules.Contents()) == 0 {
+	if rules.Size() == 0 {
 		return payload, nil
 	}
 
@@ -327,7 +327,7 @@ func applyOutboundRules(resource Resource, rules Rules) Resource {
 	// Apply only outbound Rules.
 	rules = rules.Filter(false)
 
-	if isNil(resource) || len(rules.Contents()) == 0 {
+	if isNil(resource) || rules.Size() == 0 {
 		// Return resource as-is if no Rules are provided.
 		return resource
 	}

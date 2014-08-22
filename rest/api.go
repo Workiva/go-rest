@@ -203,7 +203,7 @@ func applyMiddleware(h http.HandlerFunc, middleware []RequestMiddleware) http.Ha
 func (r muxAPI) validateRules() {
 	for _, handler := range r.resourceHandlers {
 		rules := handler.Rules()
-		if rules == nil || len(rules.Contents()) == 0 {
+		if rules == nil || rules.Size() == 0 {
 			continue
 		}
 
