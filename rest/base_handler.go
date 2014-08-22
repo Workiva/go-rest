@@ -45,11 +45,6 @@ func (b BaseResourceHandler) DeleteURI() string {
 	return ""
 }
 
-// EmptyResource is a stub. Implement if Rules are defined.
-func (b BaseResourceHandler) EmptyResource() interface{} {
-	return nil
-}
-
 // CreateResource is a stub. Implement if necessary.
 func (b BaseResourceHandler) CreateResource(ctx RequestContext, data Payload,
 	version string) (Resource, error) {

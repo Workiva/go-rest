@@ -71,8 +71,7 @@ type ResourceHandler interface {
 
 	// Rules returns the resource rules to apply to incoming requests and outgoing
 	// responses. The default behavior, seen in BaseResourceHandler, is to apply no
-	// rules. If this does not return an empty slice and EmptyResource does not return
-	// a struct, API will panic on start.
+	// rules.
 	Rules() Rules
 }
 
