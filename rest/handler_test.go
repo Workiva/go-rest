@@ -12,7 +12,7 @@ func TestDecodePayloadEmpty(t *testing.T) {
 	assert := assert.New(t)
 	payload := bytes.NewBufferString("")
 
-	decoded, err := decodePayload(payload, 0)
+	decoded, err := decodePayload(payload.Bytes())
 
 	assert.Equal(Payload{}, decoded)
 	assert.Nil(err)
@@ -24,7 +24,7 @@ func TestDecodePayloadBadJSON(t *testing.T) {
 	body := `{"foo": "bar", "baz": 1`
 	payload := bytes.NewBufferString(body)
 
-	decoded, err := decodePayload(payload, int64(len(body)))
+	decoded, err := decodePayload(payload.Bytes())
 
 	assert.Nil(decoded)
 	assert.NotNil(err)
@@ -36,7 +36,7 @@ func TestDecodePayloadHappyPath(t *testing.T) {
 	body := `{"foo": "bar", "baz": 1}`
 	payload := bytes.NewBufferString(body)
 
-	decoded, err := decodePayload(payload, int64(len(body)))
+	decoded, err := decodePayload(payload.Bytes())
 
 	assert.Equal(Payload{"foo": "bar", "baz": float64(1)}, decoded)
 	assert.Nil(err)
@@ -47,7 +47,7 @@ func TestDecodePayloadSliceEmpty(t *testing.T) {
 	assert := assert.New(t)
 	payload := bytes.NewBufferString("")
 
-	decoded, err := decodePayloadSlice(payload, 0)
+	decoded, err := decodePayloadSlice(payload.Bytes())
 
 	assert.Equal([]Payload{}, decoded)
 	assert.Nil(err)
@@ -59,7 +59,7 @@ func TestDecodePayloadSliceBadJSON(t *testing.T) {
 	body := `[{"foo": "bar", "baz": 1`
 	payload := bytes.NewBufferString(body)
 
-	decoded, err := decodePayloadSlice(payload, int64(len(body)))
+	decoded, err := decodePayloadSlice(payload.Bytes())
 
 	assert.Nil(decoded)
 	assert.NotNil(err)
@@ -71,7 +71,7 @@ func TestDecodePayloadSliceHappyPath(t *testing.T) {
 	body := `[{"foo": "bar", "baz": 1}]`
 	payload := bytes.NewBufferString(body)
 
-	decoded, err := decodePayloadSlice(payload, int64(len(body)))
+	decoded, err := decodePayloadSlice(payload.Bytes())
 
 	assert.Equal([]Payload{Payload{"foo": "bar", "baz": float64(1)}}, decoded)
 	assert.Nil(err)

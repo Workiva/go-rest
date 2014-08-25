@@ -460,8 +460,7 @@ func TestHandleUpdateListBadUpdate(t *testing.T) {
 	)
 }
 
-// Ensures that update list handler returns a Bad Request  code when the payload is
-// not a list.
+// Ensures that the update list handler handles payloads that aren't lists.
 func TestHandleUpdateListPayloadNotList(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
@@ -470,6 +469,7 @@ func TestHandleUpdateListPayloadNotList(t *testing.T) {
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
 	handler.On("Rules").Return(nil)
+	handler.On("UpdateResourceList").Return([]Resource{&TestResource{Foo: "bar"}}, nil)
 
 	api.RegisterResourceHandler(handler)
 	updateHandler, _ := api.(*muxAPI).getRouteHandler("foo:updateList")
@@ -482,9 +482,9 @@ func TestHandleUpdateListPayloadNotList(t *testing.T) {
 	updateHandler.ServeHTTP(resp, req)
 
 	handler.Mock.AssertExpectations(t)
-	assert.Equal(http.StatusBadRequest, resp.Code, "Incorrect response code")
+	assert.Equal(http.StatusOK, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"error":"EOF","success":false}`,
+		`{"result":[{"foo":"bar"}],"success":true}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)

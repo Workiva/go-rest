@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -99,7 +100,7 @@ func (h requestHandler) handleCreate(handler ResourceHandler) http.HandlerFunc {
 		version := ctx.Version()
 		rules := rulesForVersion(handler.Rules(), version)
 
-		data, err := decodePayload(r.Body, r.ContentLength)
+		data, err := decodePayload(payloadString(r.Body))
 		if err != nil {
 			// Payload decoding failed.
 			ctx = ctx.setError(err)
@@ -186,13 +187,15 @@ func (h requestHandler) handleUpdateList(handler ResourceHandler) http.HandlerFu
 		version := ctx.Version()
 		rules := rulesForVersion(handler.Rules(), version)
 
+		payloadStr := payloadString(r.Body)
 		var data []Payload
 		var err error
-		data, err = decodePayloadSlice(r.Body, r.ContentLength)
+		data, err = decodePayloadSlice(payloadStr)
 		if err != nil {
 			var p Payload
-			p, err = decodePayload(r.Body, r.ContentLength)
+			p, err = decodePayload(payloadStr)
 			data = []Payload{p}
+			fmt.Println(data)
 		}
 
 		if err != nil {
@@ -234,7 +237,7 @@ func (h requestHandler) handleUpdate(handler ResourceHandler) http.HandlerFunc {
 		version := ctx.Version()
 		rules := rulesForVersion(handler.Rules(), version)
 
-		data, err := decodePayload(r.Body, r.ContentLength)
+		data, err := decodePayload(payloadString(r.Body))
 		if err != nil {
 			// Payload decoding failed.
 			ctx = ctx.setError(err)
@@ -345,14 +348,13 @@ func rulesForVersion(r Rules, version string) Rules {
 // decodePayload unmarshals the JSON payload and returns the resulting map. If the
 // content is empty, an empty map is returned. If decoding fails, nil is returned
 // with an error.
-func decodePayload(payload io.Reader, length int64) (Payload, error) {
-	if length == 0 {
+func decodePayload(payload []byte) (Payload, error) {
+	if len(payload) == 0 {
 		return map[string]interface{}{}, nil
 	}
 
-	decoder := json.NewDecoder(payload)
 	var data Payload
-	if err := decoder.Decode(&data); err != nil {
+	if err := json.Unmarshal(payload, &data); err != nil {
 		return nil, err
 	}
 
@@ -362,16 +364,23 @@ func decodePayload(payload io.Reader, length int64) (Payload, error) {
 // decodePayloadSlice unmarshals the JSON payload and returns the resulting slice.
 // If the content is empty, an empty list is returned. If decoding fails, nil is
 // returned with an error.
-func decodePayloadSlice(payload io.Reader, length int64) ([]Payload, error) {
-	if length == 0 {
+func decodePayloadSlice(payload []byte) ([]Payload, error) {
+	if len(payload) == 0 {
 		return []Payload{}, nil
 	}
 
-	decoder := json.NewDecoder(payload)
 	var data []Payload
-	if err := decoder.Decode(&data); err != nil {
+	if err := json.Unmarshal(payload, &data); err != nil {
 		return nil, err
 	}
 
 	return data, nil
+}
+
+// payloadString returns the given io.Reader as a string. The reader must be rewound
+// after calling this in order to be read again.
+func payloadString(payload io.Reader) []byte {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(payload)
+	return buf.Bytes()
 }
