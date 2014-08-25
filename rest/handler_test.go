@@ -14,7 +14,7 @@ func TestDecodePayloadEmpty(t *testing.T) {
 
 	decoded, err := decodePayload(payload, 0)
 
-	assert.Equal(map[string]interface{}{}, decoded)
+	assert.Equal(Payload{}, decoded)
 	assert.Nil(err)
 }
 
@@ -38,6 +38,41 @@ func TestDecodePayloadHappyPath(t *testing.T) {
 
 	decoded, err := decodePayload(payload, int64(len(body)))
 
-	assert.Equal(map[string]interface{}{"foo": "bar", "baz": float64(1)}, decoded)
+	assert.Equal(Payload{"foo": "bar", "baz": float64(1)}, decoded)
+	assert.Nil(err)
+}
+
+// Ensures that decodePayloadSlice returns an empty slice for empty payloads.
+func TestDecodePayloadSliceEmpty(t *testing.T) {
+	assert := assert.New(t)
+	payload := bytes.NewBufferString("")
+
+	decoded, err := decodePayloadSlice(payload, 0)
+
+	assert.Equal([]Payload{}, decoded)
+	assert.Nil(err)
+}
+
+// Ensures that decodePayloadSlice returns a nil and an error for invalid JSON payloads.
+func TestDecodePayloadSliceBadJSON(t *testing.T) {
+	assert := assert.New(t)
+	body := `[{"foo": "bar", "baz": 1`
+	payload := bytes.NewBufferString(body)
+
+	decoded, err := decodePayloadSlice(payload, int64(len(body)))
+
+	assert.Nil(decoded)
+	assert.NotNil(err)
+}
+
+// Ensures that decodePayloadSlice returns a decoded map for JSON payloads.
+func TestDecodePayloadSliceHappyPath(t *testing.T) {
+	assert := assert.New(t)
+	body := `[{"foo": "bar", "baz": 1}]`
+	payload := bytes.NewBufferString(body)
+
+	decoded, err := decodePayloadSlice(payload, int64(len(body)))
+
+	assert.Equal([]Payload{Payload{"foo": "bar", "baz": float64(1)}}, decoded)
 	assert.Nil(err)
 }

@@ -69,16 +69,16 @@ func (b BaseResourceHandler) ReadResource(ctx RequestContext, id string,
 	return nil, NotImplemented("ReadResource not implemented")
 }
 
+// UpdateResourceList is a stub. Implement if necessary.
+func (b BaseResourceHandler) UpdateResourceList(ctx RequestContext, data []Payload,
+	version string) ([]Resource, error) {
+	return nil, NotImplemented("UpdateResourceList not implemented")
+}
+
 // UpdateResource is a stub. Implement if necessary.
 func (b BaseResourceHandler) UpdateResource(ctx RequestContext, id string,
 	data Payload, version string) (Resource, error) {
 	return nil, NotImplemented("UpdateResource not implemented")
-}
-
-// UpdateResourceList is a stub. Implement if necessary.
-func (b BaseResourceHandler) UpdateResourceList(ctx RequestContext, data Payload,
-	version string) ([]Resource, error) {
-	return nil, NotImplemented("UpdateResourceList not implemented")
 }
 
 // DeleteResource is a stub. Implement if necessary.

@@ -59,7 +59,7 @@ type ResourceHandler interface {
 	// resources at PUT /api/:version/resourceName. Typically, this would make some
 	// sort of database update call. It returns the updated resources or an error if
 	// the update failed.
-	UpdateResourceList(RequestContext, Payload, string) ([]Resource, error)
+	UpdateResourceList(RequestContext, []Payload, string) ([]Resource, error)
 
 	// UpdateResource is the logic that corresponds to updating an existing resource at
 	// PUT /api/:version/resourceName/{id}. Typically, this would make some sort of
@@ -186,13 +186,22 @@ func (h requestHandler) handleUpdateList(handler ResourceHandler) http.HandlerFu
 		version := ctx.Version()
 		rules := rulesForVersion(handler.Rules(), version)
 
-		data, err := decodePayload(r.Body, r.ContentLength)
+		var data []Payload
+		var err error
+		data, err = decodePayloadSlice(r.Body, r.ContentLength)
+		if err != nil {
+			var p Payload
+			p, err = decodePayload(r.Body, r.ContentLength)
+			data = []Payload{p}
+		}
+
 		if err != nil {
 			// Payload decoding failed.
-			ctx = ctx.setError(err)
-			ctx = ctx.setStatus(http.StatusInternalServerError)
+			ctx = ctx.setError(BadRequest(err.Error()))
 		} else {
-			data, err := applyInboundRules(data, rules)
+			for i := range data {
+				data[i], err = applyInboundRules(data[i], rules)
+			}
 			if err != nil {
 				// Type coercion failed.
 				ctx = ctx.setError(UnprocessableRequest(err.Error()))
@@ -336,13 +345,30 @@ func rulesForVersion(r Rules, version string) Rules {
 // decodePayload unmarshals the JSON payload and returns the resulting map. If the
 // content is empty, an empty map is returned. If decoding fails, nil is returned
 // with an error.
-func decodePayload(payload io.Reader, length int64) (map[string]interface{}, error) {
+func decodePayload(payload io.Reader, length int64) (Payload, error) {
 	if length == 0 {
 		return map[string]interface{}{}, nil
 	}
 
 	decoder := json.NewDecoder(payload)
-	var data map[string]interface{}
+	var data Payload
+	if err := decoder.Decode(&data); err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+// decodePayloadSlice unmarshals the JSON payload and returns the resulting slice.
+// If the content is empty, an empty list is returned. If decoding fails, nil is
+// returned with an error.
+func decodePayloadSlice(payload io.Reader, length int64) ([]Payload, error) {
+	if length == 0 {
+		return []Payload{}, nil
+	}
+
+	decoder := json.NewDecoder(payload)
+	var data []Payload
 	if err := decoder.Decode(&data); err != nil {
 		return nil, err
 	}

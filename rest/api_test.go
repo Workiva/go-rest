@@ -55,7 +55,7 @@ func (m *MockResourceHandler) ReadResourceList(r RequestContext, limit int,
 	return nil, args.String(1), args.Error(2)
 }
 
-func (m *MockResourceHandler) UpdateResourceList(r RequestContext, data Payload,
+func (m *MockResourceHandler) UpdateResourceList(r RequestContext, data []Payload,
 	version string) ([]Resource, error) {
 	args := m.Mock.Called()
 	resource := args.Get(0)
@@ -413,7 +413,7 @@ func TestHandleUpdateListBadFormat(t *testing.T) {
 	api.RegisterResourceHandler(handler)
 	updateHandler, _ := api.(*muxAPI).getRouteHandler("foo:updateList")
 
-	payload := []byte(`{"foo": "bar"}`)
+	payload := []byte(`[{"foo": "bar"}]`)
 	r := bytes.NewReader(payload)
 	req, _ := http.NewRequest("PUT", "http://foo.com/api/v0.1/foo?format=blah", r)
 	resp := httptest.NewRecorder()
@@ -429,8 +429,8 @@ func TestHandleUpdateListBadFormat(t *testing.T) {
 	)
 }
 
-// Ensures that the update list handler returns an Internal Server Error code when the updateFunc
-// returns an error.
+// Ensures that the update list handler returns an Internal Server Error code when the
+// updateListFunc returns an error.
 func TestHandleUpdateListBadUpdate(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
@@ -444,7 +444,7 @@ func TestHandleUpdateListBadUpdate(t *testing.T) {
 	api.RegisterResourceHandler(handler)
 	updateHandler, _ := api.(*muxAPI).getRouteHandler("foo:updateList")
 
-	payload := []byte(`{"foo": "bar"}`)
+	payload := []byte(`[{"foo": "bar"}]`)
 	r := bytes.NewReader(payload)
 	req, _ := http.NewRequest("PUT", "http://foo.com/api/v0.1/foo", r)
 	resp := httptest.NewRecorder()
@@ -455,6 +455,36 @@ func TestHandleUpdateListBadUpdate(t *testing.T) {
 	assert.Equal(http.StatusInternalServerError, resp.Code, "Incorrect response code")
 	assert.Equal(
 		`{"error":"couldn't update","success":false}`,
+		resp.Body.String(),
+		"Incorrect response string",
+	)
+}
+
+// Ensures that update list handler returns a Bad Request  code when the payload is
+// not a list.
+func TestHandleUpdateListPayloadNotList(t *testing.T) {
+	assert := assert.New(t)
+	handler := new(MockResourceHandler)
+	api := NewAPI()
+
+	handler.On("ResourceName").Return("foo")
+	handler.On("Authenticate").Return(nil)
+	handler.On("Rules").Return(nil)
+
+	api.RegisterResourceHandler(handler)
+	updateHandler, _ := api.(*muxAPI).getRouteHandler("foo:updateList")
+
+	payload := []byte(`{"foo": "bar"}`)
+	r := bytes.NewReader(payload)
+	req, _ := http.NewRequest("PUT", "http://foo.com/api/v0.1/foo", r)
+	resp := httptest.NewRecorder()
+
+	updateHandler.ServeHTTP(resp, req)
+
+	handler.Mock.AssertExpectations(t)
+	assert.Equal(http.StatusBadRequest, resp.Code, "Incorrect response code")
+	assert.Equal(
+		`{"error":"EOF","success":false}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -475,7 +505,7 @@ func TestHandleUpdateListHappyPath(t *testing.T) {
 	api.RegisterResourceHandler(handler)
 	updateHandler, _ := api.(*muxAPI).getRouteHandler("foo:updateList")
 
-	payload := []byte(`{"foo": "bar"}`)
+	payload := []byte(`[{"foo": "bar"}]`)
 	r := bytes.NewReader(payload)
 	req, _ := http.NewRequest("PUT", "http://foo.com/api/v0.1/foo", r)
 	resp := httptest.NewRecorder()
