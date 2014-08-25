@@ -76,8 +76,8 @@ func (b BaseResourceHandler) UpdateResource(ctx RequestContext, id string,
 }
 
 // UpdateResourceList is a stub. Implement if necessary.
-func (b BaseResourceHandler) UpdateResourceList(ctx RequestContext, id string,
-	data Payload, version string) ([]Resource, error) {
+func (b BaseResourceHandler) UpdateResourceList(ctx RequestContext, data Payload,
+	version string) ([]Resource, error) {
 	return nil, NotImplemented("UpdateResourceList not implemented")
 }
 

@@ -65,7 +65,7 @@ type ResourceHandler interface {
 	// resources at PUT /api/:version/resourceName. Typically, this would make some
 	// sort of database update call. It returns the updated resources or an error if
 	// the update failed.
-	UpdateResourceList(RequestContext, string, Payload, string) ([]Resource, error)
+	UpdateResourceList(RequestContext, Payload, string) ([]Resource, error)
 
 	// DeleteResource is the logic that corresponds to deleting an existing resource at
 	// DELETE /api/:version/resourceName/{id}. Typically, this would make some sort of
@@ -234,9 +234,7 @@ func (h requestHandler) handleUpdateList(handler ResourceHandler) http.HandlerFu
 				// Type coercion failed.
 				ctx = ctx.setError(UnprocessableRequest(err.Error()))
 			} else {
-				resources, err := handler.UpdateResourceList(
-					ctx, ctx.ResourceID(), data, version)
-
+				resources, err := handler.UpdateResourceList(ctx, data, version)
 				if err == nil {
 					// Apply rules to results.
 					for idx, resource := range resources {
