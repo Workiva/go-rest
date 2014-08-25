@@ -195,7 +195,6 @@ func (h requestHandler) handleUpdateList(handler ResourceHandler) http.HandlerFu
 			var p Payload
 			p, err = decodePayload(payloadStr)
 			data = []Payload{p}
-			fmt.Println(data)
 		}
 
 		if err != nil {
