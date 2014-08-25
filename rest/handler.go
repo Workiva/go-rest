@@ -55,17 +55,17 @@ type ResourceHandler interface {
 	// returned along with an appropriate error.
 	ReadResource(RequestContext, string, string) (Resource, error)
 
-	// UpdateResource is the logic that corresponds to updating an existing resource at
-	// PUT /api/:version/resourceName/{id}. Typically, this would make some sort of
-	// database update call. It returns the updated resource or an error if the update
-	// failed.
-	UpdateResource(RequestContext, string, Payload, string) (Resource, error)
-
 	// UpdateResourceList is the logic that corresponds to updating a collection of
 	// resources at PUT /api/:version/resourceName. Typically, this would make some
 	// sort of database update call. It returns the updated resources or an error if
 	// the update failed.
 	UpdateResourceList(RequestContext, Payload, string) ([]Resource, error)
+
+	// UpdateResource is the logic that corresponds to updating an existing resource at
+	// PUT /api/:version/resourceName/{id}. Typically, this would make some sort of
+	// database update call. It returns the updated resource or an error if the update
+	// failed.
+	UpdateResource(RequestContext, string, Payload, string) (Resource, error)
 
 	// DeleteResource is the logic that corresponds to deleting an existing resource at
 	// DELETE /api/:version/resourceName/{id}. Typically, this would make some sort of
@@ -176,43 +176,6 @@ func (h requestHandler) handleRead(handler ResourceHandler) http.HandlerFunc {
 	}
 }
 
-// handleUpdate returns a HandlerFunc which will deserialize the request payload,
-// pass it to the provided update function, and then serialize and dispatch the
-// response. The serialization mechanism used is specified by the "format" query
-// parameter.
-func (h requestHandler) handleUpdate(handler ResourceHandler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := NewContext(nil, r)
-		version := ctx.Version()
-		rules := rulesForVersion(handler.Rules(), version)
-
-		data, err := decodePayload(r.Body, r.ContentLength)
-		if err != nil {
-			// Payload decoding failed.
-			ctx = ctx.setError(err)
-			ctx = ctx.setStatus(http.StatusInternalServerError)
-		} else {
-			data, err := applyInboundRules(data, rules)
-			if err != nil {
-				// Type coercion failed.
-				ctx = ctx.setError(UnprocessableRequest(err.Error()))
-			} else {
-				resource, err := handler.UpdateResource(
-					ctx, ctx.ResourceID(), data, version)
-				if err == nil {
-					resource = applyOutboundRules(resource, rules)
-				}
-
-				ctx = ctx.setResult(resource)
-				ctx = ctx.setError(err)
-				ctx = ctx.setStatus(http.StatusOK)
-			}
-		}
-
-		h.sendResponse(w, ctx)
-	}
-}
-
 // handleUpdateList returns a HandlerFunc which will deserialize the request payload,
 // pass it to the provided update function, and then serialize and dispatch the
 // response. The serialization mechanism used is specified by the "format" query
@@ -243,6 +206,43 @@ func (h requestHandler) handleUpdateList(handler ResourceHandler) http.HandlerFu
 				}
 
 				ctx = ctx.setResult(resources)
+				ctx = ctx.setError(err)
+				ctx = ctx.setStatus(http.StatusOK)
+			}
+		}
+
+		h.sendResponse(w, ctx)
+	}
+}
+
+// handleUpdate returns a HandlerFunc which will deserialize the request payload,
+// pass it to the provided update function, and then serialize and dispatch the
+// response. The serialization mechanism used is specified by the "format" query
+// parameter.
+func (h requestHandler) handleUpdate(handler ResourceHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := NewContext(nil, r)
+		version := ctx.Version()
+		rules := rulesForVersion(handler.Rules(), version)
+
+		data, err := decodePayload(r.Body, r.ContentLength)
+		if err != nil {
+			// Payload decoding failed.
+			ctx = ctx.setError(err)
+			ctx = ctx.setStatus(http.StatusInternalServerError)
+		} else {
+			data, err := applyInboundRules(data, rules)
+			if err != nil {
+				// Type coercion failed.
+				ctx = ctx.setError(UnprocessableRequest(err.Error()))
+			} else {
+				resource, err := handler.UpdateResource(
+					ctx, ctx.ResourceID(), data, version)
+				if err == nil {
+					resource = applyOutboundRules(resource, rules)
+				}
+
+				ctx = ctx.setResult(resource)
 				ctx = ctx.setError(err)
 				ctx = ctx.setStatus(http.StatusOK)
 			}
