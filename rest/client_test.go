@@ -35,7 +35,7 @@ func (tc testAuthorizer) Authorize(urlStr string, requestType string, form url.V
 }
 
 func TestEverything(t *testing.T) {
-	returnJson := `{"Status": 200, "Reason": "", "Messages": [], "Next": "", "Results": {"Prop": "a"}}`
+	returnJSON := `{"Status": 200, "Reason": "", "Messages": [], "Next": "", "Results": {"Prop": "a"}}`
 
 	formData := map[string]string{
 		"oauth_consumer_key":     "token",
@@ -61,7 +61,7 @@ func TestEverything(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintln(w, returnJson)
+		fmt.Fprintln(w, returnJSON)
 	}))
 
 	defer ts.Close()
@@ -74,16 +74,16 @@ func TestEverything(t *testing.T) {
 	testObj := testObj{}
 	fs := []func() (*BaseResponse, error){
 		func() (*BaseResponse, error) {
-			return c.GetJson(ts.URL, nil, &testObj)
+			return c.GetJSON(ts.URL, nil, &testObj)
 		},
 		func() (*BaseResponse, error) {
-			return c.DeleteJson(ts.URL, nil, &testObj)
+			return c.DeleteJSON(ts.URL, nil, &testObj)
 		},
 		func() (*BaseResponse, error) {
-			return c.PutJson(ts.URL, nil, &testObj)
+			return c.PutJSON(ts.URL, nil, &testObj)
 		},
 		func() (*BaseResponse, error) {
-			return c.PostJson(ts.URL, nil, &testObj)
+			return c.PostJSON(ts.URL, nil, &testObj)
 		},
 	}
 

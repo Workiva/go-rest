@@ -12,7 +12,7 @@ This package can be used with any type that implements the Consumer interface:
         "something": "cool"
     }
 
-    resp, err := rc.GetJson("http://example.com/api/", params, nil)
+    resp, err := rc.GetJSON("http://example.com/api/", params, nil)
 */
 package rest
 
@@ -88,7 +88,7 @@ func (c *Client) do(method, urlStr string, params map[string]string) (*http.Resp
 	return http.DefaultClient.Do(req)
 }
 
-func (c *Client) doJson(method, url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
+func (c *Client) doJSON(method, url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
 	response, err := c.do(method, url, params)
 	if err != nil {
 		return &BaseResponse{}, err
@@ -105,9 +105,9 @@ func (c *Client) Get(urlStr string, params map[string]string) (*http.Response, e
 	return c.do(GET, urlStr, params)
 }
 
-// GetJson will perform a HTTP GET and will JSON decode the response.
-func (c *Client) GetJson(url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
-	return c.doJson(GET, url, params, entity)
+// GetJSON will perform a HTTP GET and will JSON decode the response.
+func (c *Client) GetJSON(url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
+	return c.doJSON(GET, url, params, entity)
 }
 
 // Post will perform a HTTP POST against the supplied URL with the given parameters.
@@ -115,9 +115,9 @@ func (c *Client) Post(urlStr string, params map[string]string) (*http.Response, 
 	return c.do(POST, urlStr, params)
 }
 
-// PostJson will perform a HTTP POST and will JSON decode the response.
-func (c *Client) PostJson(url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
-	return c.doJson(POST, url, params, entity)
+// PostJSON will perform a HTTP POST and will JSON decode the response.
+func (c *Client) PostJSON(url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
+	return c.doJSON(POST, url, params, entity)
 }
 
 // Put will perform a HTTP PUT against the supplied URL with the given parameters.
@@ -125,9 +125,9 @@ func (c *Client) Put(urlStr string, params map[string]string) (*http.Response, e
 	return c.do(PUT, urlStr, params)
 }
 
-// PutJson will perform a HTTP PUT and will JSON decode the response.
-func (c *Client) PutJson(url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
-	return c.doJson(PUT, url, params, entity)
+// PutJSON will perform a HTTP PUT and will JSON decode the response.
+func (c *Client) PutJSON(url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
+	return c.doJSON(PUT, url, params, entity)
 }
 
 // Delete will perform a HTTP DELETE against the supplied URL with the given parameters.
@@ -135,7 +135,7 @@ func (c *Client) Delete(urlStr string, params map[string]string) (*http.Response
 	return c.do(DELETE, urlStr, params)
 }
 
-// DeleteJson will perform a HTTP DELETE and will JSON decode the response.
-func (c *Client) DeleteJson(url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
-	return c.doJson(DELETE, url, params, entity)
+// DeleteJSON will perform a HTTP DELETE and will JSON decode the response.
+func (c *Client) DeleteJSON(url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
+	return c.doJSON(DELETE, url, params, entity)
 }
