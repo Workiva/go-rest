@@ -82,8 +82,19 @@ func (c *Client) do(method, urlStr string, params map[string]string) (*http.Resp
 
 	form := c.Authorize(urlStr, method, c.BuildForm(params))
 
-	// TODO: Investigate if this needs to be different for POST
-	req.URL.RawQuery = form.Encode()
+	encoded := form.Encode()
+
+	// TODO: Find a way to push the encoding into the specific http methods themselves.
+	switch method {
+	case GET, DELETE:
+		// Use a raw query string for GET and DELETE
+		req.URL.RawQuery = encoded
+	case POST, PUT:
+		// Put the encoded query string in the body of the POST or PUT request.
+		// TODO: Probably should add a way to use a provided body encoding.
+		req.Body = ioutil.NopCloser(strings.NewReader(encoded))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	}
 
 	return http.DefaultClient.Do(req)
 }

@@ -34,7 +34,7 @@ func (tc testAuthorizer) Authorize(urlStr string, requestType string, form url.V
 	return form
 }
 
-func TestEverything(t *testing.T) {
+func TestJSONMethods(t *testing.T) {
 	returnJSON := `{"Status": 200, "Reason": "", "Messages": [], "Next": "", "Results": {"Prop": "a"}}`
 
 	formData := map[string]string{
