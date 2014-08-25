@@ -55,6 +55,16 @@ func (m *MockResourceHandler) ReadResourceList(r RequestContext, limit int,
 	return nil, args.String(1), args.Error(2)
 }
 
+func (m *MockResourceHandler) UpdateResourceList(r RequestContext, data []Payload,
+	version string) ([]Resource, error) {
+	args := m.Mock.Called()
+	resource := args.Get(0)
+	if resource != nil {
+		return resource.([]Resource), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
 func (m *MockResourceHandler) UpdateResource(r RequestContext, id string, data Payload,
 	version string) (Resource, error) {
 	args := m.Mock.Called()
@@ -383,6 +393,129 @@ func TestHandleReadHappyPath(t *testing.T) {
 	assert.Equal(http.StatusOK, resp.Code, "Incorrect response code")
 	assert.Equal(
 		`{"result":{"foo":"hello"},"success":true}`,
+		resp.Body.String(),
+		"Incorrect response string",
+	)
+}
+
+// Ensures that the update list handler returns a Not Implemented code if an invalid response format
+// is provided.
+func TestHandleUpdateListBadFormat(t *testing.T) {
+	assert := assert.New(t)
+	handler := new(MockResourceHandler)
+	api := NewAPI()
+
+	handler.On("ResourceName").Return("foo")
+	handler.On("Authenticate").Return(nil)
+	handler.On("Rules").Return(nil)
+	handler.On("UpdateResourceList").Return([]Resource{&TestResource{}}, nil)
+
+	api.RegisterResourceHandler(handler)
+	updateHandler, _ := api.(*muxAPI).getRouteHandler("foo:updateList")
+
+	payload := []byte(`[{"foo": "bar"}]`)
+	r := bytes.NewReader(payload)
+	req, _ := http.NewRequest("PUT", "http://foo.com/api/v0.1/foo?format=blah", r)
+	resp := httptest.NewRecorder()
+
+	updateHandler.ServeHTTP(resp, req)
+
+	handler.Mock.AssertExpectations(t)
+	assert.Equal(http.StatusNotImplemented, resp.Code, "Incorrect response code")
+	assert.Equal(
+		`{"error":"Format not implemented: blah","success":false}`,
+		resp.Body.String(),
+		"Incorrect response string",
+	)
+}
+
+// Ensures that the update list handler returns an Internal Server Error code when the
+// updateListFunc returns an error.
+func TestHandleUpdateListBadUpdate(t *testing.T) {
+	assert := assert.New(t)
+	handler := new(MockResourceHandler)
+	api := NewAPI()
+
+	handler.On("ResourceName").Return("foo")
+	handler.On("Authenticate").Return(nil)
+	handler.On("Rules").Return(nil)
+	handler.On("UpdateResourceList").Return(nil, fmt.Errorf("couldn't update"))
+
+	api.RegisterResourceHandler(handler)
+	updateHandler, _ := api.(*muxAPI).getRouteHandler("foo:updateList")
+
+	payload := []byte(`[{"foo": "bar"}]`)
+	r := bytes.NewReader(payload)
+	req, _ := http.NewRequest("PUT", "http://foo.com/api/v0.1/foo", r)
+	resp := httptest.NewRecorder()
+
+	updateHandler.ServeHTTP(resp, req)
+
+	handler.Mock.AssertExpectations(t)
+	assert.Equal(http.StatusInternalServerError, resp.Code, "Incorrect response code")
+	assert.Equal(
+		`{"error":"couldn't update","success":false}`,
+		resp.Body.String(),
+		"Incorrect response string",
+	)
+}
+
+// Ensures that the update list handler handles payloads that aren't lists.
+func TestHandleUpdateListPayloadNotList(t *testing.T) {
+	assert := assert.New(t)
+	handler := new(MockResourceHandler)
+	api := NewAPI()
+
+	handler.On("ResourceName").Return("foo")
+	handler.On("Authenticate").Return(nil)
+	handler.On("Rules").Return(nil)
+	handler.On("UpdateResourceList").Return([]Resource{&TestResource{Foo: "bar"}}, nil)
+
+	api.RegisterResourceHandler(handler)
+	updateHandler, _ := api.(*muxAPI).getRouteHandler("foo:updateList")
+
+	payload := []byte(`{"foo": "bar"}`)
+	r := bytes.NewReader(payload)
+	req, _ := http.NewRequest("PUT", "http://foo.com/api/v0.1/foo", r)
+	resp := httptest.NewRecorder()
+
+	updateHandler.ServeHTTP(resp, req)
+
+	handler.Mock.AssertExpectations(t)
+	assert.Equal(http.StatusOK, resp.Code, "Incorrect response code")
+	assert.Equal(
+		`{"result":[{"foo":"bar"}],"success":true}`,
+		resp.Body.String(),
+		"Incorrect response string",
+	)
+}
+
+// Ensures that the update list handler returns the serialized resource and OK code when
+// updateFunc succeeds.
+func TestHandleUpdateListHappyPath(t *testing.T) {
+	assert := assert.New(t)
+	handler := new(MockResourceHandler)
+	api := NewAPI()
+
+	handler.On("ResourceName").Return("foo")
+	handler.On("Authenticate").Return(nil)
+	handler.On("Rules").Return(nil)
+	handler.On("UpdateResourceList").Return([]Resource{&TestResource{Foo: "bar"}}, nil)
+
+	api.RegisterResourceHandler(handler)
+	updateHandler, _ := api.(*muxAPI).getRouteHandler("foo:updateList")
+
+	payload := []byte(`[{"foo": "bar"}]`)
+	r := bytes.NewReader(payload)
+	req, _ := http.NewRequest("PUT", "http://foo.com/api/v0.1/foo", r)
+	resp := httptest.NewRecorder()
+
+	updateHandler.ServeHTTP(resp, req)
+
+	handler.Mock.AssertExpectations(t)
+	assert.Equal(http.StatusOK, resp.Code, "Incorrect response code")
+	assert.Equal(
+		`{"result":[{"foo":"bar"}],"success":true}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 )
@@ -31,6 +32,9 @@ type ResourceHandler interface {
 	// UpdateURI returns the URI for updating a specific resource.
 	UpdateURI() string
 
+	// UpdateListURI returns the URI for updating a list of resources.
+	UpdateListURI() string
+
 	// DeleteURI returns the URI for deleting a specific resource.
 	DeleteURI() string
 
@@ -51,6 +55,12 @@ type ResourceHandler interface {
 	// database query to load the resource. If the resource doesn't exist, nil should be
 	// returned along with an appropriate error.
 	ReadResource(RequestContext, string, string) (Resource, error)
+
+	// UpdateResourceList is the logic that corresponds to updating a collection of
+	// resources at PUT /api/:version/resourceName. Typically, this would make some
+	// sort of database update call. It returns the updated resources or an error if
+	// the update failed.
+	UpdateResourceList(RequestContext, []Payload, string) ([]Resource, error)
 
 	// UpdateResource is the logic that corresponds to updating an existing resource at
 	// PUT /api/:version/resourceName/{id}. Typically, this would make some sort of
@@ -90,7 +100,7 @@ func (h requestHandler) handleCreate(handler ResourceHandler) http.HandlerFunc {
 		version := ctx.Version()
 		rules := rulesForVersion(handler.Rules(), version)
 
-		data, err := decodePayload(r.Body, r.ContentLength)
+		data, err := decodePayload(payloadString(r.Body))
 		if err != nil {
 			// Payload decoding failed.
 			ctx = ctx.setError(err)
@@ -167,6 +177,55 @@ func (h requestHandler) handleRead(handler ResourceHandler) http.HandlerFunc {
 	}
 }
 
+// handleUpdateList returns a HandlerFunc which will deserialize the request payload,
+// pass it to the provided update function, and then serialize and dispatch the
+// response. The serialization mechanism used is specified by the "format" query
+// parameter.
+func (h requestHandler) handleUpdateList(handler ResourceHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := NewContext(nil, r)
+		version := ctx.Version()
+		rules := rulesForVersion(handler.Rules(), version)
+
+		payloadStr := payloadString(r.Body)
+		var data []Payload
+		var err error
+		data, err = decodePayloadSlice(payloadStr)
+		if err != nil {
+			var p Payload
+			p, err = decodePayload(payloadStr)
+			data = []Payload{p}
+		}
+
+		if err != nil {
+			// Payload decoding failed.
+			ctx = ctx.setError(BadRequest(err.Error()))
+		} else {
+			for i := range data {
+				data[i], err = applyInboundRules(data[i], rules)
+			}
+			if err != nil {
+				// Type coercion failed.
+				ctx = ctx.setError(UnprocessableRequest(err.Error()))
+			} else {
+				resources, err := handler.UpdateResourceList(ctx, data, version)
+				if err == nil {
+					// Apply rules to results.
+					for idx, resource := range resources {
+						resources[idx] = applyOutboundRules(resource, rules)
+					}
+				}
+
+				ctx = ctx.setResult(resources)
+				ctx = ctx.setError(err)
+				ctx = ctx.setStatus(http.StatusOK)
+			}
+		}
+
+		h.sendResponse(w, ctx)
+	}
+}
+
 // handleUpdate returns a HandlerFunc which will deserialize the request payload,
 // pass it to the provided update function, and then serialize and dispatch the
 // response. The serialization mechanism used is specified by the "format" query
@@ -177,7 +236,7 @@ func (h requestHandler) handleUpdate(handler ResourceHandler) http.HandlerFunc {
 		version := ctx.Version()
 		rules := rulesForVersion(handler.Rules(), version)
 
-		data, err := decodePayload(r.Body, r.ContentLength)
+		data, err := decodePayload(payloadString(r.Body))
 		if err != nil {
 			// Payload decoding failed.
 			ctx = ctx.setError(err)
@@ -288,16 +347,41 @@ func rulesForVersion(r Rules, version string) Rules {
 // decodePayload unmarshals the JSON payload and returns the resulting map. If the
 // content is empty, an empty map is returned. If decoding fails, nil is returned
 // with an error.
-func decodePayload(payload io.Reader, length int64) (map[string]interface{}, error) {
-	if length == 0 {
+func decodePayload(payload []byte) (Payload, error) {
+	if len(payload) == 0 {
 		return map[string]interface{}{}, nil
 	}
 
-	decoder := json.NewDecoder(payload)
-	var data map[string]interface{}
-	if err := decoder.Decode(&data); err != nil {
+	var data Payload
+	if err := json.Unmarshal(payload, &data); err != nil {
 		return nil, err
 	}
 
 	return data, nil
+}
+
+// decodePayloadSlice unmarshals the JSON payload and returns the resulting slice.
+// If the content is empty, an empty list is returned. If decoding fails, nil is
+// returned with an error.
+func decodePayloadSlice(payload []byte) ([]Payload, error) {
+	if len(payload) == 0 {
+		return []Payload{}, nil
+	}
+
+	var data []Payload
+	if err := json.Unmarshal(payload, &data); err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+// payloadString returns the given io.Reader as a string. The reader must be rewound
+// after calling this in order to be read again.
+func payloadString(payload io.Reader) []byte {
+	payloadStr, err := ioutil.ReadAll(payload)
+	if err != nil {
+		return nil
+	}
+	return payloadStr
 }

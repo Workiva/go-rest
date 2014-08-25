@@ -39,6 +39,12 @@ func (b BaseResourceHandler) UpdateURI() string {
 	return ""
 }
 
+// UpdateListURI is a stub. Implement if necessary. The default update list URI is
+// /api/v{version:[^/]+}/resourceName.
+func (b BaseResourceHandler) UpdateListURI() string {
+	return ""
+}
+
 // DeleteURI is a stub. Implement if necessary. The default delete URI is
 // /api/v{version:[^/]+}/resourceName/{resource_id}.
 func (b BaseResourceHandler) DeleteURI() string {
@@ -61,6 +67,12 @@ func (b BaseResourceHandler) ReadResourceList(ctx RequestContext, limit int,
 func (b BaseResourceHandler) ReadResource(ctx RequestContext, id string,
 	version string) (Resource, error) {
 	return nil, NotImplemented("ReadResource not implemented")
+}
+
+// UpdateResourceList is a stub. Implement if necessary.
+func (b BaseResourceHandler) UpdateResourceList(ctx RequestContext, data []Payload,
+	version string) ([]Resource, error) {
+	return nil, NotImplemented("UpdateResourceList not implemented")
 }
 
 // UpdateResource is a stub. Implement if necessary.
@@ -142,6 +154,16 @@ func (r resourceHandlerProxy) UpdateURI() string {
 	if uri == "" {
 		uri = fmt.Sprintf("/api/v{%s:[^/]+}/%s/{%s}", versionKey, r.ResourceName(),
 			resourceIDKey)
+	}
+	return uri
+}
+
+// UpdateListURI returns the URI for updating a list of resources using the handler-
+// specified URI while falling back to a sensible default if not provided.
+func (r resourceHandlerProxy) UpdateListURI() string {
+	uri := r.ResourceHandler.UpdateListURI()
+	if uri == "" {
+		uri = fmt.Sprintf("/api/v{%s:[^/]+}/%s", versionKey, r.ResourceName())
 	}
 	return uri
 }

@@ -135,9 +135,14 @@ func (r *muxAPI) RegisterResourceHandler(h ResourceHandler, middleware ...Reques
 	log.Printf("Registered read handler at GET %s", h.ReadURI())
 
 	r.router.HandleFunc(
+		h.UpdateListURI(), applyMiddleware(r.handler.handleUpdateList(h), middleware),
+	).Methods("PUT").Name(resource + ":updateList")
+	log.Printf("Registered update list handler at PUT %s", h.UpdateListURI())
+
+	r.router.HandleFunc(
 		h.UpdateURI(), applyMiddleware(r.handler.handleUpdate(h), middleware),
 	).Methods("PUT").Name(resource + ":update")
-	log.Printf("Registered update handler at UPDATE %s", h.UpdateURI())
+	log.Printf("Registered update handler at PUT %s", h.UpdateURI())
 
 	r.router.HandleFunc(
 		h.DeleteURI(), applyMiddleware(r.handler.handleDelete(h), middleware),

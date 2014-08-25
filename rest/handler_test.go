@@ -12,9 +12,9 @@ func TestDecodePayloadEmpty(t *testing.T) {
 	assert := assert.New(t)
 	payload := bytes.NewBufferString("")
 
-	decoded, err := decodePayload(payload, 0)
+	decoded, err := decodePayload(payload.Bytes())
 
-	assert.Equal(map[string]interface{}{}, decoded)
+	assert.Equal(Payload{}, decoded)
 	assert.Nil(err)
 }
 
@@ -24,7 +24,7 @@ func TestDecodePayloadBadJSON(t *testing.T) {
 	body := `{"foo": "bar", "baz": 1`
 	payload := bytes.NewBufferString(body)
 
-	decoded, err := decodePayload(payload, int64(len(body)))
+	decoded, err := decodePayload(payload.Bytes())
 
 	assert.Nil(decoded)
 	assert.NotNil(err)
@@ -36,8 +36,43 @@ func TestDecodePayloadHappyPath(t *testing.T) {
 	body := `{"foo": "bar", "baz": 1}`
 	payload := bytes.NewBufferString(body)
 
-	decoded, err := decodePayload(payload, int64(len(body)))
+	decoded, err := decodePayload(payload.Bytes())
 
-	assert.Equal(map[string]interface{}{"foo": "bar", "baz": float64(1)}, decoded)
+	assert.Equal(Payload{"foo": "bar", "baz": float64(1)}, decoded)
+	assert.Nil(err)
+}
+
+// Ensures that decodePayloadSlice returns an empty slice for empty payloads.
+func TestDecodePayloadSliceEmpty(t *testing.T) {
+	assert := assert.New(t)
+	payload := bytes.NewBufferString("")
+
+	decoded, err := decodePayloadSlice(payload.Bytes())
+
+	assert.Equal([]Payload{}, decoded)
+	assert.Nil(err)
+}
+
+// Ensures that decodePayloadSlice returns a nil and an error for invalid JSON payloads.
+func TestDecodePayloadSliceBadJSON(t *testing.T) {
+	assert := assert.New(t)
+	body := `[{"foo": "bar", "baz": 1`
+	payload := bytes.NewBufferString(body)
+
+	decoded, err := decodePayloadSlice(payload.Bytes())
+
+	assert.Nil(decoded)
+	assert.NotNil(err)
+}
+
+// Ensures that decodePayloadSlice returns a decoded map for JSON payloads.
+func TestDecodePayloadSliceHappyPath(t *testing.T) {
+	assert := assert.New(t)
+	body := `[{"foo": "bar", "baz": 1}]`
+	payload := bytes.NewBufferString(body)
+
+	decoded, err := decodePayloadSlice(payload.Bytes())
+
+	assert.Equal([]Payload{Payload{"foo": "bar", "baz": float64(1)}}, decoded)
 	assert.Nil(err)
 }
