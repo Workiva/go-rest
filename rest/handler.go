@@ -1,10 +1,10 @@
 package rest
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 )
@@ -379,7 +379,9 @@ func decodePayloadSlice(payload []byte) ([]Payload, error) {
 // payloadString returns the given io.Reader as a string. The reader must be rewound
 // after calling this in order to be read again.
 func payloadString(payload io.Reader) []byte {
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(payload)
-	return buf.Bytes()
+	payloadStr, err := ioutil.ReadAll(payload)
+	if err != nil {
+		return nil
+	}
+	return payloadStr
 }
