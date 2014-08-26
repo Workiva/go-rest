@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"code.google.com/p/go.net/context"
 	gcontext "github.com/gorilla/context"
@@ -247,7 +248,12 @@ func (ctx *gorillaRequestContext) Request() (*http.Request, bool) {
 
 // Limit returns the maximum number of results that should be fetched.
 func (ctx *gorillaRequestContext) Limit() int {
-	return ctx.ValueWithDefault(limitKey, 100).(int)
+	limitStr := ctx.ValueWithDefault(limitKey, "100")
+	limit, err := strconv.Atoi(limitStr.(string))
+	if err != nil {
+		limit = 100
+	}
+	return limit
 }
 
 // NextURL returns the URL to use to request the next page of results using the current
