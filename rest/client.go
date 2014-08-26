@@ -93,7 +93,7 @@ func (c *Client) do(method, urlStr string, params map[string]string) (*http.Resp
 		// Set the auth params in the query string.
 		req.URL.RawQuery = auth.Encode()
 		// Encode the form values as JSON and put them in the request body.
-		body, err := json.Marshal(form)
+		body, err := encodeBody(form)
 		if err != nil {
 			return nil, err
 		}
@@ -170,4 +170,20 @@ func combineURLValues(to, from url.Values, merge bool) url.Values {
 		}
 	}
 	return to
+}
+
+func encodeBody(form url.Values) ([]byte, error) {
+	actual := map[string]string{}
+
+	// Get the first value for each key.
+	for k := range form {
+		actual[k] = form.Get(k)
+	}
+
+	// Encode the form
+	body, err := json.Marshal(actual)
+	if err != nil {
+		return nil, err
+	}
+	return body, nil
 }
