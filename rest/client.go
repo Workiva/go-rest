@@ -17,12 +17,12 @@ This package can be used with any type that implements the Consumer interface:
 package rest
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strings"
 )
 
 // Supported HTTP Methods
@@ -75,25 +75,30 @@ func (c *Client) BuildForm(params map[string]string) url.Values {
 
 func (c *Client) do(method, urlStr string, params map[string]string) (*http.Response, error) {
 	req, err := http.NewRequest(method, urlStr, nil)
-
 	if err != nil {
 		return nil, err
 	}
 
-	form := c.Authorize(urlStr, method, c.BuildForm(params))
-
-	encoded := form.Encode()
+	// Set up the form values and the authorization.
+	req.Method = method
+	form := c.BuildForm(params)
+	auth := c.Authorize(urlStr, method, url.Values{})
 
 	// TODO: Find a way to push the encoding into the specific http methods themselves.
 	switch method {
 	case GET, DELETE:
-		// Use a raw query string for GET and DELETE
-		req.URL.RawQuery = encoded
+		// Combine form and auth into the query string.
+		req.URL.RawQuery = combineURLValues(form, auth, false).Encode()
 	case POST, PUT:
-		// Put the encoded query string in the body of the POST or PUT request.
-		// TODO: Probably should add a way to use a provided body encoding.
-		req.Body = ioutil.NopCloser(strings.NewReader(encoded))
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		// Set the auth params in the query string.
+		req.URL.RawQuery = auth.Encode()
+		// Encode the form values as JSON and put them in the request body.
+		body, err := json.Marshal(form)
+		if err != nil {
+			return nil, err
+		}
+		req.Body = ioutil.NopCloser(bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
 	}
 
 	return http.DefaultClient.Do(req)
@@ -108,7 +113,7 @@ func (c *Client) doJSON(method, url string, params map[string]string, entity int
 	defer response.Body.Close()
 
 	b, _ := ioutil.ReadAll(response.Body)
-	return c.decode(strings.NewReader(string(b)), entity)
+	return c.decode(bytes.NewReader(b), entity)
 }
 
 // Get will perform a HTTP GET against the supplied URL with the given parameters.
@@ -149,4 +154,20 @@ func (c *Client) Delete(urlStr string, params map[string]string) (*http.Response
 // DeleteJSON will perform a HTTP DELETE and will JSON decode the response.
 func (c *Client) DeleteJSON(url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
 	return c.doJSON(DELETE, url, params, entity)
+}
+
+// combineURLValues will copy all the Value entries from one url.Values to the
+// other. If merge is true, then it will merge the common keyed-values,
+// otherwise it will remove the existing values from the map and replace them
+// with the new from values. It returns the passed in to value.
+func combineURLValues(to, from url.Values, merge bool) url.Values {
+	for k, vs := range from {
+		if _, ok := to[k]; ok && !merge {
+			to.Del(k)
+		}
+		for _, v := range vs {
+			to.Add(k, v)
+		}
+	}
+	return to
 }
