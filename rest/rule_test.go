@@ -1028,7 +1028,8 @@ func TestApplyInboundRulesNonResourceRule(t *testing.T) {
 // Ensures that nil is returned by applyOutboundRules if nil is passed in.
 func TestApplyOutboundRulesNilResource(t *testing.T) {
 	assert := assert.New(t)
-	assert.Nil(applyOutboundRules(nil, NewRules((*TestResource)(nil), &Rule{})), "Incorrect return value")
+	assert.Nil(applyOutboundRules(
+		nil, NewRules((*TestResource)(nil), &Rule{}), "1"), "Incorrect return value")
 }
 
 // Ensures that resource is returned by applyOutboundRules if rules is empty.
@@ -1036,7 +1037,8 @@ func TestApplyOutboundRulesNoRules(t *testing.T) {
 	assert := assert.New(t)
 	resource := &TestResource{}
 
-	assert.Equal(resource, applyOutboundRules(resource, NewRules((*TestResource)(nil))), "Incorrect return value")
+	assert.Equal(resource, applyOutboundRules(
+		resource, NewRules((*TestResource)(nil)), "1"), "Incorrect return value")
 }
 
 // Ensures that resource is returned by applyOutboundRules if it's not a struct.
@@ -1044,8 +1046,8 @@ func TestApplyOutboundRulesNotStruct(t *testing.T) {
 	assert := assert.New(t)
 	resource := "resource"
 
-	assert.Equal(resource, applyOutboundRules(resource, NewRules((*TestResource)(nil), &Rule{})),
-		"Incorrect return value")
+	assert.Equal(resource, applyOutboundRules(
+		resource, NewRules((*TestResource)(nil), &Rule{}), "1"), "Incorrect return value")
 }
 
 // Ensures that applyOutboundRules handles map[string]interface.
@@ -1056,7 +1058,7 @@ func TestApplyOutboundRulesMap(t *testing.T) {
 
 	assert.Equal(
 		Payload{"Foo": "hello"},
-		applyOutboundRules(resource, rules),
+		applyOutboundRules(resource, rules, "1"),
 		"Incorrect return value",
 	)
 }
@@ -1070,7 +1072,7 @@ func TestApplyOutboundRulesMapMissingFields(t *testing.T) {
 
 	assert.Equal(
 		Payload{},
-		applyOutboundRules(resource, rules),
+		applyOutboundRules(resource, rules, "1"),
 		"Incorrect return value",
 	)
 }
@@ -1092,7 +1094,7 @@ func TestApplyOutboundRulesMapOutputHandler(t *testing.T) {
 
 	assert.Equal(
 		Payload{"foo": "hello world"},
-		applyOutboundRules(resource, rules),
+		applyOutboundRules(resource, rules, "1"),
 		"Incorrect return value",
 	)
 }
@@ -1106,7 +1108,7 @@ func TestApplyOutboundRulesBadMap(t *testing.T) {
 
 	assert.Equal(
 		resource,
-		applyOutboundRules(resource, rules),
+		applyOutboundRules(resource, rules, "1"),
 		"Incorrect return value",
 	)
 }
@@ -1138,7 +1140,7 @@ func TestApplyOutboundRulesMapNestedRulesSlice(t *testing.T) {
 
 	assert.Equal(
 		Payload{"foo": "bar", "baz": []interface{}{Payload{"f": "hello"}}},
-		applyOutboundRules(resource, rules),
+		applyOutboundRules(resource, rules, "1"),
 		"Incorrect return value",
 	)
 }
@@ -1170,7 +1172,7 @@ func TestApplyOutboundRulesMapNestedRulesValueNonSlice(t *testing.T) {
 
 	assert.Equal(
 		Payload{"foo": "bar", "baz": Payload{"f": "hello"}},
-		applyOutboundRules(resource, rules),
+		applyOutboundRules(resource, rules, "1"),
 		"Incorrect return value",
 	)
 }
@@ -1206,7 +1208,7 @@ func TestApplyOutboundRulesStructNestedRulesSlice(t *testing.T) {
 
 	assert.Equal(
 		Payload{"foo": "hello", "bar": []interface{}{Payload{"f": "world"}}},
-		applyOutboundRules(resource, rules),
+		applyOutboundRules(resource, rules, "1"),
 		"Incorrect return value",
 	)
 }
@@ -1242,7 +1244,45 @@ func TestApplyOutboundRulesStructNestedRulesValueNonSlice(t *testing.T) {
 
 	assert.Equal(
 		Payload{"foo": "hello", "bar": Payload{"f": "world"}},
-		applyOutboundRules(resource, rules),
+		applyOutboundRules(resource, rules, "1"),
+		"Incorrect return value",
+	)
+}
+
+// Ensures that nested outbound Rules are not applied if the version doesn't apply.
+func TestApplyOutboundRulesNestedRulesDifferentVersion(t *testing.T) {
+	assert := assert.New(t)
+	type nestedResource struct {
+		Foo string
+		Bar []TestResource
+	}
+	resource := nestedResource{
+		Foo: "hello",
+		Bar: []TestResource{TestResource{Foo: "world"}},
+	}
+	rules := NewRules((*nestedResource)(nil),
+		&Rule{
+			Field:      "Foo",
+			FieldAlias: "foo",
+			Versions:   []string{"1"},
+		},
+		&Rule{
+			Field:      "Bar",
+			FieldAlias: "bar",
+			Versions:   []string{"1"},
+			Rules: NewRules((*TestResource)(nil),
+				&Rule{
+					Field:      "Foo",
+					FieldAlias: "f",
+					Versions:   []string{"2"},
+				},
+			),
+		},
+	)
+
+	assert.Equal(
+		Payload{"foo": "hello", "bar": []interface{}{TestResource{Foo: "world"}}},
+		applyOutboundRules(resource, rules, "1"),
 		"Incorrect return value",
 	)
 }
@@ -1255,7 +1295,7 @@ func TestApplyOutboundRulesDefaultName(t *testing.T) {
 
 	assert.Equal(
 		Payload{"Foo": "hello"},
-		applyOutboundRules(resource, rules),
+		applyOutboundRules(resource, rules, "1"),
 		"Incorrect return value",
 	)
 }
@@ -1276,7 +1316,7 @@ func TestApplyOutboundRulesOutputHandler(t *testing.T) {
 
 	assert.Equal(
 		Payload{"foo": "hello world"},
-		applyOutboundRules(resource, rules),
+		applyOutboundRules(resource, rules, "1"),
 		"Incorrect return value",
 	)
 }
@@ -1289,7 +1329,7 @@ func TestApplyOutboundRulesNonResourceRule(t *testing.T) {
 
 	assert.Equal(
 		&TestResource{Foo: "hello"},
-		applyOutboundRules(resource, rules),
+		applyOutboundRules(resource, rules, "1"),
 		"Incorrect return value",
 	)
 }

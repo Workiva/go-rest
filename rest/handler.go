@@ -98,7 +98,7 @@ func (h requestHandler) handleCreate(handler ResourceHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
 		version := ctx.Version()
-		rules := rulesForVersion(handler.Rules(), version)
+		rules := handler.Rules()
 
 		data, err := decodePayload(payloadString(r.Body))
 		if err != nil {
@@ -113,7 +113,7 @@ func (h requestHandler) handleCreate(handler ResourceHandler) http.HandlerFunc {
 			} else {
 				resource, err := handler.CreateResource(ctx, data, ctx.Version())
 				if err == nil {
-					resource = applyOutboundRules(resource, rules)
+					resource = applyOutboundRules(resource, rules, version)
 				}
 				ctx = ctx.setResult(resource)
 				ctx = ctx.setStatus(http.StatusCreated)
@@ -134,7 +134,7 @@ func (h requestHandler) handleReadList(handler ResourceHandler) http.HandlerFunc
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
 		version := ctx.Version()
-		rules := rulesForVersion(handler.Rules(), version)
+		rules := handler.Rules()
 
 		resources, cursor, err := handler.ReadResourceList(
 			ctx, ctx.Limit(), ctx.Cursor(), version)
@@ -142,7 +142,7 @@ func (h requestHandler) handleReadList(handler ResourceHandler) http.HandlerFunc
 		if err == nil {
 			// Apply rules to results.
 			for idx, resource := range resources {
-				resources[idx] = applyOutboundRules(resource, rules)
+				resources[idx] = applyOutboundRules(resource, rules, version)
 			}
 		}
 
@@ -162,11 +162,11 @@ func (h requestHandler) handleRead(handler ResourceHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
 		version := ctx.Version()
-		rules := rulesForVersion(handler.Rules(), version)
+		rules := handler.Rules()
 
 		resource, err := handler.ReadResource(ctx, ctx.ResourceID(), version)
 		if err == nil {
-			resource = applyOutboundRules(resource, rules)
+			resource = applyOutboundRules(resource, rules, version)
 		}
 
 		ctx = ctx.setResult(resource)
@@ -185,7 +185,7 @@ func (h requestHandler) handleUpdateList(handler ResourceHandler) http.HandlerFu
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
 		version := ctx.Version()
-		rules := rulesForVersion(handler.Rules(), version)
+		rules := handler.Rules()
 
 		payloadStr := payloadString(r.Body)
 		var data []Payload
@@ -212,7 +212,7 @@ func (h requestHandler) handleUpdateList(handler ResourceHandler) http.HandlerFu
 				if err == nil {
 					// Apply rules to results.
 					for idx, resource := range resources {
-						resources[idx] = applyOutboundRules(resource, rules)
+						resources[idx] = applyOutboundRules(resource, rules, version)
 					}
 				}
 
@@ -234,7 +234,7 @@ func (h requestHandler) handleUpdate(handler ResourceHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
 		version := ctx.Version()
-		rules := rulesForVersion(handler.Rules(), version)
+		rules := handler.Rules()
 
 		data, err := decodePayload(payloadString(r.Body))
 		if err != nil {
@@ -250,7 +250,7 @@ func (h requestHandler) handleUpdate(handler ResourceHandler) http.HandlerFunc {
 				resource, err := handler.UpdateResource(
 					ctx, ctx.ResourceID(), data, version)
 				if err == nil {
-					resource = applyOutboundRules(resource, rules)
+					resource = applyOutboundRules(resource, rules, version)
 				}
 
 				ctx = ctx.setResult(resource)
@@ -270,11 +270,11 @@ func (h requestHandler) handleDelete(handler ResourceHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
 		version := ctx.Version()
-		rules := rulesForVersion(handler.Rules(), version)
+		rules := handler.Rules()
 
 		resource, err := handler.DeleteResource(ctx, ctx.ResourceID(), version)
 		if err == nil {
-			resource = applyOutboundRules(resource, rules)
+			resource = applyOutboundRules(resource, rules, version)
 		}
 
 		ctx = ctx.setResult(resource)
