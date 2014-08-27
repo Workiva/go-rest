@@ -106,7 +106,7 @@ func (h requestHandler) handleCreate(handler ResourceHandler) http.HandlerFunc {
 			ctx = ctx.setError(err)
 			ctx = ctx.setStatus(http.StatusInternalServerError)
 		} else {
-			data, err := applyInboundRules(data, rules)
+			data, err := applyInboundRules(data, rules, version)
 			if err != nil {
 				// Type coercion failed.
 				ctx = ctx.setError(UnprocessableRequest(err.Error()))
@@ -202,7 +202,7 @@ func (h requestHandler) handleUpdateList(handler ResourceHandler) http.HandlerFu
 			ctx = ctx.setError(BadRequest(err.Error()))
 		} else {
 			for i := range data {
-				data[i], err = applyInboundRules(data[i], rules)
+				data[i], err = applyInboundRules(data[i], rules, version)
 			}
 			if err != nil {
 				// Type coercion failed.
@@ -242,7 +242,7 @@ func (h requestHandler) handleUpdate(handler ResourceHandler) http.HandlerFunc {
 			ctx = ctx.setError(err)
 			ctx = ctx.setStatus(http.StatusInternalServerError)
 		} else {
-			data, err := applyInboundRules(data, rules)
+			data, err := applyInboundRules(data, rules, version)
 			if err != nil {
 				// Type coercion failed.
 				ctx = ctx.setError(UnprocessableRequest(err.Error()))
@@ -326,22 +326,6 @@ func sendResponse(w http.ResponseWriter, r response, serializer ResponseSerializ
 	w.Header().Set("Content-Type", contentType)
 	w.WriteHeader(status)
 	w.Write(response)
-}
-
-// rulesForVersion returns a slice of Rules which apply to the given version.
-func rulesForVersion(r Rules, version string) Rules {
-	if r == nil {
-		return &rules{}
-	}
-
-	filtered := make([]*Rule, 0, r.Size())
-	for _, rule := range r.Contents() {
-		if rule.Applies(version) {
-			filtered = append(filtered, rule)
-		}
-	}
-
-	return &rules{contents: filtered, resourceType: r.ResourceType()}
 }
 
 // decodePayload unmarshals the JSON payload and returns the resulting map. If the

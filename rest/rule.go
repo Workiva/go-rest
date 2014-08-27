@@ -46,6 +46,9 @@ type Rules interface {
 
 	// Size returns the number of contained Rules.
 	Size() int
+
+	// ForVersion returns the Rules which apply to the given version.
+	ForVersion(string) Rules
 }
 
 type rules struct {
@@ -124,6 +127,18 @@ func (r *rules) Filter(filter Filter) Rules {
 // Size returns the number of contained Rules.
 func (r rules) Size() int {
 	return len(r.contents)
+}
+
+// ForVersion returns the Rules which apply to the given version.
+func (r *rules) ForVersion(version string) Rules {
+	filtered := make([]*Rule, 0, r.Size())
+	for _, rule := range r.Contents() {
+		if rule.Applies(version) {
+			filtered = append(filtered, rule)
+		}
+	}
+
+	return &rules{contents: filtered, resourceType: r.resourceType}
 }
 
 // NewRules returns a set of Rules for use by a ResourceHandler. The first argument
@@ -234,13 +249,13 @@ func (r Rule) isResourceRule() bool {
 // incoming values will attempted to be coerced. If coercion fails, an error will be
 // returned. If Rules specify nested Rules, they will be recursively applied to the
 // field value, taking precedence over a type coercion.
-func applyInboundRules(payload Payload, rules Rules) (Payload, error) {
+func applyInboundRules(payload Payload, rules Rules, version string) (Payload, error) {
 	if payload == nil {
 		return Payload{}, nil
 	}
 
 	// Apply only inbound Rules.
-	rules = rules.Filter(true)
+	rules = rules.Filter(true).ForVersion(version)
 
 	if rules.Size() == 0 {
 		return payload, nil
@@ -252,9 +267,9 @@ fieldLoop:
 	for field, value := range payload {
 		for _, rule := range rules.Contents() {
 			if rule.Name() == field {
-				if nestedInboundRulesApply(value, rule.Rules) {
+				if nestedInboundRulesApply(value, rule.Rules, version) {
 					// Nested Rules take precedence over type coercion.
-					v, err := applyNestedInboundRules(value, rule.Rules)
+					v, err := applyNestedInboundRules(value, rule.Rules, version)
 					if err != nil {
 						return nil, err
 					}
@@ -291,7 +306,9 @@ fieldLoop:
 
 // applyNestedInboundRules recursively applies nested Rules which are not specified as
 // output only to the provided value.
-func applyNestedInboundRules(value interface{}, rules Rules) (interface{}, error) {
+func applyNestedInboundRules(
+	value interface{}, rules Rules, version string) (interface{}, error) {
+
 	var fieldValue interface{}
 	valueType := reflect.TypeOf(value).Kind()
 	if valueType == reflect.Slice {
@@ -301,7 +318,7 @@ func applyNestedInboundRules(value interface{}, rules Rules) (interface{}, error
 		for i := 0; i < s.Len(); i++ {
 			var payload map[string]interface{}
 			payload, err := applyInboundRules(
-				s.Index(i).Interface().(map[string]interface{}), rules)
+				s.Index(i).Interface().(map[string]interface{}), rules, version)
 			if err != nil {
 				return nil, err
 			}
@@ -310,7 +327,8 @@ func applyNestedInboundRules(value interface{}, rules Rules) (interface{}, error
 		fieldValue = nestedValues
 	} else {
 		var payload map[string]interface{}
-		payload, err := applyInboundRules(value.(map[string]interface{}), rules)
+		payload, err := applyInboundRules(
+			value.(map[string]interface{}), rules, version)
 		if err != nil {
 			return nil, err
 		}
@@ -322,7 +340,7 @@ func applyNestedInboundRules(value interface{}, rules Rules) (interface{}, error
 
 // nestedInboundRulesApply returns true if the Rules contain inbound Rules and
 // the value is a map or slice.
-func nestedInboundRulesApply(value interface{}, rules Rules) bool {
+func nestedInboundRulesApply(value interface{}, rules Rules, version string) bool {
 	if rules == nil || rules.Size() == 0 {
 		return false
 	}
@@ -333,7 +351,7 @@ func nestedInboundRulesApply(value interface{}, rules Rules) bool {
 		return false
 	}
 
-	return rules.Filter(true).Size() > 0
+	return rules.Filter(Inbound).ForVersion(version).Size() > 0
 }
 
 // applyOutboundRules applies Rules which are not specified as input only to the
@@ -489,4 +507,20 @@ func isNil(resource Resource) bool {
 	default:
 		return resource == nil
 	}
+}
+
+// rulesForVersion returns Rules which apply to the given version.
+func rulesForVersion(r Rules, version string) Rules {
+	if r == nil {
+		return &rules{}
+	}
+
+	filtered := make([]*Rule, 0, r.Size())
+	for _, rule := range r.Contents() {
+		if rule.Applies(version) {
+			filtered = append(filtered, rule)
+		}
+	}
+
+	return &rules{contents: filtered, resourceType: r.ResourceType()}
 }
