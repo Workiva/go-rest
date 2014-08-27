@@ -13,10 +13,6 @@ import (
 //    For now, we are only providing type validation.
 //
 //  - Make type coercion pluggable (i.e. conversion/validation of custom types).
-//
-//  - Apply versioning to nested Rules. Currently, nested Rules are applied if the parent
-//    is applied, even if they specify versions which do not include the requested
-//    version.
 
 // Filter is a category for filtering Rules.
 type Filter bool
