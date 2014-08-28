@@ -96,7 +96,7 @@ func (b BaseResourceHandler) Authenticate(r *http.Request) error {
 // Rules returns the resource rules to apply to incoming requests and outgoing
 // responses. No rules are applied by default. Implement if necessary.
 func (b BaseResourceHandler) Rules() Rules {
-	return nil
+	return &rules{}
 }
 
 // resourceHandlerProxy wraps a ResourceHandler and allows the framework to provide

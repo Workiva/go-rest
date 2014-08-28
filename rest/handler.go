@@ -98,7 +98,7 @@ func (h requestHandler) handleCreate(handler ResourceHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
 		version := ctx.Version()
-		rules := rulesForVersion(handler.Rules(), version)
+		rules := handler.Rules()
 
 		data, err := decodePayload(payloadString(r.Body))
 		if err != nil {
@@ -106,14 +106,14 @@ func (h requestHandler) handleCreate(handler ResourceHandler) http.HandlerFunc {
 			ctx = ctx.setError(err)
 			ctx = ctx.setStatus(http.StatusInternalServerError)
 		} else {
-			data, err := applyInboundRules(data, rules)
+			data, err := applyInboundRules(data, rules, version)
 			if err != nil {
 				// Type coercion failed.
 				ctx = ctx.setError(UnprocessableRequest(err.Error()))
 			} else {
 				resource, err := handler.CreateResource(ctx, data, ctx.Version())
 				if err == nil {
-					resource = applyOutboundRules(resource, rules)
+					resource = applyOutboundRules(resource, rules, version)
 				}
 				ctx = ctx.setResult(resource)
 				ctx = ctx.setStatus(http.StatusCreated)
@@ -134,7 +134,7 @@ func (h requestHandler) handleReadList(handler ResourceHandler) http.HandlerFunc
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
 		version := ctx.Version()
-		rules := rulesForVersion(handler.Rules(), version)
+		rules := handler.Rules()
 
 		resources, cursor, err := handler.ReadResourceList(
 			ctx, ctx.Limit(), ctx.Cursor(), version)
@@ -142,7 +142,7 @@ func (h requestHandler) handleReadList(handler ResourceHandler) http.HandlerFunc
 		if err == nil {
 			// Apply rules to results.
 			for idx, resource := range resources {
-				resources[idx] = applyOutboundRules(resource, rules)
+				resources[idx] = applyOutboundRules(resource, rules, version)
 			}
 		}
 
@@ -162,11 +162,11 @@ func (h requestHandler) handleRead(handler ResourceHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
 		version := ctx.Version()
-		rules := rulesForVersion(handler.Rules(), version)
+		rules := handler.Rules()
 
 		resource, err := handler.ReadResource(ctx, ctx.ResourceID(), version)
 		if err == nil {
-			resource = applyOutboundRules(resource, rules)
+			resource = applyOutboundRules(resource, rules, version)
 		}
 
 		ctx = ctx.setResult(resource)
@@ -185,7 +185,7 @@ func (h requestHandler) handleUpdateList(handler ResourceHandler) http.HandlerFu
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
 		version := ctx.Version()
-		rules := rulesForVersion(handler.Rules(), version)
+		rules := handler.Rules()
 
 		payloadStr := payloadString(r.Body)
 		var data []Payload
@@ -202,7 +202,7 @@ func (h requestHandler) handleUpdateList(handler ResourceHandler) http.HandlerFu
 			ctx = ctx.setError(BadRequest(err.Error()))
 		} else {
 			for i := range data {
-				data[i], err = applyInboundRules(data[i], rules)
+				data[i], err = applyInboundRules(data[i], rules, version)
 			}
 			if err != nil {
 				// Type coercion failed.
@@ -212,7 +212,7 @@ func (h requestHandler) handleUpdateList(handler ResourceHandler) http.HandlerFu
 				if err == nil {
 					// Apply rules to results.
 					for idx, resource := range resources {
-						resources[idx] = applyOutboundRules(resource, rules)
+						resources[idx] = applyOutboundRules(resource, rules, version)
 					}
 				}
 
@@ -234,7 +234,7 @@ func (h requestHandler) handleUpdate(handler ResourceHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
 		version := ctx.Version()
-		rules := rulesForVersion(handler.Rules(), version)
+		rules := handler.Rules()
 
 		data, err := decodePayload(payloadString(r.Body))
 		if err != nil {
@@ -242,7 +242,7 @@ func (h requestHandler) handleUpdate(handler ResourceHandler) http.HandlerFunc {
 			ctx = ctx.setError(err)
 			ctx = ctx.setStatus(http.StatusInternalServerError)
 		} else {
-			data, err := applyInboundRules(data, rules)
+			data, err := applyInboundRules(data, rules, version)
 			if err != nil {
 				// Type coercion failed.
 				ctx = ctx.setError(UnprocessableRequest(err.Error()))
@@ -250,7 +250,7 @@ func (h requestHandler) handleUpdate(handler ResourceHandler) http.HandlerFunc {
 				resource, err := handler.UpdateResource(
 					ctx, ctx.ResourceID(), data, version)
 				if err == nil {
-					resource = applyOutboundRules(resource, rules)
+					resource = applyOutboundRules(resource, rules, version)
 				}
 
 				ctx = ctx.setResult(resource)
@@ -270,11 +270,11 @@ func (h requestHandler) handleDelete(handler ResourceHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
 		version := ctx.Version()
-		rules := rulesForVersion(handler.Rules(), version)
+		rules := handler.Rules()
 
 		resource, err := handler.DeleteResource(ctx, ctx.ResourceID(), version)
 		if err == nil {
-			resource = applyOutboundRules(resource, rules)
+			resource = applyOutboundRules(resource, rules, version)
 		}
 
 		ctx = ctx.setResult(resource)
@@ -326,22 +326,6 @@ func sendResponse(w http.ResponseWriter, r response, serializer ResponseSerializ
 	w.Header().Set("Content-Type", contentType)
 	w.WriteHeader(status)
 	w.Write(response)
-}
-
-// rulesForVersion returns a slice of Rules which apply to the given version.
-func rulesForVersion(r Rules, version string) Rules {
-	if r == nil {
-		return &rules{}
-	}
-
-	filtered := make([]*Rule, 0, r.Size())
-	for _, rule := range r.Contents() {
-		if rule.Applies(version) {
-			filtered = append(filtered, rule)
-		}
-	}
-
-	return &rules{contents: filtered, resourceType: r.ResourceType()}
 }
 
 // decodePayload unmarshals the JSON payload and returns the resulting map. If the

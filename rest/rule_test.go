@@ -13,7 +13,7 @@ import (
 func TestApplyInboundRulesNilPayload(t *testing.T) {
 	assert := assert.New(t)
 
-	actual, err := applyInboundRules(nil, NewRules((*TestResource)(nil)))
+	actual, err := applyInboundRules(nil, NewRules((*TestResource)(nil)), "1")
 
 	assert.Equal(Payload{}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -24,7 +24,7 @@ func TestApplyInboundRulesNoRules(t *testing.T) {
 	assert := assert.New(t)
 	payload := Payload{}
 
-	actual, err := applyInboundRules(payload, NewRules((*TestResource)(nil)))
+	actual, err := applyInboundRules(payload, NewRules((*TestResource)(nil)), "1")
 
 	assert.Equal(payload, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -45,7 +45,7 @@ func TestApplyInboundRulesMissingRequiredField(t *testing.T) {
 			Field:    "foo",
 			Required: true,
 		},
-	))
+	), "1")
 
 	assert.Nil(actual, "Return value should be nil")
 	assert.Equal(fmt.Errorf("Missing required field 'baz'"), err, "Incorrect error")
@@ -62,7 +62,7 @@ func TestApplyInboundRules(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": "bar"}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -80,7 +80,7 @@ func TestApplyInboundRulesInputHandler(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": "bar qux"}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -98,7 +98,7 @@ func TestApplyInboundRulesCoerceBoolError(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Nil(actual, "Return value should be nil")
 	assert.Equal(fmt.Errorf("Unable to coerce bool to float32"), err, "Incorrect error")
@@ -116,7 +116,7 @@ func TestApplyInboundRulesCoerceBoolToBool(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": true}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -134,7 +134,7 @@ func TestApplyInboundRulesCoerceBoolToString(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": "true"}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -152,7 +152,7 @@ func TestApplyInboundRulesCoerceFloatError(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Nil(actual, "Return value should be nil")
 	assert.Equal(fmt.Errorf("Unable to coerce float to bool"), err, "Incorrect error")
@@ -170,7 +170,7 @@ func TestApplyInboundRulesCoerceFloatToInt(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": int(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -188,7 +188,7 @@ func TestApplyInboundRulesCoerceFloatToInt8(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": int8(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -206,7 +206,7 @@ func TestApplyInboundRulesCoerceFloatToInt16(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": int16(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -224,7 +224,7 @@ func TestApplyInboundRulesCoerceFloatToInt32(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": int32(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -242,7 +242,7 @@ func TestApplyInboundRulesCoerceFloatToInt64(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": int64(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -260,7 +260,7 @@ func TestApplyInboundRulesCoerceFloatToUint(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": uint(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -278,7 +278,7 @@ func TestApplyInboundRulesCoerceFloatToUint8(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": uint8(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -296,7 +296,7 @@ func TestApplyInboundRulesCoerceFloatToUint16(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": uint16(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -314,7 +314,7 @@ func TestApplyInboundRulesCoerceFloatToUint32(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": uint32(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -332,7 +332,7 @@ func TestApplyInboundRulesCoerceFloatToUint64(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": uint64(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -350,7 +350,7 @@ func TestApplyInboundRulesCoerceFloatToFloat32(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": float32(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -368,7 +368,7 @@ func TestApplyInboundRulesCoerceFloatToFloat64(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": float64(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -386,7 +386,7 @@ func TestApplyInboundRulesCoerceFloatToString(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": "42"}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -404,7 +404,7 @@ func TestApplyInboundRulesCoerceFloatToDuration(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": time.Duration(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -422,7 +422,7 @@ func TestApplyInboundRulesCoerceStringError(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Nil(actual, "Return value should be nil")
 	assert.Equal(fmt.Errorf("Unable to coerce string to map[string]interface{}"),
@@ -441,7 +441,7 @@ func TestApplyInboundRulesCoerceStringIntError(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Nil(actual, "Return value should be nil")
 	assert.Equal("strconv.ParseInt: parsing \"hello\": invalid syntax",
@@ -460,7 +460,7 @@ func TestApplyInboundRulesCoerceStringToInt(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": int(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -478,7 +478,7 @@ func TestApplyInboundRulesCoerceStringToInt8(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": int8(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -496,7 +496,7 @@ func TestApplyInboundRulesCoerceStringToInt16(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": int16(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -514,7 +514,7 @@ func TestApplyInboundRulesCoerceStringToInt32(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": int32(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -532,7 +532,7 @@ func TestApplyInboundRulesCoerceStringToInt64(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": int64(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -550,7 +550,7 @@ func TestApplyInboundRulesCoerceStringUintError(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Nil(actual, "Return value should be nil")
 	assert.Equal("strconv.ParseUint: parsing \"hello\": invalid syntax",
@@ -569,7 +569,7 @@ func TestApplyInboundRulesCoerceStringToUint(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": uint(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -587,7 +587,7 @@ func TestApplyInboundRulesCoerceStringToUint8(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": uint8(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -605,7 +605,7 @@ func TestApplyInboundRulesCoerceStringToUint16(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": uint16(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -623,7 +623,7 @@ func TestApplyInboundRulesCoerceStringToUint32(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": uint32(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -641,7 +641,7 @@ func TestApplyInboundRulesCoerceStringToUint64(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": uint64(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -659,7 +659,7 @@ func TestApplyInboundRulesCoerceStringFloatError(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Nil(actual, "Return value should be nil")
 	assert.Equal("strconv.ParseFloat: parsing \"hello\": invalid syntax",
@@ -678,7 +678,7 @@ func TestApplyInboundRulesCoerceStringToFloat32(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": float32(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -696,7 +696,7 @@ func TestApplyInboundRulesCoerceStringToFloat64(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": float64(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -714,7 +714,7 @@ func TestApplyInboundRulesCoerceStringToString(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": "42"}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -732,7 +732,7 @@ func TestApplyInboundRulesCoerceStringBoolError(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Nil(actual, "Return value should be nil")
 	assert.Equal("strconv.ParseBool: parsing \"hello\": invalid syntax",
@@ -751,7 +751,7 @@ func TestApplyInboundRulesCoerceStringToBool(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": true}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -769,7 +769,7 @@ func TestApplyInboundRulesCoerceStringToDurationError(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Nil(actual, "Return value should be nil")
 	assert.Equal("time: invalid duration hello", err.Error(), "Incorrect error")
@@ -787,7 +787,7 @@ func TestApplyInboundRulesCoerceStringToDuration(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": time.Duration(100)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -805,7 +805,7 @@ func TestApplyInboundRulesCoerceStringToTimeError(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Nil(actual, "Return value should be nil")
 	assert.Equal(
@@ -825,7 +825,7 @@ func TestApplyInboundRulesCoerceStringToTime(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": time.Date(2014, 8, 11, 15, 46, 2, 0, time.UTC)},
 		actual, "Incorrect return value")
@@ -844,7 +844,7 @@ func TestApplyInboundRulesCoerceSliceError(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Nil(actual, "Return value should be nil")
 	assert.Equal(fmt.Errorf("Unable to coerce slice to bool"), err, "Incorrect error")
@@ -862,7 +862,7 @@ func TestApplyInboundRulesCoerceSliceToSlice(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": []interface{}{1, 2, 3}}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -880,7 +880,7 @@ func TestApplyInboundRulesCoerceMapError(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Nil(actual, "Return value should be nil")
 	assert.Equal(fmt.Errorf("Unable to coerce map to bool"), err, "Incorrect error")
@@ -898,7 +898,7 @@ func TestApplyInboundRulesCoerceMapToMap(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": map[string]interface{}{"a": 1}},
 		actual, "Incorrect return value")
@@ -919,7 +919,7 @@ func TestApplyInboundRulesNestedRulesDontApply(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": 1}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -938,7 +938,7 @@ func TestApplyInboundRulesNestedRulesMap(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": map[string]interface{}{"bar": "baz"}}, actual,
 		"Incorrect return value")
@@ -961,11 +961,48 @@ func TestApplyInboundRulesNestedRulesSlice(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": []interface{}{
 		map[string]interface{}{"bar": "a"},
 		map[string]interface{}{"bar": "b"},
+	}}, actual, "Incorrect return value")
+
+	assert.Nil(err, "Error should be nil")
+}
+
+// Ensures that nested inbound Rules are not applied if they do not apply to the version.
+func TestApplyInboundRulesNestedRulesDifferentVersion(t *testing.T) {
+	assert := assert.New(t)
+	payload := Payload{"foo": []map[string]interface{}{
+		map[string]interface{}{"foo": "hi", "bar": "a"},
+		map[string]interface{}{"foo": "hello", "bar": "b"},
+	}}
+	rules := NewRules((*TestResource)(nil),
+		&Rule{
+			Field:      "Foo",
+			FieldAlias: "foo",
+			Versions:   []string{"1"},
+			Rules: NewRules((*TestResource)(nil),
+				&Rule{
+					FieldAlias: "foo",
+					Versions:   []string{"1"},
+				},
+				&Rule{
+					Field:      "Bar",
+					FieldAlias: "bar",
+					Type:       String,
+					Versions:   []string{"2"},
+				},
+			),
+		},
+	)
+
+	actual, err := applyInboundRules(payload, rules, "1")
+
+	assert.Equal(Payload{"foo": []interface{}{
+		map[string]interface{}{"foo": "hi"},
+		map[string]interface{}{"foo": "hello"},
 	}}, actual, "Incorrect return value")
 
 	assert.Nil(err, "Error should be nil")
@@ -982,7 +1019,7 @@ func TestApplyInboundRulesNonResourceRule(t *testing.T) {
 		},
 	)
 
-	actual, err := applyInboundRules(payload, rules)
+	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Equal(Payload{"foo": float32(42)}, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
@@ -991,7 +1028,8 @@ func TestApplyInboundRulesNonResourceRule(t *testing.T) {
 // Ensures that nil is returned by applyOutboundRules if nil is passed in.
 func TestApplyOutboundRulesNilResource(t *testing.T) {
 	assert := assert.New(t)
-	assert.Nil(applyOutboundRules(nil, NewRules((*TestResource)(nil), &Rule{})), "Incorrect return value")
+	assert.Nil(applyOutboundRules(
+		nil, NewRules((*TestResource)(nil), &Rule{}), "1"), "Incorrect return value")
 }
 
 // Ensures that resource is returned by applyOutboundRules if rules is empty.
@@ -999,7 +1037,8 @@ func TestApplyOutboundRulesNoRules(t *testing.T) {
 	assert := assert.New(t)
 	resource := &TestResource{}
 
-	assert.Equal(resource, applyOutboundRules(resource, NewRules((*TestResource)(nil))), "Incorrect return value")
+	assert.Equal(resource, applyOutboundRules(
+		resource, NewRules((*TestResource)(nil)), "1"), "Incorrect return value")
 }
 
 // Ensures that resource is returned by applyOutboundRules if it's not a struct.
@@ -1007,8 +1046,8 @@ func TestApplyOutboundRulesNotStruct(t *testing.T) {
 	assert := assert.New(t)
 	resource := "resource"
 
-	assert.Equal(resource, applyOutboundRules(resource, NewRules((*TestResource)(nil), &Rule{})),
-		"Incorrect return value")
+	assert.Equal(resource, applyOutboundRules(
+		resource, NewRules((*TestResource)(nil), &Rule{}), "1"), "Incorrect return value")
 }
 
 // Ensures that applyOutboundRules handles map[string]interface.
@@ -1019,7 +1058,7 @@ func TestApplyOutboundRulesMap(t *testing.T) {
 
 	assert.Equal(
 		Payload{"Foo": "hello"},
-		applyOutboundRules(resource, rules),
+		applyOutboundRules(resource, rules, "1"),
 		"Incorrect return value",
 	)
 }
@@ -1033,7 +1072,7 @@ func TestApplyOutboundRulesMapMissingFields(t *testing.T) {
 
 	assert.Equal(
 		Payload{},
-		applyOutboundRules(resource, rules),
+		applyOutboundRules(resource, rules, "1"),
 		"Incorrect return value",
 	)
 }
@@ -1055,7 +1094,7 @@ func TestApplyOutboundRulesMapOutputHandler(t *testing.T) {
 
 	assert.Equal(
 		Payload{"foo": "hello world"},
-		applyOutboundRules(resource, rules),
+		applyOutboundRules(resource, rules, "1"),
 		"Incorrect return value",
 	)
 }
@@ -1069,7 +1108,7 @@ func TestApplyOutboundRulesBadMap(t *testing.T) {
 
 	assert.Equal(
 		resource,
-		applyOutboundRules(resource, rules),
+		applyOutboundRules(resource, rules, "1"),
 		"Incorrect return value",
 	)
 }
@@ -1101,7 +1140,7 @@ func TestApplyOutboundRulesMapNestedRulesSlice(t *testing.T) {
 
 	assert.Equal(
 		Payload{"foo": "bar", "baz": []interface{}{Payload{"f": "hello"}}},
-		applyOutboundRules(resource, rules),
+		applyOutboundRules(resource, rules, "1"),
 		"Incorrect return value",
 	)
 }
@@ -1133,7 +1172,7 @@ func TestApplyOutboundRulesMapNestedRulesValueNonSlice(t *testing.T) {
 
 	assert.Equal(
 		Payload{"foo": "bar", "baz": Payload{"f": "hello"}},
-		applyOutboundRules(resource, rules),
+		applyOutboundRules(resource, rules, "1"),
 		"Incorrect return value",
 	)
 }
@@ -1169,7 +1208,7 @@ func TestApplyOutboundRulesStructNestedRulesSlice(t *testing.T) {
 
 	assert.Equal(
 		Payload{"foo": "hello", "bar": []interface{}{Payload{"f": "world"}}},
-		applyOutboundRules(resource, rules),
+		applyOutboundRules(resource, rules, "1"),
 		"Incorrect return value",
 	)
 }
@@ -1205,7 +1244,45 @@ func TestApplyOutboundRulesStructNestedRulesValueNonSlice(t *testing.T) {
 
 	assert.Equal(
 		Payload{"foo": "hello", "bar": Payload{"f": "world"}},
-		applyOutboundRules(resource, rules),
+		applyOutboundRules(resource, rules, "1"),
+		"Incorrect return value",
+	)
+}
+
+// Ensures that nested outbound Rules are not applied if the version doesn't apply.
+func TestApplyOutboundRulesNestedRulesDifferentVersion(t *testing.T) {
+	assert := assert.New(t)
+	type nestedResource struct {
+		Foo string
+		Bar []TestResource
+	}
+	resource := nestedResource{
+		Foo: "hello",
+		Bar: []TestResource{TestResource{Foo: "world"}},
+	}
+	rules := NewRules((*nestedResource)(nil),
+		&Rule{
+			Field:      "Foo",
+			FieldAlias: "foo",
+			Versions:   []string{"1"},
+		},
+		&Rule{
+			Field:      "Bar",
+			FieldAlias: "bar",
+			Versions:   []string{"1"},
+			Rules: NewRules((*TestResource)(nil),
+				&Rule{
+					Field:      "Foo",
+					FieldAlias: "f",
+					Versions:   []string{"2"},
+				},
+			),
+		},
+	)
+
+	assert.Equal(
+		Payload{"foo": "hello", "bar": []interface{}{TestResource{Foo: "world"}}},
+		applyOutboundRules(resource, rules, "1"),
 		"Incorrect return value",
 	)
 }
@@ -1218,7 +1295,7 @@ func TestApplyOutboundRulesDefaultName(t *testing.T) {
 
 	assert.Equal(
 		Payload{"Foo": "hello"},
-		applyOutboundRules(resource, rules),
+		applyOutboundRules(resource, rules, "1"),
 		"Incorrect return value",
 	)
 }
@@ -1239,7 +1316,7 @@ func TestApplyOutboundRulesOutputHandler(t *testing.T) {
 
 	assert.Equal(
 		Payload{"foo": "hello world"},
-		applyOutboundRules(resource, rules),
+		applyOutboundRules(resource, rules, "1"),
 		"Incorrect return value",
 	)
 }
@@ -1252,7 +1329,7 @@ func TestApplyOutboundRulesNonResourceRule(t *testing.T) {
 
 	assert.Equal(
 		&TestResource{Foo: "hello"},
-		applyOutboundRules(resource, rules),
+		applyOutboundRules(resource, rules, "1"),
 		"Incorrect return value",
 	)
 }
