@@ -135,7 +135,7 @@ func TestHandleCreateBadFormat(t *testing.T) {
 	handler.Mock.AssertExpectations(t)
 	assert.Equal(http.StatusNotImplemented, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"error":"Format not implemented: blah","success":false}`,
+		`{"messages":["Format not implemented: blah"],"reason":"Not Implemented","status":501}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -166,7 +166,7 @@ func TestHandleCreateBadCreate(t *testing.T) {
 	handler.Mock.AssertExpectations(t)
 	assert.Equal(http.StatusInternalServerError, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"error":"couldn't create","success":false}`,
+		`{"messages":["couldn't create"],"reason":"Internal Server Error","status":500}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -197,7 +197,7 @@ func TestHandleCreateHappyPath(t *testing.T) {
 	handler.Mock.AssertExpectations(t)
 	assert.Equal(http.StatusCreated, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"result":{"foo":"bar"},"success":true}`,
+		`{"messages":[],"reason":"Created","result":{"foo":"bar"},"status":201}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -251,7 +251,7 @@ func TestHandleReadListBadFormat(t *testing.T) {
 	handler.Mock.AssertExpectations(t)
 	assert.Equal(http.StatusNotImplemented, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"error":"Format not implemented: blah","success":false}`,
+		`{"messages":["Format not implemented: blah"],"reason":"Not Implemented","status":501}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -280,7 +280,7 @@ func TestHandleReadListBadRead(t *testing.T) {
 	handler.Mock.AssertExpectations(t)
 	assert.Equal(http.StatusInternalServerError, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"error":"no resource","success":false}`,
+		`{"messages":["no resource"],"reason":"Internal Server Error","status":500}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -308,7 +308,7 @@ func TestHandleReadListHappyPath(t *testing.T) {
 	handler.Mock.AssertExpectations(t)
 	assert.Equal(http.StatusOK, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"next":"http://foo.com?next=cursor123","result":[{"foo":"hello"}],"success":true}`,
+		`{"messages":[],"next":"http://foo.com?next=cursor123","reason":"OK","results":[{"foo":"hello"}],"status":200}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -336,7 +336,7 @@ func TestHandleReadBadFormat(t *testing.T) {
 	handler.Mock.AssertExpectations(t)
 	assert.Equal(http.StatusNotImplemented, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"error":"Format not implemented: blah","success":false}`,
+		`{"messages":["Format not implemented: blah"],"reason":"Not Implemented","status":501}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -364,7 +364,7 @@ func TestHandleReadBadRead(t *testing.T) {
 	handler.Mock.AssertExpectations(t)
 	assert.Equal(http.StatusInternalServerError, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"error":"no resource","success":false}`,
+		`{"messages":["no resource"],"reason":"Internal Server Error","status":500}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -392,7 +392,7 @@ func TestHandleReadHappyPath(t *testing.T) {
 	handler.Mock.AssertExpectations(t)
 	assert.Equal(http.StatusOK, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"result":{"foo":"hello"},"success":true}`,
+		`{"messages":[],"reason":"OK","result":{"foo":"hello"},"status":200}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -423,7 +423,7 @@ func TestHandleUpdateListBadFormat(t *testing.T) {
 	handler.Mock.AssertExpectations(t)
 	assert.Equal(http.StatusNotImplemented, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"error":"Format not implemented: blah","success":false}`,
+		`{"messages":["Format not implemented: blah"],"reason":"Not Implemented","status":501}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -454,7 +454,7 @@ func TestHandleUpdateListBadUpdate(t *testing.T) {
 	handler.Mock.AssertExpectations(t)
 	assert.Equal(http.StatusInternalServerError, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"error":"couldn't update","success":false}`,
+		`{"messages":["couldn't update"],"reason":"Internal Server Error","status":500}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -484,7 +484,7 @@ func TestHandleUpdateListPayloadNotList(t *testing.T) {
 	handler.Mock.AssertExpectations(t)
 	assert.Equal(http.StatusOK, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"result":[{"foo":"bar"}],"success":true}`,
+		`{"messages":[],"reason":"OK","results":[{"foo":"bar"}],"status":200}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -515,7 +515,7 @@ func TestHandleUpdateListHappyPath(t *testing.T) {
 	handler.Mock.AssertExpectations(t)
 	assert.Equal(http.StatusOK, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"result":[{"foo":"bar"}],"success":true}`,
+		`{"messages":[],"reason":"OK","results":[{"foo":"bar"}],"status":200}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -545,7 +545,7 @@ func TestHandleUpdateBadFormat(t *testing.T) {
 	handler.Mock.AssertExpectations(t)
 	assert.Equal(http.StatusNotImplemented, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"error":"Format not implemented: blah","success":false}`,
+		`{"messages":["Format not implemented: blah"],"reason":"Not Implemented","status":501}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -576,7 +576,7 @@ func TestHandleUpdateBadUpdate(t *testing.T) {
 	handler.Mock.AssertExpectations(t)
 	assert.Equal(http.StatusInternalServerError, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"error":"couldn't update","success":false}`,
+		`{"messages":["couldn't update"],"reason":"Internal Server Error","status":500}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -606,7 +606,7 @@ func TestHandleUpdateHappyPath(t *testing.T) {
 	handler.Mock.AssertExpectations(t)
 	assert.Equal(http.StatusOK, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"result":{"foo":"bar"},"success":true}`,
+		`{"messages":[],"reason":"OK","result":{"foo":"bar"},"status":200}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -635,7 +635,7 @@ func TestHandleDeleteBadFormat(t *testing.T) {
 	handler.Mock.AssertExpectations(t)
 	assert.Equal(http.StatusNotImplemented, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"error":"Format not implemented: blah","success":false}`,
+		`{"messages":["Format not implemented: blah"],"reason":"Not Implemented","status":501}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -664,7 +664,7 @@ func TestHandleDeleteBadDelete(t *testing.T) {
 	handler.Mock.AssertExpectations(t)
 	assert.Equal(http.StatusInternalServerError, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"error":"no resource","success":false}`,
+		`{"messages":["no resource"],"reason":"Internal Server Error","status":500}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -692,7 +692,7 @@ func TestHandleDeleteHappyPath(t *testing.T) {
 	handler.Mock.AssertExpectations(t)
 	assert.Equal(http.StatusOK, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"result":{"foo":"hello"},"success":true}`,
+		`{"messages":[],"reason":"OK","result":{"foo":"hello"},"status":200}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -730,7 +730,7 @@ func TestApplyMiddleware(t *testing.T) {
 	handler.Mock.AssertExpectations(t)
 	assert.True(called, "Middleware was not invoked")
 	assert.Equal(
-		`{"result":{"foo":"hello"},"success":true}`,
+		`{"messages":[],"reason":"OK","result":{"foo":"hello"},"status":200}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -762,7 +762,7 @@ func TestOutboundRules(t *testing.T) {
 
 	handler.Mock.AssertExpectations(t)
 	assert.Equal(
-		`{"result":{"f":"hello"},"success":true}`,
+		`{"messages":[],"reason":"OK","result":{"f":"hello"},"status":200}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -794,7 +794,7 @@ func TestOutboundRulesDontApplyOnError(t *testing.T) {
 
 	handler.Mock.AssertExpectations(t)
 	assert.Equal(
-		`{"error":"oh snap","success":false}`,
+		`{"messages":["oh snap"],"reason":"Internal Server Error","status":500}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -827,7 +827,7 @@ func TestOutboundRulesDontApplyOnNilResource(t *testing.T) {
 
 	handler.Mock.AssertExpectations(t)
 	assert.Equal(
-		`{"result":null,"success":true}`,
+		`{"messages":[],"reason":"OK","result":null,"status":200}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)

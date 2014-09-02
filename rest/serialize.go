@@ -3,10 +3,20 @@ package rest
 import (
 	"encoding/json"
 	"net/http"
+	"reflect"
+)
+
+const (
+	status   = "status"
+	reason   = "reason"
+	messages = "messages"
+	result   = "result"
+	results  = "results"
+	next     = "next"
 )
 
 // response is a data structure holding the serializable response body for a request and
-// HTTP status code. It should be created using NewSuccessResponse or NewErrorResponse.
+// HTTP status code. It should be created using NewResponse.
 type response struct {
 	Payload Payload
 	Status  int
@@ -37,41 +47,62 @@ func (j jsonSerializer) ContentType() string {
 	return "application/json"
 }
 
-// NewSuccessResponse constructs a new response struct containing the Resource and,
-// if provided, a "next" URL for retrieving the next page of results.
-func NewSuccessResponse(r Resource, status int, nextURL string) response {
-	payload := Payload{
-		"success": true,
-		"result":  r,
+// NewResponse constructs a new response struct containing the payload to send back.
+// It will either be a success or error response depending on the RequestContext.
+func NewResponse(ctx RequestContext) response {
+	err := ctx.Error()
+	if err != nil {
+		return newErrorResponse(ctx)
 	}
 
-	if nextURL != "" {
-		payload["next"] = nextURL
+	return newSuccessResponse(ctx)
+}
+
+// newSuccessResponse constructs a new response struct containing a resource response.
+func newSuccessResponse(ctx RequestContext) response {
+	r := ctx.Result()
+	resultKey := result
+	if r != nil && reflect.TypeOf(r).Kind() == reflect.Slice {
+		resultKey = results
+	}
+
+	s := ctx.Status()
+	payload := Payload{
+		status:    s,
+		reason:    http.StatusText(s),
+		messages:  []string{}, // TODO: Implement messages on context.
+		resultKey: r,
+	}
+
+	if nextURL, err := ctx.NextURL(); err == nil && nextURL != "" {
+		payload[next] = nextURL
 	}
 
 	response := response{
 		Payload: payload,
-		Status:  status,
+		Status:  s,
 	}
 
 	return response
 }
 
-// NewErrorResponse constructs a new response struct containing the error message.
-func NewErrorResponse(err error) response {
-	payload := Payload{
-		"success": false,
-		"error":   err.Error(),
+// newErrorResponse constructs a new response struct containing an error message.
+func newErrorResponse(ctx RequestContext) response {
+	err := ctx.Error()
+	s := http.StatusInternalServerError
+	if restError, ok := err.(Error); ok {
+		s = restError.Status()
 	}
 
-	status := http.StatusInternalServerError
-	if restError, ok := err.(Error); ok {
-		status = restError.Status()
+	payload := Payload{
+		status:   s,
+		reason:   http.StatusText(s),
+		messages: []string{err.Error()}, // TODO: Implement messages on context.
 	}
 
 	response := response{
 		Payload: payload,
-		Status:  status,
+		Status:  s,
 	}
 
 	return response

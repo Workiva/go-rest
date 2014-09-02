@@ -288,27 +288,15 @@ func (h requestHandler) handleDelete(handler ResourceHandler) http.HandlerFunc {
 // sendResponse writes a success or error response to the provided http.ResponseWriter
 // based on the contents of the RequestContext.
 func (h requestHandler) sendResponse(w http.ResponseWriter, ctx RequestContext) {
-	status := ctx.Status()
-	requestError := ctx.Error()
-	result := ctx.Result()
 	format := ctx.ResponseFormat()
-
 	serializer, err := h.responseSerializer(format)
 	if err != nil {
 		// Fall back to json serialization.
 		serializer = jsonSerializer{}
-		requestError = NotImplemented(fmt.Sprintf("Format not implemented: %s", format))
+		ctx = ctx.setError(NotImplemented(fmt.Sprintf("Format not implemented: %s", format)))
 	}
 
-	var response response
-	if requestError != nil {
-		response = NewErrorResponse(requestError)
-	} else {
-		nextURL, _ := ctx.NextURL()
-		response = NewSuccessResponse(result, status, nextURL)
-	}
-
-	sendResponse(w, response, serializer)
+	sendResponse(w, NewResponse(ctx), serializer)
 }
 
 // sendResponse writes a response to the http.ResponseWriter.
