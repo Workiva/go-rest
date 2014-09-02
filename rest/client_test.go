@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"reflect"
 	"strconv"
 	"testing"
 	"time"
@@ -112,29 +111,6 @@ func TestJSONMethods(t *testing.T) {
 
 		if testObj.Prop != "a" {
 			t.Errorf("testObj prop %s, want %s", testObj.Prop, "a")
-		}
-	}
-}
-
-func TestCombineURLValues(t *testing.T) {
-	tss := []struct {
-		in1, in2, exp url.Values
-		merge         bool
-	}{
-		{url.Values{}, url.Values{}, url.Values{}, false},
-		{url.Values{}, url.Values{}, url.Values{}, true},
-		{url.Values{"a": []string{"1"}}, url.Values{}, url.Values{"a": []string{"1"}}, true},
-		{url.Values{"a": []string{"1"}}, url.Values{}, url.Values{"a": []string{"1"}}, false},
-		{url.Values{"a": []string{"1"}}, url.Values{"b": []string{"2"}}, url.Values{"a": []string{"1"}, "b": []string{"2"}}, false},
-		{url.Values{"a": []string{"1"}}, url.Values{"b": []string{"2"}}, url.Values{"a": []string{"1"}, "b": []string{"2"}}, true},
-		{url.Values{"a": []string{"1"}}, url.Values{"a": []string{"2"}}, url.Values{"a": []string{"2"}}, false},
-		{url.Values{"a": []string{"1"}}, url.Values{"a": []string{"2"}}, url.Values{"a": []string{"1", "2"}}, true},
-		{url.Values{}, url.Values{"a": []string{"1", "2"}}, url.Values{"a": []string{"1", "2"}}, true},
-	}
-
-	for _, ts := range tss {
-		if out := combineURLValues(ts.in1, ts.in2, ts.merge); !reflect.DeepEqual(out, ts.exp) {
-			t.Errorf("Combinbing %v and %v gave %v and not the expected &%v", ts.in1, ts.in2, out, ts.exp)
 		}
 	}
 }

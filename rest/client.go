@@ -79,19 +79,18 @@ func (c *Client) do(method, urlStr string, params map[string]string) (*http.Resp
 		return nil, err
 	}
 
-	// Set up the form values and the authorization.
+	// Set up the form values and request method.
 	req.Method = method
 	form := c.BuildForm(params)
-	auth := c.Authorize(urlStr, method, url.Values{})
 
-	// TODO: Find a way to push the encoding into the specific http methods themselves.
+	// TODO: Find a way to push the encoding and authorization into the specific http methods themselves.
 	switch method {
 	case GET, DELETE:
 		// Combine form and auth into the query string.
-		req.URL.RawQuery = combineURLValues(form, auth, false).Encode()
+		req.URL.RawQuery = c.Authorize(urlStr, method, form).Encode()
 	case POST, PUT:
 		// Set the auth params in the query string.
-		req.URL.RawQuery = auth.Encode()
+		req.URL.RawQuery = c.Authorize(urlStr, method, url.Values{}).Encode()
 		// Encode the form values as JSON and put them in the request body.
 		body, err := encodeBody(form)
 		if err != nil {
@@ -154,22 +153,6 @@ func (c *Client) Delete(urlStr string, params map[string]string) (*http.Response
 // DeleteJSON will perform a HTTP DELETE and will JSON decode the response.
 func (c *Client) DeleteJSON(url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
 	return c.doJSON(DELETE, url, params, entity)
-}
-
-// combineURLValues will copy all the Value entries from one url.Values to the
-// other. If merge is true, then it will merge the common keyed-values,
-// otherwise it will remove the existing values from the map and replace them
-// with the new from values. It returns the passed in to value.
-func combineURLValues(to, from url.Values, merge bool) url.Values {
-	for k, vs := range from {
-		if _, ok := to[k]; ok && !merge {
-			to.Del(k)
-		}
-		for _, v := range vs {
-			to.Add(k, v)
-		}
-	}
-	return to
 }
 
 func encodeBody(form url.Values) ([]byte, error) {
