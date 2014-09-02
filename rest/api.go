@@ -19,6 +19,8 @@ type FilePath string
 // API is the top-level interface encapsulating an HTTP REST server. It's responsible for
 // registering ResourceHandlers and routing requests. Use NewAPI to retrieve an instance.
 type API interface {
+	http.Handler
+
 	// Start begins serving requests. This will block unless it fails, in which case an
 	// error will be returned. This will validate any defined Rules. If any Rules are
 	// invalid, it will panic.
@@ -48,9 +50,6 @@ type API interface {
 	// RegisterPathPrefix binds the http.HandlerFunc to URIs matched by the given path\
 	// prefix and applies any specified middleware.
 	RegisterPathPrefix(string, http.HandlerFunc, ...RequestMiddleware)
-
-	// ServeHTTP handles an HTTP request.
-	ServeHTTP(http.ResponseWriter, *http.Request)
 
 	// RegisterResponseSerializer registers the provided ResponseSerializer with the given
 	// format. If the format has already been registered, it will be overwritten.
