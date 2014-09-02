@@ -19,6 +19,8 @@ type FilePath string
 // API is the top-level interface encapsulating an HTTP REST server. It's responsible for
 // registering ResourceHandlers and routing requests. Use NewAPI to retrieve an instance.
 type API interface {
+	http.Handler
+
 	// Start begins serving requests. This will block unless it fails, in which case an
 	// error will be returned. This will validate any defined Rules. If any Rules are
 	// invalid, it will panic.
@@ -36,6 +38,18 @@ type API interface {
 	// endpoints and applies any specified middleware. Endpoints will have the following
 	// base URL: /api/:version/resourceName.
 	RegisterResourceHandler(ResourceHandler, ...RequestMiddleware)
+
+	// RegisterHandlerFunc binds the http.HandlerFunc to the provided URI and applies any
+	// specified middleware.
+	RegisterHandlerFunc(string, http.HandlerFunc, ...RequestMiddleware)
+
+	// RegisterHandler binds the http.Handler to the provided URI and applies any specified
+	// middleware.
+	RegisterHandler(string, http.Handler, ...RequestMiddleware)
+
+	// RegisterPathPrefix binds the http.HandlerFunc to URIs matched by the given path\
+	// prefix and applies any specified middleware.
+	RegisterPathPrefix(string, http.HandlerFunc, ...RequestMiddleware)
 
 	// RegisterResponseSerializer registers the provided ResponseSerializer with the given
 	// format. If the format has already been registered, it will be overwritten.
@@ -150,6 +164,31 @@ func (r *muxAPI) RegisterResourceHandler(h ResourceHandler, middleware ...Reques
 	log.Printf("Registered delete handler at DELETE %s", h.DeleteURI())
 
 	r.resourceHandlers = append(r.resourceHandlers, h)
+}
+
+// RegisterHandlerFunc binds the http.HandlerFunc to the provided URI and applies any
+// specified middleware.
+func (r *muxAPI) RegisterHandlerFunc(uri string, handler http.HandlerFunc,
+	middleware ...RequestMiddleware) {
+	r.router.HandleFunc(uri, applyMiddleware(handler, middleware))
+}
+
+// RegisterHandler binds the http.Handler to the provided URI and applies any specified
+// middleware.
+func (r *muxAPI) RegisterHandler(uri string, handler http.Handler, middleware ...RequestMiddleware) {
+	r.router.HandleFunc(uri, applyMiddleware(handler.ServeHTTP, middleware))
+}
+
+// RegisterPathPrefix binds the http.HandlerFunc to URIs matched by the given path
+// prefix and applies any specified middleware.
+func (r *muxAPI) RegisterPathPrefix(uri string, handler http.HandlerFunc,
+	middleware ...RequestMiddleware) {
+	r.router.PathPrefix(uri).HandlerFunc(applyMiddleware(handler, middleware))
+}
+
+// ServeHTTP handles an HTTP request.
+func (r *muxAPI) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	r.router.ServeHTTP(w, req)
 }
 
 // RegisterResponseSerializer registers the provided ResponseSerializer with the given format. If the
