@@ -96,6 +96,13 @@ type RequestContext interface {
 
 	// Limit returns the maximum number of results that should be fetched.
 	Limit() int
+
+	// Messages returns all of the messages set by the request handler to be included in
+	// the response.
+	Messages() []string
+
+	// AddMessage adds a message to the request messages to be included in the response.
+	AddMessage(string)
 }
 
 // gorillaRequestContext is an implementation of the RequestContext interface. It wraps
@@ -103,7 +110,8 @@ type RequestContext interface {
 // to the parent Context if necessary.
 type gorillaRequestContext struct {
 	context.Context
-	req *http.Request
+	req      *http.Request
+	messages []string
 }
 
 // NewContext returns a RequestContext populated with parameters from the request path and
@@ -135,14 +143,14 @@ func NewContext(parent context.Context, req *http.Request) RequestContext {
 	// parameters with the same name as query string values. Figure out a
 	// better way to handle this.
 
-	return &gorillaRequestContext{parent, req}
+	return &gorillaRequestContext{parent, req, []string{}}
 }
 
 // WithValue returns a new RequestContext with the provided key-value pair and this context
 // as the parent.
 func (ctx *gorillaRequestContext) WithValue(key, value interface{}) RequestContext {
 	if r, ok := ctx.Request(); ok {
-		return &gorillaRequestContext{context.WithValue(ctx, key, value), r}
+		return &gorillaRequestContext{context.WithValue(ctx, key, value), r, ctx.messages}
 	}
 
 	// Should not reach this.
@@ -286,4 +294,19 @@ func (ctx *gorillaRequestContext) NextURL() (string, error) {
 	q.Set("next", cursor)
 	u.RawQuery = q.Encode()
 	return u.String(), nil
+}
+
+// Messages returns all of the messages set by the request handler to be included in
+// the response.
+func (ctx *gorillaRequestContext) Messages() []string {
+	messages := ctx.messages
+	if err := ctx.Error(); err != nil {
+		messages = append(messages, err.Error())
+	}
+	return messages
+}
+
+// AddMessage adds a message to the request messages to be included in the response.
+func (ctx *gorillaRequestContext) AddMessage(message string) {
+	ctx.messages = append(ctx.messages, message)
 }

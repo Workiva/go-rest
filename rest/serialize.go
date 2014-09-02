@@ -70,7 +70,7 @@ func newSuccessResponse(ctx RequestContext) response {
 	payload := Payload{
 		status:    s,
 		reason:    http.StatusText(s),
-		messages:  []string{}, // TODO: Implement messages on context.
+		messages:  ctx.Messages(),
 		resultKey: r,
 	}
 
@@ -97,7 +97,7 @@ func newErrorResponse(ctx RequestContext) response {
 	payload := Payload{
 		status:   s,
 		reason:   http.StatusText(s),
-		messages: []string{err.Error()}, // TODO: Implement messages on context.
+		messages: ctx.Messages(),
 	}
 
 	response := response{
