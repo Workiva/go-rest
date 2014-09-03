@@ -12,17 +12,17 @@ This package can be used with any type that implements the Consumer interface:
         "something": "cool"
     }
 
-    resp, err := rc.GetJson("http://example.com/api/", params, nil)
+    resp, err := rc.GetJSON("http://example.com/api/", params, nil)
 */
 package rest
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strings"
 )
 
 // Supported HTTP Methods
@@ -75,20 +75,35 @@ func (c *Client) BuildForm(params map[string]string) url.Values {
 
 func (c *Client) do(method, urlStr string, params map[string]string) (*http.Response, error) {
 	req, err := http.NewRequest(method, urlStr, nil)
-
 	if err != nil {
 		return nil, err
 	}
 
-	form := c.Authorize(urlStr, method, c.BuildForm(params))
+	// Set up the form values and request method.
+	req.Method = method
+	form := c.BuildForm(params)
 
-	// TODO: Investigate if this needs to be different for POST
-	req.URL.RawQuery = form.Encode()
+	// TODO: Find a way to push the encoding and authorization into the specific http methods themselves.
+	switch method {
+	case GET, DELETE:
+		// Combine form and auth into the query string.
+		req.URL.RawQuery = c.Authorize(urlStr, method, form).Encode()
+	case POST, PUT:
+		// Set the auth params in the query string.
+		req.URL.RawQuery = c.Authorize(urlStr, method, url.Values{}).Encode()
+		// Encode the form values as JSON and put them in the request body.
+		body, err := encodeBody(form)
+		if err != nil {
+			return nil, err
+		}
+		req.Body = ioutil.NopCloser(bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+	}
 
 	return http.DefaultClient.Do(req)
 }
 
-func (c *Client) doJson(method, url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
+func (c *Client) doJSON(method, url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
 	response, err := c.do(method, url, params)
 	if err != nil {
 		return &BaseResponse{}, err
@@ -97,7 +112,7 @@ func (c *Client) doJson(method, url string, params map[string]string, entity int
 	defer response.Body.Close()
 
 	b, _ := ioutil.ReadAll(response.Body)
-	return c.decode(strings.NewReader(string(b)), entity)
+	return c.decode(bytes.NewReader(b), entity)
 }
 
 // Get will perform a HTTP GET against the supplied URL with the given parameters.
@@ -105,9 +120,9 @@ func (c *Client) Get(urlStr string, params map[string]string) (*http.Response, e
 	return c.do(GET, urlStr, params)
 }
 
-// GetJson will perform a HTTP GET and will JSON decode the response.
-func (c *Client) GetJson(url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
-	return c.doJson(GET, url, params, entity)
+// GetJSON will perform a HTTP GET and will JSON decode the response.
+func (c *Client) GetJSON(url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
+	return c.doJSON(GET, url, params, entity)
 }
 
 // Post will perform a HTTP POST against the supplied URL with the given parameters.
@@ -115,9 +130,9 @@ func (c *Client) Post(urlStr string, params map[string]string) (*http.Response, 
 	return c.do(POST, urlStr, params)
 }
 
-// PostJson will perform a HTTP POST and will JSON decode the response.
-func (c *Client) PostJson(url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
-	return c.doJson(POST, url, params, entity)
+// PostJSON will perform a HTTP POST and will JSON decode the response.
+func (c *Client) PostJSON(url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
+	return c.doJSON(POST, url, params, entity)
 }
 
 // Put will perform a HTTP PUT against the supplied URL with the given parameters.
@@ -125,9 +140,9 @@ func (c *Client) Put(urlStr string, params map[string]string) (*http.Response, e
 	return c.do(PUT, urlStr, params)
 }
 
-// PutJson will perform a HTTP PUT and will JSON decode the response.
-func (c *Client) PutJson(url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
-	return c.doJson(PUT, url, params, entity)
+// PutJSON will perform a HTTP PUT and will JSON decode the response.
+func (c *Client) PutJSON(url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
+	return c.doJSON(PUT, url, params, entity)
 }
 
 // Delete will perform a HTTP DELETE against the supplied URL with the given parameters.
@@ -135,7 +150,23 @@ func (c *Client) Delete(urlStr string, params map[string]string) (*http.Response
 	return c.do(DELETE, urlStr, params)
 }
 
-// DeleteJson will perform a HTTP DELETE and will JSON decode the response.
-func (c *Client) DeleteJson(url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
-	return c.doJson(DELETE, url, params, entity)
+// DeleteJSON will perform a HTTP DELETE and will JSON decode the response.
+func (c *Client) DeleteJSON(url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
+	return c.doJSON(DELETE, url, params, entity)
+}
+
+func encodeBody(form url.Values) ([]byte, error) {
+	actual := map[string]string{}
+
+	// Get the first value for each key.
+	for k := range form {
+		actual[k] = form.Get(k)
+	}
+
+	// Encode the form
+	body, err := json.Marshal(actual)
+	if err != nil {
+		return nil, err
+	}
+	return body, nil
 }
