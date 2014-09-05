@@ -63,6 +63,8 @@ type API interface {
 	// formats currently available.
 	AvailableFormats() []string
 
+	ResourceHandlers() []ResourceHandler
+
 	// responseSerializer returns a ResponseSerializer for the given format type. If the
 	// format is not implemented, the returned serializer will be nil and the error set.
 	responseSerializer(string) (ResponseSerializer, error)
@@ -112,6 +114,7 @@ func NewAPI() API {
 // returned.
 func (r *muxAPI) Start(addr Address) error {
 	r.validateRules()
+	GenerateDocs(r)
 	return http.ListenAndServe(string(addr), r.router)
 }
 
@@ -218,6 +221,10 @@ func (r *muxAPI) AvailableFormats() []string {
 	}
 	sort.Strings(formats)
 	return formats
+}
+
+func (r *muxAPI) ResourceHandlers() []ResourceHandler {
+	return r.resourceHandlers
 }
 
 // responseSerializer returns a ResponseSerializer for the given format type. If the format

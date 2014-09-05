@@ -21,9 +21,17 @@ func (b BaseResourceHandler) CreateURI() string {
 	return ""
 }
 
+func (b BaseResourceHandler) CreateDocumentation() string {
+	return ""
+}
+
 // ReadURI is a stub. Implement if necessary. The default read URI is
 // /api/v{version:[^/]+}/resourceName/{resource_id}.
 func (b BaseResourceHandler) ReadURI() string {
+	return ""
+}
+
+func (b BaseResourceHandler) ReadDocumentation() string {
 	return ""
 }
 
@@ -33,9 +41,17 @@ func (b BaseResourceHandler) ReadListURI() string {
 	return ""
 }
 
+func (b BaseResourceHandler) ReadListDocumentation() string {
+	return ""
+}
+
 // UpdateURI is a stub. Implement if necessary. The default update URI is
 // /api/v{version:[^/]+}/resourceName/{resource_id}.
 func (b BaseResourceHandler) UpdateURI() string {
+	return ""
+}
+
+func (b BaseResourceHandler) UpdateDocumentation() string {
 	return ""
 }
 
@@ -45,9 +61,17 @@ func (b BaseResourceHandler) UpdateListURI() string {
 	return ""
 }
 
+func (b BaseResourceHandler) UpdateListDocumentation() string {
+	return ""
+}
+
 // DeleteURI is a stub. Implement if necessary. The default delete URI is
 // /api/v{version:[^/]+}/resourceName/{resource_id}.
 func (b BaseResourceHandler) DeleteURI() string {
+	return ""
+}
+
+func (b BaseResourceHandler) DeleteDocumentation() string {
 	return ""
 }
 
