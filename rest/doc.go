@@ -202,15 +202,16 @@ func getInputFields(rules Rules) []field {
 	fields := make([]field, 0, rules.Size())
 
 	for _, rule := range rules.Contents() {
-		required := "no"
+		required := "optional"
 		if rule.Required {
-			required = "yes"
+			required = "required"
 		}
 
 		field := field{
-			"name":     rule.Name(),
-			"required": required,
-			"type":     ruleTypeName(rule, Inbound),
+			"name":        rule.Name(),
+			"required":    required,
+			"type":        ruleTypeName(rule, Inbound),
+			"description": rule.DocString,
 		}
 
 		fields = append(fields, field)
@@ -225,8 +226,9 @@ func getOutputFields(rules Rules) []field {
 
 	for _, rule := range rules.Contents() {
 		field := field{
-			"name": rule.Name(),
-			"type": ruleTypeName(rule, Outbound),
+			"name":        rule.Name(),
+			"type":        ruleTypeName(rule, Outbound),
+			"description": rule.DocString,
 		}
 
 		fields = append(fields, field)
@@ -351,6 +353,19 @@ func getNestedExampleValue(r *Rule, version string) interface{} {
 }
 
 func versions(handlers []ResourceHandler) []string {
-	// TODO
-	return []string{"1"}
+	versionMap := map[string]bool{}
+	for _, handler := range handlers {
+		for _, rule := range handler.Rules().Contents() {
+			for _, version := range rule.Versions {
+				versionMap[version] = true
+			}
+		}
+	}
+
+	versions := make([]string, 0, len(versionMap))
+	for version, _ := range versionMap {
+		versions = append(versions, version)
+	}
+
+	return versions
 }

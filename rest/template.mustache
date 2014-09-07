@@ -9,6 +9,17 @@
         <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
         <script
             src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+        <style>
+            .field {
+                margin-bottom:0px;
+                border-top:none;
+                border-bottom: 1px solid #ddd;
+            }
+
+            .field:hover {
+                background-color:#F8F8F8;
+            }
+        </style>
     </head>
 
     <body>
@@ -36,19 +47,17 @@
                             <div class="tab-pane active" id="request-fields-{{index}}">
                                 <div class="list-group">
                                     {{#inputFields}}
-                                    <dl class="dl-horizontal list-group-item"
-                                        style="border-top:none;">
-
-                                        <dt>Name</dt>
-                                        <dd>{{name}}</dd>
-
-                                        <dt>Required</dt>
-                                        <dd>{{required}}</dd>
-
-                                        <dt>Type</dt>
-                                        <dd>{{type}}</dd>
-
-                                    </dl>
+                                    <div class="list-group-item field">
+                                        <span style="width:220px;float:left;">
+                                            <strong>{{name}}</strong>
+                                            <span style="display:block;color:#999;">
+                                                {{required}}
+                                            </span>
+                                        </span>
+                                        <p style="margin-left:220px;">
+                                            ({{type}}) {{description}}
+                                        </p>
+                                    </div>
                                     {{/inputFields}}
                                 </div>
                             </div>
@@ -76,16 +85,14 @@
                             <div class="tab-pane active" id="response-fields-{{index}}">
                                 <div class="list-group">
                                     {{#outputFields}}
-                                    <dl class="dl-horizontal list-group-item"
-                                        style="border-top:none;">
-
-                                        <dt>Name</dt>
-                                        <dd>{{name}}</dd>
-
-                                        <dt>Type</dt>
-                                        <dd>{{type}}</dd>
-
-                                    </dl>
+                                    <div class="list-group-item field">
+                                        <span style="width:220px;float:left;">
+                                            <strong>{{name}}</strong>
+                                        </span>
+                                        <p style="margin-left:220px;">
+                                            ({{type}}) {{description}}
+                                        </p>
+                                    </div>
                                     {{/outputFields}}
                                 </div> 
                             </div>
