@@ -41,12 +41,11 @@ func GenerateDocs(api API) {
 		docs[version] = versionDocs
 	}
 
-	generateIndexDoc(docs, versions)
+	generateIndexDocs(docs, versions)
 }
 
-func generateIndexDoc(docs map[string][]handlerDoc, versions []string) {
-	tpl, err := mustache.ParseFile(
-		"/Users/tylertreat/Go/src/github.com/WebFilings/go-rest/rest/index.mustache")
+func generateIndexDocs(docs map[string][]handlerDoc, versions []string) {
+	tpl, err := mustache.ParseString(IndexTemplate)
 	if err != nil {
 		log.Println(err)
 		return
@@ -56,6 +55,7 @@ func generateIndexDoc(docs map[string][]handlerDoc, versions []string) {
 		rendered := tpl.Render(map[string]interface{}{
 			"handlers": docList,
 			"version":  version,
+			"versions": versions,
 		})
 		ioutil.WriteFile(fmt.Sprintf("%sindex_v%s.html", directory, version), []byte(rendered), 0644)
 	}
@@ -64,8 +64,7 @@ func generateIndexDoc(docs map[string][]handlerDoc, versions []string) {
 
 func generateHandlerDoc(handler ResourceHandler, version string) (handlerDoc, error) {
 	handler = resourceHandlerProxy{handler}
-	tpl, err := mustache.ParseFile(
-		"/Users/tylertreat/Go/src/github.com/WebFilings/go-rest/rest/template.mustache")
+	tpl, err := mustache.ParseString(HandlerTemplate)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -176,9 +175,11 @@ func generateHandlerDoc(handler ResourceHandler, version string) (handlerDoc, er
 
 	name := handlerTypeName(handler)
 	context := map[string]interface{}{
-		"resource":  name,
-		"version":   version,
-		"endpoints": endpoints,
+		"resource":       name,
+		"version":        version,
+		"versions":       handlerVersions(handler),
+		"endpoints":      endpoints,
+		"fileNamePrefix": fileNamePrefix(name),
 	}
 	rendered := tpl.Render(context)
 
@@ -282,8 +283,11 @@ func handlerTypeName(handler ResourceHandler) string {
 }
 
 func fileName(name, version string) string {
-	name = strings.Replace(name, " ", "_", -1)
-	return strings.ToLower(fmt.Sprintf("%s_v%s.html", name, version))
+	return strings.ToLower(fmt.Sprintf("%s_v%s.html", fileNamePrefix(name), version))
+}
+
+func fileNamePrefix(name string) string {
+	return strings.ToLower(strings.Replace(name, " ", "_", -1))
 }
 
 func buildExampleRequest(rules Rules, list bool, version string) string {
@@ -295,7 +299,7 @@ func buildExampleResponse(rules Rules, list bool, version string) string {
 }
 
 func buildExamplePayload(rules Rules, filter Filter, list bool, version string) string {
-	rules = rules.Filter(filter)
+	rules = rules.ForVersion(version).Filter(filter)
 	if rules.Size() == 0 {
 		return ""
 	}
@@ -380,4 +384,8 @@ func versions(handlers []ResourceHandler) []string {
 	}
 
 	return versions
+}
+
+func handlerVersions(handler ResourceHandler) []string {
+	return versions([]ResourceHandler{handler})
 }
