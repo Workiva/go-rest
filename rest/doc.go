@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"reflect"
 	"regexp"
 	"strings"
@@ -13,11 +14,18 @@ import (
 	"github.com/hoisie/mustache"
 )
 
+const directory = "_docs/"
+
 type endpoint map[string]interface{}
 type field map[string]interface{}
 type handlerDoc map[string]string
 
 func GenerateDocs(api API) {
+	if err := os.MkdirAll(directory, 0777); err != nil {
+		log.Println(err)
+		return
+	}
+
 	handlers := api.ResourceHandlers()
 	docs := map[string][]handlerDoc{}
 	versions := versions(handlers)
@@ -49,7 +57,7 @@ func generateIndexDoc(docs map[string][]handlerDoc, versions []string) {
 			"handlers": docList,
 			"version":  version,
 		})
-		ioutil.WriteFile(fmt.Sprintf("v%s.html", version), []byte(rendered), 0644)
+		ioutil.WriteFile(fmt.Sprintf("%sindex_v%s.html", directory, version), []byte(rendered), 0644)
 	}
 
 }
@@ -65,6 +73,10 @@ func generateHandlerDoc(handler ResourceHandler, version string) (handlerDoc, er
 
 	inputFields := getInputFields(handler.Rules().ForVersion(version))
 	outputFields := getOutputFields(handler.Rules().ForVersion(version))
+
+	if len(outputFields) == 0 {
+		return nil, fmt.Errorf("No documented output fields for %s", handler.ResourceName())
+	}
 
 	index := 0
 	endpoints := []endpoint{}
@@ -170,8 +182,8 @@ func generateHandlerDoc(handler ResourceHandler, version string) (handlerDoc, er
 	}
 	rendered := tpl.Render(context)
 
-	file := fileName(name)
-	ioutil.WriteFile(file, []byte(rendered), 0644)
+	file := fileName(name, version)
+	ioutil.WriteFile(fmt.Sprintf("%s%s", directory, file), []byte(rendered), 0644)
 
 	doc := handlerDoc{"name": name, "file": file}
 	return doc, nil
@@ -269,9 +281,9 @@ func handlerTypeName(handler ResourceHandler) string {
 	return resourceTypeName(rulesType.String())
 }
 
-func fileName(name string) string {
+func fileName(name, version string) string {
 	name = strings.Replace(name, " ", "_", -1)
-	return strings.ToLower(name + ".html")
+	return strings.ToLower(fmt.Sprintf("%s_v%s.html", name, version))
 }
 
 func buildExampleRequest(rules Rules, list bool, version string) string {
