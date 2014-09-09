@@ -1,5 +1,6 @@
 package rest
 
+// HandlerTemplate is the mustache template for the handler documentation.
 const HandlerTemplate string = `
 <!DOCTYPE HTML>
 <html lang="en">

@@ -63,6 +63,7 @@ type API interface {
 	// formats currently available.
 	AvailableFormats() []string
 
+	// ResourceHandlers returns a slice containing the registered ResourceHandlers.
 	ResourceHandlers() []ResourceHandler
 
 	// responseSerializer returns a ResponseSerializer for the given format type. If the

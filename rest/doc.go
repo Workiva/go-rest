@@ -20,6 +20,7 @@ type endpoint map[string]interface{}
 type field map[string]interface{}
 type handlerDoc map[string]string
 
+// GenerateDocs creates the HTML documentation for the provided API.
 func GenerateDocs(api API) {
 	if err := os.MkdirAll(directory, 0777); err != nil {
 		log.Println(err)
@@ -379,7 +380,7 @@ func versions(handlers []ResourceHandler) []string {
 	}
 
 	versions := make([]string, 0, len(versionMap))
-	for version, _ := range versionMap {
+	for version := range versionMap {
 		versions = append(versions, version)
 	}
 

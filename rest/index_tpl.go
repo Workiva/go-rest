@@ -1,5 +1,6 @@
 package rest
 
+// IndexTemplate is the mustache template for the documentation index.
 const IndexTemplate string = `
 <!DOCTYPE HTML>
 <html lang="en">
