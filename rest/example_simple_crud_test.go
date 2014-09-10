@@ -107,7 +107,7 @@ func (f FooHandler) Authenticate(r *http.Request) error {
 // This example shows how to fully implement a basic ResourceHandler for performing
 // CRUD operations.
 func Example_simpleCrud() {
-	api := NewAPI()
+	api := NewAPI(NewConfiguration())
 
 	// Call RegisterResourceHandler to wire up FooHandler.
 	api.RegisterResourceHandler(FooHandler{})

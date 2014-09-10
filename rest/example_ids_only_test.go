@@ -54,7 +54,7 @@ func (m MyResourceHandler) ReadResourceList(ctx RequestContext, limit int,
 // This example shows how to implement a ResourceHandler which has an endpoint for
 // fetching multiple resources and, optionally, retrieving only their IDs.
 func Example_idsOnly() {
-	api := NewAPI()
+	api := NewAPI(NewConfiguration())
 
 	// Call RegisterResourceHandler to wire up HelloWorldHandler.
 	api.RegisterResourceHandler(MyResourceHandler{})

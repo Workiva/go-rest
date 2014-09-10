@@ -4,10 +4,16 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"sort"
 	"sync"
 
 	"github.com/gorilla/mux"
+)
+
+const (
+	defaultLogPrefix     = "rest "
+	defaultDocsDirectory = "_docs/"
 )
 
 // Address is the address and port to bind to (e.g. ":8080").
@@ -15,6 +21,32 @@ type Address string
 
 // FilePath represents a file path.
 type FilePath string
+
+// Configuration contains settings for configuring an API.
+type Configuration struct {
+	Debug         bool
+	Logger        *log.Logger
+	GenerateDocs  bool
+	DocsDirectory string
+}
+
+// Debugf prints the formatted string to the Configuration Logger if Debug is enabled.
+func (c *Configuration) Debugf(format string, v ...interface{}) {
+	if c.Debug {
+		c.Logger.Printf(format, v)
+	}
+}
+
+// NewConfiguration returns a default Configuration.
+func NewConfiguration() *Configuration {
+	logger := log.New(os.Stdout, defaultLogPrefix, log.LstdFlags)
+	return &Configuration{
+		Debug:         true,
+		Logger:        logger,
+		GenerateDocs:  true,
+		DocsDirectory: defaultDocsDirectory,
+	}
+}
 
 // API is the top-level interface encapsulating an HTTP REST server. It's responsible for
 // registering ResourceHandlers and routing requests. Use NewAPI to retrieve an instance.
@@ -47,7 +79,7 @@ type API interface {
 	// middleware.
 	RegisterHandler(string, http.Handler, ...RequestMiddleware)
 
-	// RegisterPathPrefix binds the http.HandlerFunc to URIs matched by the given path\
+	// RegisterPathPrefix binds the http.HandlerFunc to URIs matched by the given path
 	// prefix and applies any specified middleware.
 	RegisterPathPrefix(string, http.HandlerFunc, ...RequestMiddleware)
 
@@ -62,6 +94,9 @@ type API interface {
 	// AvailableFormats returns a slice containing all of the available serialization
 	// formats currently available.
 	AvailableFormats() []string
+
+	// Configuration returns the API Configuration.
+	Configuration() *Configuration
 
 	// ResourceHandlers returns a slice containing the registered ResourceHandlers.
 	ResourceHandlers() []ResourceHandler
@@ -92,6 +127,7 @@ func newAuthMiddleware(authenticate func(*http.Request) error) RequestMiddleware
 // muxAPI is an implementation of the API interface which relies on the gorilla/mux
 // package to handle request dispatching (see http://www.gorillatoolkit.org/pkg/mux).
 type muxAPI struct {
+	config             *Configuration
 	router             *mux.Router
 	mu                 sync.RWMutex
 	handler            *requestHandler
@@ -100,9 +136,10 @@ type muxAPI struct {
 }
 
 // NewAPI returns a newly allocated API instance.
-func NewAPI() API {
+func NewAPI(config *Configuration) API {
 	r := mux.NewRouter()
 	restAPI := &muxAPI{
+		config:             config,
 		router:             r,
 		serializerRegistry: map[string]ResponseSerializer{"json": &jsonSerializer{}},
 		resourceHandlers:   make([]ResourceHandler, 0),
@@ -114,8 +151,7 @@ func NewAPI() API {
 // Start begins serving requests. This will block unless it fails, in which case an error will be
 // returned.
 func (r *muxAPI) Start(addr Address) error {
-	r.validateRules()
-	GenerateDocs(r)
+	r.preprocess()
 	return http.ListenAndServe(string(addr), r.router)
 }
 
@@ -125,8 +161,17 @@ func (r *muxAPI) Start(addr Address) error {
 // authority, the certFile should be the concatenation of the server's certificate followed by
 // the CA's certificate.
 func (r *muxAPI) StartTLS(addr Address, certFile, keyFile FilePath) error {
-	r.validateRules()
+	r.preprocess()
 	return http.ListenAndServeTLS(string(addr), string(certFile), string(keyFile), r.router)
+}
+
+// preprocess performs any necessary preprocessing before the server can be started, including
+// Rule validation.
+func (r *muxAPI) preprocess() {
+	r.validateRules()
+	if r.config.GenerateDocs {
+		GenerateDocs(r)
+	}
 }
 
 // RegisterResourceHandler binds the provided ResourceHandler to the appropriate REST endpoints and
@@ -140,32 +185,32 @@ func (r *muxAPI) RegisterResourceHandler(h ResourceHandler, middleware ...Reques
 	r.router.HandleFunc(
 		h.CreateURI(), applyMiddleware(r.handler.handleCreate(h), middleware),
 	).Methods("POST").Name(resource + ":create")
-	log.Printf("Registered create handler at POST %s", h.CreateURI())
+	r.config.Debugf("Registered create handler at POST %s", h.CreateURI())
 
 	r.router.HandleFunc(
 		h.ReadListURI(), applyMiddleware(r.handler.handleReadList(h), middleware),
 	).Methods("GET").Name(resource + ":readList")
-	log.Printf("Registered read list handler at GET %s", h.ReadListURI())
+	r.config.Debugf("Registered read list handler at GET %s", h.ReadListURI())
 
 	r.router.HandleFunc(
 		h.ReadURI(), applyMiddleware(r.handler.handleRead(h), middleware),
 	).Methods("GET").Name(resource + ":read")
-	log.Printf("Registered read handler at GET %s", h.ReadURI())
+	r.config.Debugf("Registered read handler at GET %s", h.ReadURI())
 
 	r.router.HandleFunc(
 		h.UpdateListURI(), applyMiddleware(r.handler.handleUpdateList(h), middleware),
 	).Methods("PUT").Name(resource + ":updateList")
-	log.Printf("Registered update list handler at PUT %s", h.UpdateListURI())
+	r.config.Debugf("Registered update list handler at PUT %s", h.UpdateListURI())
 
 	r.router.HandleFunc(
 		h.UpdateURI(), applyMiddleware(r.handler.handleUpdate(h), middleware),
 	).Methods("PUT").Name(resource + ":update")
-	log.Printf("Registered update handler at PUT %s", h.UpdateURI())
+	r.config.Debugf("Registered update handler at PUT %s", h.UpdateURI())
 
 	r.router.HandleFunc(
 		h.DeleteURI(), applyMiddleware(r.handler.handleDelete(h), middleware),
 	).Methods("DELETE").Name(resource + ":delete")
-	log.Printf("Registered delete handler at DELETE %s", h.DeleteURI())
+	r.config.Debugf("Registered delete handler at DELETE %s", h.DeleteURI())
 
 	r.resourceHandlers = append(r.resourceHandlers, h)
 }
@@ -224,8 +269,14 @@ func (r *muxAPI) AvailableFormats() []string {
 	return formats
 }
 
+// ResourceHandlers returns a slice containing the registered ResourceHandlers.
 func (r *muxAPI) ResourceHandlers() []ResourceHandler {
 	return r.resourceHandlers
+}
+
+// Configuration returns the API Configuration.
+func (r *muxAPI) Configuration() *Configuration {
+	return r.config
 }
 
 // responseSerializer returns a ResponseSerializer for the given format type. If the format

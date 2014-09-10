@@ -54,7 +54,7 @@ func ExampleMiddleware(wrapped http.HandlerFunc) http.HandlerFunc {
 // Authenticate method which is used to authenticate requests, but middleware allows
 // you to insert additional authorization, logging, or other AOP-style operations.
 func Example_middleware() {
-	api := NewAPI()
+	api := NewAPI(NewConfiguration())
 
 	// Call RegisterResourceHandler to wire up ExampleHandler and apply middleware.
 	api.RegisterResourceHandler(ExampleHandler{}, ExampleMiddleware)

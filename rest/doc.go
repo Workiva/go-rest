@@ -14,15 +14,18 @@ import (
 	"github.com/hoisie/mustache"
 )
 
-const directory = "_docs/"
-
 type endpoint map[string]interface{}
 type field map[string]interface{}
 type handlerDoc map[string]string
 
 // GenerateDocs creates the HTML documentation for the provided API.
 func GenerateDocs(api API) {
-	if err := os.MkdirAll(directory, 0777); err != nil {
+	dir := api.Configuration().DocsDirectory
+	if !strings.HasSuffix(dir, "/") {
+		dir = dir + "/"
+	}
+
+	if err := os.MkdirAll(dir, 0777); err != nil {
 		log.Println(err)
 		return
 	}
@@ -34,7 +37,7 @@ func GenerateDocs(api API) {
 	for _, version := range versions {
 		versionDocs := make([]handlerDoc, 0, len(handlers))
 		for _, handler := range handlers {
-			if doc, err := generateHandlerDoc(handler, version); err == nil {
+			if doc, err := generateHandlerDoc(handler, version, dir); err == nil {
 				versionDocs = append(versionDocs, doc)
 			}
 		}
@@ -42,10 +45,10 @@ func GenerateDocs(api API) {
 		docs[version] = versionDocs
 	}
 
-	generateIndexDocs(docs, versions)
+	generateIndexDocs(docs, versions, dir)
 }
 
-func generateIndexDocs(docs map[string][]handlerDoc, versions []string) {
+func generateIndexDocs(docs map[string][]handlerDoc, versions []string, dir string) {
 	tpl, err := mustache.ParseString(IndexTemplate)
 	if err != nil {
 		log.Println(err)
@@ -58,12 +61,12 @@ func generateIndexDocs(docs map[string][]handlerDoc, versions []string) {
 			"version":  version,
 			"versions": versions,
 		})
-		ioutil.WriteFile(fmt.Sprintf("%sindex_v%s.html", directory, version), []byte(rendered), 0644)
+		ioutil.WriteFile(fmt.Sprintf("%sindex_v%s.html", dir, version), []byte(rendered), 0644)
 	}
 
 }
 
-func generateHandlerDoc(handler ResourceHandler, version string) (handlerDoc, error) {
+func generateHandlerDoc(handler ResourceHandler, version, dir string) (handlerDoc, error) {
 	handler = resourceHandlerProxy{handler}
 	tpl, err := mustache.ParseString(HandlerTemplate)
 	if err != nil {
@@ -185,7 +188,7 @@ func generateHandlerDoc(handler ResourceHandler, version string) (handlerDoc, er
 	rendered := tpl.Render(context)
 
 	file := fileName(name, version)
-	ioutil.WriteFile(fmt.Sprintf("%s%s", directory, file), []byte(rendered), 0644)
+	ioutil.WriteFile(fmt.Sprintf("%s%s", dir, file), []byte(rendered), 0644)
 
 	doc := handlerDoc{"name": name, "file": file}
 	return doc, nil

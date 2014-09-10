@@ -20,7 +20,7 @@ func (y YAMLSerializer) ContentType() string {
 // the only available format, but the ResponseSerializer interface allows different
 // formats to be implemented.
 func Example_responseSerializer() {
-	api := NewAPI()
+	api := NewAPI(NewConfiguration())
 
 	// Call RegisterResponseSerializer to wire up YAMLSerializer.
 	api.RegisterResponseSerializer("yaml", YAMLSerializer{})
