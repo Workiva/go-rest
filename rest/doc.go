@@ -18,7 +18,8 @@ type endpoint map[string]interface{}
 type field map[string]interface{}
 type handlerDoc map[string]string
 
-// GenerateDocs creates the HTML documentation for the provided API.
+// GenerateDocs creates the HTML documentation for the provided API. The resulting HTML files
+// will be placed in the directory specified by the API Configuration.
 func GenerateDocs(api API) {
 	dir := api.Configuration().DocsDirectory
 	if !strings.HasSuffix(dir, "/") {
