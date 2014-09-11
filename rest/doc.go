@@ -325,12 +325,9 @@ func (d *defaultContextGenerator) generate(handler ResourceHandler, version stri
 func formatURI(uri, version string) string {
 	uri = strings.Replace(uri, "{version:[^/]+}", version, -1)
 
-	r, err := regexp.Compile("{.*?}")
-	if err != nil {
-		panic(err)
-	}
+	re := regexp.MustCompile("{.*?}")
 
-	for _, param := range r.FindAllString(uri, -1) {
+	for _, param := range re.FindAllString(uri, -1) {
 		uri = replaceURIParam(uri, param)
 	}
 
