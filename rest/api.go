@@ -170,7 +170,7 @@ func (r *muxAPI) StartTLS(addr Address, certFile, keyFile FilePath) error {
 func (r *muxAPI) preprocess() {
 	r.validateRules()
 	if r.config.GenerateDocs {
-		GenerateDocs(r)
+		newDocGenerator().generateDocs(r)
 	}
 }
 

@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"reflect"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -18,17 +18,103 @@ type endpoint map[string]interface{}
 type field map[string]interface{}
 type handlerDoc map[string]string
 
-// GenerateDocs creates the HTML documentation for the provided API. The resulting HTML files
-// will be placed in the directory specified by the API Configuration.
-func GenerateDocs(api API) {
+// templateRenderer is a template which can be rendered as a string.
+type templateRenderer interface {
+	// render will render the template as a string using the provided context values.
+	render(interface{}) string
+}
+
+// templateParser is used to parse a template string into a templateRenderer struct.
+type templateParser interface {
+	// parse will parse the string into a templateRenderer or return an error if the
+	// template is malformed.
+	parse(string) (templateRenderer, error)
+}
+
+// mustacheRenderer is an implementation of the templateRenderer interface which relies on
+// mustache templating.
+type mustacheRenderer struct {
+	*mustache.Template
+}
+
+// render will render the template as a string using the provided context values.
+func (m *mustacheRenderer) render(context interface{}) string {
+	return m.Render(context)
+}
+
+// mustacheParser is an implementation of the templateParser interface which relies on
+// mustache templating.
+type mustacheParser struct{}
+
+// parse will parse the string into a templateRenderer or return an error if the template
+// is malformed.
+func (m *mustacheParser) parse(template string) (templateRenderer, error) {
+	tpl, err := mustache.ParseString(template)
+	if err != nil {
+		return nil, err
+	}
+
+	return &mustacheRenderer{tpl}, nil
+}
+
+// docContextGenerator creates template contexts for rendering ResourceHandler documentation.
+type docContextGenerator interface {
+	// generate creates a template context for the provided ResourceHandler.
+	generate(ResourceHandler, string) (map[string]interface{}, error)
+}
+
+// docWriter writes rendered documentation to a persistent medium.
+type docWriter interface {
+	// mkdir creates a directory to store documentation in.
+	mkdir(string, os.FileMode) error
+
+	// write saves the rendered documentation.
+	write(string, []byte, os.FileMode) error
+}
+
+// fsDocWriter is an implementation of the docWriter interface which writes documentation to
+// the local file system.
+type fsDocWriter struct{}
+
+// mkdir creates a directory to store documentation in.
+func (f *fsDocWriter) mkdir(dir string, mode os.FileMode) error {
+	return os.MkdirAll(dir, mode)
+}
+
+// write saves the rendered documentation.
+func (f *fsDocWriter) write(file string, data []byte, mode os.FileMode) error {
+	return ioutil.WriteFile(file, data, mode)
+}
+
+// docGenerator produces documentation files for APIs by introspecting ResourceHandlers and
+// their Rules.
+type docGenerator struct {
+	templateParser
+	docContextGenerator
+	docWriter
+}
+
+// newDocGenerator creates a new docGenerator instance which relies on mustache templating.
+func newDocGenerator() *docGenerator {
+	return &docGenerator{
+		&mustacheParser{},
+		&defaultContextGenerator{},
+		&fsDocWriter{},
+	}
+}
+
+// generateDocs creates the HTML documentation for the provided API. The resulting HTML files
+// will be placed in the directory specified by the API Configuration. Returns an error if
+// generating the documentation failed, nil otherwise.
+func (d *docGenerator) generateDocs(api API) error {
 	dir := api.Configuration().DocsDirectory
 	if !strings.HasSuffix(dir, "/") {
 		dir = dir + "/"
 	}
 
-	if err := os.MkdirAll(dir, 0777); err != nil {
-		log.Println(err)
-		return
+	if err := d.mkdir(dir, 0777); err != nil {
+		api.Configuration().Logger.Println(err)
+		return err
 	}
 
 	handlers := api.ResourceHandlers()
@@ -38,7 +124,11 @@ func GenerateDocs(api API) {
 	for _, version := range versions {
 		versionDocs := make([]handlerDoc, 0, len(handlers))
 		for _, handler := range handlers {
-			if doc, err := generateHandlerDoc(handler, version, dir); err == nil {
+			doc, err := d.generateHandlerDoc(handler, version, dir)
+			if err != nil {
+				api.Configuration().Logger.Println(err)
+				return err
+			} else if doc != nil {
 				versionDocs = append(versionDocs, doc)
 			}
 		}
@@ -46,40 +136,78 @@ func GenerateDocs(api API) {
 		docs[version] = versionDocs
 	}
 
-	generateIndexDocs(docs, versions, dir)
+	if err := d.generateIndexDocs(docs, versions, dir); err != nil {
+		api.Configuration().Logger.Println(err)
+		return err
+	}
+
+	api.Configuration().Debugf("Documentation generated in %s", dir)
+	return nil
 }
 
-func generateIndexDocs(docs map[string][]handlerDoc, versions []string, dir string) {
-	tpl, err := mustache.ParseString(IndexTemplate)
+// generateIndexDocs creates index files for each API version with documented endpoints.
+func (d *docGenerator) generateIndexDocs(docs map[string][]handlerDoc, versions []string,
+	dir string) error {
+
+	tpl, err := d.parse(IndexTemplate)
 	if err != nil {
-		log.Println(err)
-		return
+		return err
 	}
 
 	for version, docList := range docs {
-		rendered := tpl.Render(map[string]interface{}{
+		rendered := tpl.render(map[string]interface{}{
 			"handlers": docList,
 			"version":  version,
 			"versions": versions,
 		})
-		ioutil.WriteFile(fmt.Sprintf("%sindex_v%s.html", dir, version), []byte(rendered), 0644)
+		if err := d.write(fmt.Sprintf("%sindex_v%s.html", dir, version),
+			[]byte(rendered), 0644); err != nil {
+			return err
+		}
 	}
 
+	return nil
 }
 
-func generateHandlerDoc(handler ResourceHandler, version, dir string) (handlerDoc, error) {
-	handler = resourceHandlerProxy{handler}
-	tpl, err := mustache.ParseString(HandlerTemplate)
+// generateHandlerDoc creates a documentation file for the versioned ResourceHandler.
+// Returns nil if the handler contains no documented endpoints or has no output fields.
+func (d *docGenerator) generateHandlerDoc(handler ResourceHandler, version,
+	dir string) (handlerDoc, error) {
+
+	tpl, err := d.parse(HandlerTemplate)
 	if err != nil {
-		log.Println(err)
 		return nil, err
 	}
+
+	context, err := d.generate(handler, version)
+	if context == nil || err != nil {
+		return nil, err
+	}
+	rendered := tpl.render(context)
+
+	name := handlerTypeName(handler)
+	file := fileName(name, version)
+	if err := d.write(fmt.Sprintf("%s%s", dir, file), []byte(rendered), 0644); err != nil {
+		return nil, err
+	}
+
+	doc := handlerDoc{"name": name, "file": file}
+	return doc, nil
+}
+
+// defaultContextGenerator is an implementation of the docContextGenerator interface.
+type defaultContextGenerator struct{}
+
+// generate creates a template context for the provided ResourceHandler.
+func (d *defaultContextGenerator) generate(handler ResourceHandler, version string) (
+	map[string]interface{}, error) {
 
 	inputFields := getInputFields(handler.Rules().ForVersion(version))
 	outputFields := getOutputFields(handler.Rules().ForVersion(version))
 
 	if len(outputFields) == 0 {
-		return nil, fmt.Errorf("No documented output fields for %s", handler.ResourceName())
+		// Handler has no output fields for this version.
+		return nil, nil
 	}
 
 	index := 0
@@ -175,7 +303,8 @@ func generateHandlerDoc(handler ResourceHandler, version, dir string) (handlerDo
 	index++
 
 	if len(endpoints) == 0 {
-		return nil, fmt.Errorf("No documented endpoints")
+		// No documented endpoints.
+		return nil, nil
 	}
 
 	name := handlerTypeName(handler)
@@ -186,15 +315,13 @@ func generateHandlerDoc(handler ResourceHandler, version, dir string) (handlerDo
 		"endpoints":      endpoints,
 		"fileNamePrefix": fileNamePrefix(name),
 	}
-	rendered := tpl.Render(context)
 
-	file := fileName(name, version)
-	ioutil.WriteFile(fmt.Sprintf("%s%s", dir, file), []byte(rendered), 0644)
-
-	doc := handlerDoc{"name": name, "file": file}
-	return doc, nil
+	return context, nil
 }
 
+// formatURI returns the specified URI replacing templated variable names with their
+// human-readable documentation equivalent. It also replaces the version regex with
+// the actual version string.
 func formatURI(uri, version string) string {
 	uri = strings.Replace(uri, "{version:[^/]+}", version, -1)
 
@@ -210,11 +337,14 @@ func formatURI(uri, version string) string {
 	return uri
 }
 
+// replaceURIParam replaces the templated variable name with the human-readable
+// documentation equivalent, e.g. {foo} is replaced with :foo.
 func replaceURIParam(uri, param string) string {
 	paramName := param[1 : len(param)-1]
 	return strings.Replace(uri, param, ":"+paramName, -1)
 }
 
+// getInputFields returns input field descriptions.
 func getInputFields(rules Rules) []field {
 	rules = rules.Filter(Inbound)
 	fields := make([]field, 0, rules.Size())
@@ -238,6 +368,7 @@ func getInputFields(rules Rules) []field {
 	return fields
 }
 
+// getInputFields returns output field descriptions.
 func getOutputFields(rules Rules) []field {
 	rules = rules.Filter(Outbound)
 	fields := make([]field, 0, rules.Size())
@@ -255,6 +386,7 @@ func getOutputFields(rules Rules) []field {
 	return fields
 }
 
+// ruleTypeName returns the human-readable type name for a Rule.
 func ruleTypeName(r *Rule, filter Filter) string {
 	name := typeToName[r.Type]
 
@@ -269,6 +401,7 @@ func ruleTypeName(r *Rule, filter Filter) string {
 	return name
 }
 
+// resourceTypeName returns the human-readable type name for a resource.
 func resourceTypeName(qualifiedName string) string {
 	i := strings.LastIndex(qualifiedName, ".")
 	if i < 0 {
@@ -278,6 +411,7 @@ func resourceTypeName(qualifiedName string) string {
 	return qualifiedName[i+1 : len(qualifiedName)]
 }
 
+// handlerTypeName returns the human-readable type name for a ResourceHandler resource.
 func handlerTypeName(handler ResourceHandler) string {
 	rulesType := handler.Rules().ResourceType()
 	if rulesType == nil {
@@ -287,22 +421,29 @@ func handlerTypeName(handler ResourceHandler) string {
 	return resourceTypeName(rulesType.String())
 }
 
+// fileName returns the constructed HTML file name for the provided name and version.
 func fileName(name, version string) string {
 	return strings.ToLower(fmt.Sprintf("%s_v%s.html", fileNamePrefix(name), version))
 }
 
+// fileNamePrefix returns the provided name as lower case with spaces replaced with
+// underscores.
 func fileNamePrefix(name string) string {
 	return strings.ToLower(strings.Replace(name, " ", "_", -1))
 }
 
+// buildExampleRequest returns a JSON string representing an example endpoint request.
 func buildExampleRequest(rules Rules, list bool, version string) string {
 	return buildExamplePayload(rules, Inbound, list, version)
 }
 
+// buildExampleRequest returns a JSON string representing an example endpoint response.
 func buildExampleResponse(rules Rules, list bool, version string) string {
 	return buildExamplePayload(rules, Outbound, list, version)
 }
 
+// buildExamplePayload returns a JSON string representing either an example endpoint request
+// or response depending on the Filter provided.
 func buildExamplePayload(rules Rules, filter Filter, list bool, version string) string {
 	rules = rules.ForVersion(version).Filter(filter)
 	if rules.Size() == 0 {
@@ -322,13 +463,13 @@ func buildExamplePayload(rules Rules, filter Filter, list bool, version string) 
 
 	serialized, err := json.MarshalIndent(payload, "", "    ")
 	if err != nil {
-		log.Println(err)
 		return ""
 	}
 
 	return string(serialized)
 }
 
+// getExampleValue returns an example value for the provided Rule.
 func getExampleValue(r *Rule, version string) interface{} {
 	value := r.DocExample
 	if value != nil {
@@ -353,6 +494,7 @@ func getExampleValue(r *Rule, version string) interface{} {
 	}
 }
 
+// getNestedExampleValue returns an example value for a nested Rule value.
 func getNestedExampleValue(r *Rule, version string) interface{} {
 	if r.Rules == nil {
 		switch r.Type {
@@ -373,6 +515,8 @@ func getNestedExampleValue(r *Rule, version string) interface{} {
 	return value
 }
 
+// versions returns a slice containing all versions specified by the provided
+// ResourceHandlers.
 func versions(handlers []ResourceHandler) []string {
 	versionMap := map[string]bool{}
 	for _, handler := range handlers {
@@ -388,9 +532,12 @@ func versions(handlers []ResourceHandler) []string {
 		versions = append(versions, version)
 	}
 
+	sort.Strings(versions)
 	return versions
 }
 
+// handlerVersions returns a slice containing all versions specified by the provided
+// ResourceHandler.
 func handlerVersions(handler ResourceHandler) []string {
 	return versions([]ResourceHandler{handler})
 }
