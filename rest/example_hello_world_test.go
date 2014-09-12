@@ -40,7 +40,7 @@ func (h HelloWorldHandler) ReadResource(ctx RequestContext, id string,
 // This example shows a minimal implementation of a ResourceHandler by using the
 // BaseResourceHandler. It only implements an endpoint for fetching a resource.
 func Example_helloWorld() {
-	api := NewAPI()
+	api := NewAPI(NewConfiguration())
 
 	// Call RegisterResourceHandler to wire up HelloWorldHandler.
 	api.RegisterResourceHandler(HelloWorldHandler{})

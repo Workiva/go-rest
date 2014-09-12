@@ -23,20 +23,39 @@ type ResourceHandler interface {
 	// CreateURI returns the URI for creating a resource.
 	CreateURI() string
 
+	// CreateDocumentation returns a string describing the handler's create endpoint.
+	CreateDocumentation() string
+
 	// ReadURI returns the URI for reading a specific resource.
 	ReadURI() string
+
+	// ReadDocumentation returns a string describing the handler's read endpoint.
+	ReadDocumentation() string
 
 	// ReadListURI returns the URI for reading a list of resources.
 	ReadListURI() string
 
+	// ReadListDocumentation returns a string describing the handler's read list endpoint.
+	ReadListDocumentation() string
+
 	// UpdateURI returns the URI for updating a specific resource.
 	UpdateURI() string
+
+	// UpdateDocumentation returns a string describing the handler's update endpoint.
+	UpdateDocumentation() string
 
 	// UpdateListURI returns the URI for updating a list of resources.
 	UpdateListURI() string
 
+	// UpdateListDocumentation returns a string describing the handler's update list
+	// endpoint.
+	UpdateListDocumentation() string
+
 	// DeleteURI returns the URI for deleting a specific resource.
 	DeleteURI() string
+
+	// DeleteDocumentation returns a string describing the handler's delete endpoint.
+	DeleteDocumentation() string
 
 	// CreateResource is the logic that corresponds to creating a new resource at
 	// POST /api/:version/resourceName. Typically, this would insert a record into a

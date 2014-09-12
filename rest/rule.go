@@ -194,6 +194,12 @@ type Rule struct {
 
 	// Nested Rules to apply to field value.
 	Rules Rules
+
+	// Description used in documentation.
+	DocString string
+
+	// Example value used in documentation.
+	DocExample interface{}
 }
 
 // Name returns the name of the input/output field alias. It defaults to the field

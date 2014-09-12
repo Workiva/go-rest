@@ -115,7 +115,7 @@ func (r *muxAPI) getRouteHandler(name string) (http.Handler, error) {
 func TestHandleCreateBadFormat(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
@@ -146,7 +146,7 @@ func TestHandleCreateBadFormat(t *testing.T) {
 func TestHandleCreateBadCreate(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
@@ -177,7 +177,7 @@ func TestHandleCreateBadCreate(t *testing.T) {
 func TestHandleCreateHappyPath(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
@@ -208,7 +208,7 @@ func TestHandleCreateHappyPath(t *testing.T) {
 func TestHandleCreateNotAuthorized(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(fmt.Errorf("Not authorized"))
@@ -233,7 +233,7 @@ func TestHandleCreateNotAuthorized(t *testing.T) {
 func TestHandleReadListBadFormat(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
@@ -262,7 +262,7 @@ func TestHandleReadListBadFormat(t *testing.T) {
 func TestHandleReadListBadRead(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
@@ -290,7 +290,7 @@ func TestHandleReadListBadRead(t *testing.T) {
 func TestHandleReadListHappyPath(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
@@ -318,7 +318,7 @@ func TestHandleReadListHappyPath(t *testing.T) {
 func TestHandleReadBadFormat(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
@@ -346,7 +346,7 @@ func TestHandleReadBadFormat(t *testing.T) {
 func TestHandleReadBadRead(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
@@ -374,7 +374,7 @@ func TestHandleReadBadRead(t *testing.T) {
 func TestHandleReadHappyPath(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
@@ -403,7 +403,7 @@ func TestHandleReadHappyPath(t *testing.T) {
 func TestHandleUpdateListBadFormat(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
@@ -434,7 +434,7 @@ func TestHandleUpdateListBadFormat(t *testing.T) {
 func TestHandleUpdateListBadUpdate(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
@@ -464,7 +464,7 @@ func TestHandleUpdateListBadUpdate(t *testing.T) {
 func TestHandleUpdateListPayloadNotList(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
@@ -495,7 +495,7 @@ func TestHandleUpdateListPayloadNotList(t *testing.T) {
 func TestHandleUpdateListHappyPath(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
@@ -525,7 +525,7 @@ func TestHandleUpdateListHappyPath(t *testing.T) {
 func TestHandleUpdateBadFormat(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
@@ -556,7 +556,7 @@ func TestHandleUpdateBadFormat(t *testing.T) {
 func TestHandleUpdateBadUpdate(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
@@ -586,7 +586,7 @@ func TestHandleUpdateBadUpdate(t *testing.T) {
 func TestHandleUpdateHappyPath(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
@@ -617,7 +617,7 @@ func TestHandleUpdateHappyPath(t *testing.T) {
 func TestHandleDeleteBadFormat(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
@@ -646,7 +646,7 @@ func TestHandleDeleteBadFormat(t *testing.T) {
 func TestHandleDeleteBadDelete(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
@@ -674,7 +674,7 @@ func TestHandleDeleteBadDelete(t *testing.T) {
 func TestHandleDeleteHappyPath(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
@@ -711,7 +711,7 @@ func getMiddleware(called *bool) RequestMiddleware {
 func TestApplyMiddleware(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
@@ -740,7 +740,7 @@ func TestApplyMiddleware(t *testing.T) {
 func TestOutboundRules(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 	rule := &Rule{
 		Field:      "Foo",
 		FieldAlias: "f",
@@ -772,7 +772,7 @@ func TestOutboundRules(t *testing.T) {
 func TestOutboundRulesDontApplyOnError(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 	rule := &Rule{
 		Field:      "Foo",
 		FieldAlias: "f",
@@ -805,7 +805,7 @@ func TestOutboundRulesDontApplyOnError(t *testing.T) {
 func TestOutboundRulesDontApplyOnNilResource(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 	rule := &Rule{
 		Field:      "Foo",
 		FieldAlias: "f",
@@ -847,7 +847,7 @@ func (t TestResponseSerializer) ContentType() string {
 // AvailableFormats behave as expected.
 func TestRegisterUnregisterResponseSerializer(t *testing.T) {
 	assert := assert.New(t)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 
 	assert.Equal([]string{"json"}, api.AvailableFormats())
 
@@ -863,7 +863,7 @@ func TestRegisterUnregisterResponseSerializer(t *testing.T) {
 // Ensures that validateRules panics when the resource doesn't have a Rule field.
 func TestValidateRulesBadField(t *testing.T) {
 	assert := assert.New(t)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 	handler := new(MockResourceHandler)
 	handler.On("ResourceName").Return("foo")
 	handler.On("Rules").Return(NewRules((*TestResource)(nil), &Rule{Field: "bar"}))
@@ -879,7 +879,7 @@ func TestValidateRulesBadField(t *testing.T) {
 // Ensures that validateRules panics when a Rule has an incorrect type.
 func TestValidateRulesBadType(t *testing.T) {
 	assert := assert.New(t)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 	handler := new(MockResourceHandler)
 	handler.On("ResourceName").Return("foo")
 	handler.On("Rules").Return(NewRules((*TestResource)(nil), &Rule{Field: "Foo", Type: Int}))
@@ -895,7 +895,7 @@ func TestValidateRulesBadType(t *testing.T) {
 // Ensures that validateRules doesn't panic when the Rules are valid.
 func TestValidateRulesHappyPath(t *testing.T) {
 	assert := assert.New(t)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 	handler := new(MockResourceHandler)
 	handler.On("ResourceName").Return("foo")
 	handler.On("Rules").Return(NewRules((*TestResource)(nil), &Rule{
@@ -914,7 +914,7 @@ func TestValidateRulesHappyPath(t *testing.T) {
 // Ensures that validateRules doesn't panic when there are no Rules.
 func TestValidateRulesNoRules(t *testing.T) {
 	assert := assert.New(t)
-	api := NewAPI()
+	api := NewAPI(&Configuration{})
 	handler := new(MockResourceHandler)
 	handler.On("ResourceName").Return("foo")
 	handler.On("Rules").Return(&rules{})

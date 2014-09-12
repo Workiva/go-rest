@@ -115,7 +115,7 @@ func (r ResourceWithSecretHandler) Rules() Rules {
 // This example shows how Rules are used to provide fine-grained control over response
 // input and output.
 func Example_rules() {
-	api := NewAPI()
+	api := NewAPI(NewConfiguration())
 
 	// Call RegisterResourceHandler to wire up ResourceWithSecretHandler.
 	api.RegisterResourceHandler(ResourceWithSecretHandler{})
