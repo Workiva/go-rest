@@ -72,3 +72,12 @@ func TestMessagesWithError(t *testing.T) {
 		assert.Equal(errMessage, ctx.Messages()[1])
 	}
 }
+
+// Ensures that Header returns the request Header.
+func TestHeader(t *testing.T) {
+	assert := assert.New(t)
+	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
+	ctx := NewContext(nil, req)
+
+	assert.Equal(req.Header, ctx.Header())
+}
