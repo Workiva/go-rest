@@ -66,10 +66,10 @@ func TestJSONMethods(t *testing.T) {
 
 	defer ts.Close()
 
-	var c = Client{testAuthorizer{
+	var c = NewClient(testAuthorizer{
 		"token",
 		"value",
-	}}
+	})
 
 	testObj := testObj{}
 	fs := []func() (*BaseResponse, error){
