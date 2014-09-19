@@ -1,12 +1,12 @@
 /*
 Package rest contains the company standard REST API client and server implementations.
 
-This package can be used with any type that implements the Consumer interface:
+This package can be used with any type that implements the Authorizer interface:
 
-    rc := rest.Client{myConsumer{
+    rc := rest.NewClient(myAuthorizer{
     	"Key",
     	"Secret",
-    }}
+    })
 
     params := map[string]string{
         "something": "cool"
@@ -39,10 +39,20 @@ type Authorizer interface {
 	Authorize(urlStr string, requestType string, form url.Values) url.Values
 }
 
-// Client is the type that encapsulates and uses the Consumer to sign any REST
+// Client is the type that encapsulates and uses the Authorizer to sign any REST
 // requests that are performed.
 type Client struct {
 	Authorizer
+	*http.Client
+}
+
+// NewClient returns a new Client using the provided Authorizer and http.DefaultClient
+// as the underlying http.Client.
+func NewClient(authorizer Authorizer) *Client {
+	return &Client{
+		authorizer,
+		http.DefaultClient,
+	}
 }
 
 // BaseResponse is the resultant type of any of the Do*() methods of the
@@ -100,7 +110,7 @@ func (c *Client) do(method, urlStr string, params map[string]string) (*http.Resp
 		req.Header.Set("Content-Type", "application/json")
 	}
 
-	return http.DefaultClient.Do(req)
+	return c.Do(req)
 }
 
 func (c *Client) doJSON(method, url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
