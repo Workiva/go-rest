@@ -103,6 +103,9 @@ type RequestContext interface {
 
 	// AddMessage adds a message to the request messages to be included in the response.
 	AddMessage(string)
+
+	// Header returns the header key-value pairs for the request.
+	Header() http.Header
 }
 
 // gorillaRequestContext is an implementation of the RequestContext interface. It wraps
@@ -243,6 +246,16 @@ func (ctx *gorillaRequestContext) Cursor() string {
 // setCursor sets the current result cursor for the request.
 func (ctx *gorillaRequestContext) setCursor(cursor string) RequestContext {
 	return ctx.WithValue(cursorKey, cursor)
+}
+
+// Header returns the header key-value pairs for the request.
+func (ctx *gorillaRequestContext) Header() http.Header {
+	req, ok := ctx.Request()
+	if !ok {
+		return http.Header{}
+	}
+
+	return req.Header
 }
 
 // Request returns the *http.Request associated with context using NewContext, if any.
