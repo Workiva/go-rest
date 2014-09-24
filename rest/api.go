@@ -212,6 +212,21 @@ func (r *muxAPI) RegisterResourceHandler(h ResourceHandler, middleware ...Reques
 	).Methods("DELETE").Name(resource + ":delete")
 	r.config.Debugf("Registered delete handler at DELETE %s", h.DeleteURI())
 
+	// Some browsers don't support PUT and DELETE, so allow method overriding.
+	// POST requests with X-HTTP-Method-Override=PUT/DELETE will route to the
+	// respective handlers.
+	r.router.HandleFunc(
+		h.UpdateListURI(), applyMiddleware(r.handler.handleUpdateList(h), middleware),
+	).Methods("POST").Headers("X-HTTP-Method-Override", "PUT").Name(resource + ":updateListOverride")
+
+	r.router.HandleFunc(
+		h.UpdateURI(), applyMiddleware(r.handler.handleUpdate(h), middleware),
+	).Methods("POST").Headers("X-HTTP-Method-Override", "PUT").Name(resource + ":updateOverride")
+
+	r.router.HandleFunc(
+		h.DeleteURI(), applyMiddleware(r.handler.handleDelete(h), middleware),
+	).Methods("POST").Headers("X-HTTP-Method-Override", "DELETE").Name(resource + ":deleteOverride")
+
 	r.resourceHandlers = append(r.resourceHandlers, h)
 }
 
