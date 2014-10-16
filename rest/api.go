@@ -48,6 +48,38 @@ func NewConfiguration() *Configuration {
 	}
 }
 
+// Middleware can be passed in to API#Start and API#StartTLS and will be
+// invoked on every request to a route handled by the API. Returns true if the
+// request should be terminated, false if it should continue.
+type Middleware func(w http.ResponseWriter, r *http.Request) bool
+
+// middlewareProxy proxies an http.Handler by invoking middleware before
+// passing the request to the Handler. It implements the http.Handler
+// interface.
+type middlewareProxy struct {
+	handler    http.Handler
+	middleware []Middleware
+}
+
+// ServeHTTP invokes middleware on the request and then delegates to the
+// proxied http.Handler.
+func (m *middlewareProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	for _, middleware := range m.middleware {
+		if middleware(w, r) {
+			return
+		}
+	}
+	m.handler.ServeHTTP(w, r)
+}
+
+// wrapMiddleware returns an http.Handler with the Middleware applied.
+func wrapMiddleware(handler http.Handler, middleware ...Middleware) http.Handler {
+	return &middlewareProxy{
+		handler:    handler,
+		middleware: middleware,
+	}
+}
+
 // API is the top-level interface encapsulating an HTTP REST server. It's responsible for
 // registering ResourceHandlers and routing requests. Use NewAPI to retrieve an instance.
 type API interface {
@@ -55,16 +87,18 @@ type API interface {
 
 	// Start begins serving requests. This will block unless it fails, in which case an
 	// error will be returned. This will validate any defined Rules. If any Rules are
-	// invalid, it will panic.
-	Start(Address) error
+	// invalid, it will panic. Any provided Middleware will be invoked for every request
+	// handled by the API.
+	Start(Address, ...Middleware) error
 
 	// StartTLS begins serving requests received over HTTPS connections. This will block
 	// unless it fails, in which case an error will be returned. Files containing a
 	// certificate and matching private key for the server must be provided. If the
 	// certificate is signed by a certificate authority, the certFile should be the
 	// concatenation of the server's certificate followed by the CA's certificate. This
-	// will validate any defined Rules. If any Rules are invalid, it will panic.
-	StartTLS(Address, FilePath, FilePath) error
+	// will validate any defined Rules. If any Rules are invalid, it will panic. Any
+	// provided Middleware will be invoked for every request handled by the API.
+	StartTLS(Address, FilePath, FilePath, ...Middleware) error
 
 	// RegisterResourceHandler binds the provided ResourceHandler to the appropriate REST
 	// endpoints and applies any specified middleware. Endpoints will have the following
@@ -150,9 +184,9 @@ func NewAPI(config *Configuration) API {
 
 // Start begins serving requests. This will block unless it fails, in which case an error will be
 // returned.
-func (r *muxAPI) Start(addr Address) error {
+func (r *muxAPI) Start(addr Address, middleware ...Middleware) error {
 	r.preprocess()
-	return http.ListenAndServe(string(addr), r.router)
+	return http.ListenAndServe(string(addr), wrapMiddleware(r.router, middleware...))
 }
 
 // StartTLS begins serving requests received over HTTPS connections. This will block unless it
@@ -160,9 +194,9 @@ func (r *muxAPI) Start(addr Address) error {
 // private key for the server must be provided. If the certificate is signed by a certificate
 // authority, the certFile should be the concatenation of the server's certificate followed by
 // the CA's certificate.
-func (r *muxAPI) StartTLS(addr Address, certFile, keyFile FilePath) error {
+func (r *muxAPI) StartTLS(addr Address, certFile, keyFile FilePath, middleware ...Middleware) error {
 	r.preprocess()
-	return http.ListenAndServeTLS(string(addr), string(certFile), string(keyFile), r.router)
+	return http.ListenAndServeTLS(string(addr), string(certFile), string(keyFile), wrapMiddleware(r.router, middleware...))
 }
 
 // preprocess performs any necessary preprocessing before the server can be started, including
