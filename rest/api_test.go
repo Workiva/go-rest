@@ -926,3 +926,51 @@ func TestValidateRulesNoRules(t *testing.T) {
 	}()
 	api.(*muxAPI).validateRules()
 }
+
+type httpHandler struct {
+	called bool
+}
+
+func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.called = true
+}
+
+// Ensures that middlewareProxy invokes middleware and doesn't delegate to the
+// wrapped http.Handler if any middleware return true.
+func TestMiddlewareProxyTerminate(t *testing.T) {
+	assert := assert.New(t)
+	handler := &httpHandler{}
+	called := false
+	middleware := func(w http.ResponseWriter, r *http.Request) bool {
+		called = true
+		return true
+	}
+	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
+	w := httptest.NewRecorder()
+	proxy := wrapMiddleware(handler, middleware)
+
+	proxy.ServeHTTP(w, req)
+
+	assert.True(called)
+	assert.False(handler.called)
+}
+
+// Ensures that middlewareProxy invokes middleware and delegates to the wrapped
+// http.Handler if all middleware return false.
+func TestMiddlewareProxyDelegate(t *testing.T) {
+	assert := assert.New(t)
+	handler := &httpHandler{}
+	called := false
+	middleware := func(w http.ResponseWriter, r *http.Request) bool {
+		called = true
+		return false
+	}
+	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
+	w := httptest.NewRecorder()
+	proxy := wrapMiddleware(handler, middleware)
+
+	proxy.ServeHTTP(w, req)
+
+	assert.True(called)
+	assert.True(handler.called)
+}
