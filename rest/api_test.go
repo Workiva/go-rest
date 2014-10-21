@@ -860,8 +860,61 @@ func TestRegisterUnregisterResponseSerializer(t *testing.T) {
 	assert.Equal([]string{"json"}, api.AvailableFormats())
 }
 
-// Ensures that validateRules panics when the resource doesn't have a Rule field.
-func TestValidateRulesBadField(t *testing.T) {
+// Ensures that Validate returns an error when the resource doesn't have a Rule
+// field.
+func TestValidateBadField(t *testing.T) {
+	assert := assert.New(t)
+	api := NewAPI(&Configuration{})
+	handler := new(MockResourceHandler)
+	handler.On("ResourceName").Return("foo")
+	handler.On("Rules").Return(NewRules((*TestResource)(nil), &Rule{Field: "bar"}))
+	api.RegisterResourceHandler(handler)
+
+	assert.Error(api.Validate())
+}
+
+// Ensures that Validate returns an error when a Rule has an incorrect type.
+func TestValidateBadType(t *testing.T) {
+	assert := assert.New(t)
+	api := NewAPI(&Configuration{})
+	handler := new(MockResourceHandler)
+	handler.On("ResourceName").Return("foo")
+	handler.On("Rules").Return(NewRules((*TestResource)(nil), &Rule{Field: "Foo", Type: Int}))
+	api.RegisterResourceHandler(handler)
+
+	assert.Error(api.Validate())
+}
+
+// Ensures that Validate returns nil when the Rules are valid.
+func TestValidateHappyPath(t *testing.T) {
+	assert := assert.New(t)
+	api := NewAPI(&Configuration{})
+	handler := new(MockResourceHandler)
+	handler.On("ResourceName").Return("foo")
+	handler.On("Rules").Return(NewRules((*TestResource)(nil), &Rule{
+		Field: "Foo",
+		Type:  String,
+	}))
+	api.RegisterResourceHandler(handler)
+
+	assert.Nil(api.Validate())
+}
+
+// Ensures that Validate returns nil when there are no Rules.
+func TestValidateNoRules(t *testing.T) {
+	assert := assert.New(t)
+	api := NewAPI(&Configuration{})
+	handler := new(MockResourceHandler)
+	handler.On("ResourceName").Return("foo")
+	handler.On("Rules").Return(&rules{})
+	api.RegisterResourceHandler(handler)
+
+	assert.Nil(api.Validate())
+}
+
+// Ensures that validateRulesOrPanic panics when the resource doesn't have a
+// Rule field.
+func TestValidateRulesOrPanicBadField(t *testing.T) {
 	assert := assert.New(t)
 	api := NewAPI(&Configuration{})
 	handler := new(MockResourceHandler)
@@ -873,11 +926,11 @@ func TestValidateRulesBadField(t *testing.T) {
 		r := recover()
 		assert.NotNil(r, "Should have panicked")
 	}()
-	api.(*muxAPI).validateRules()
+	api.(*muxAPI).validateRulesOrPanic()
 }
 
-// Ensures that validateRules panics when a Rule has an incorrect type.
-func TestValidateRulesBadType(t *testing.T) {
+// Ensures that validateRulesOrPanic panics when a Rule has an incorrect type.
+func TestValidateRulesOrPanicBadType(t *testing.T) {
 	assert := assert.New(t)
 	api := NewAPI(&Configuration{})
 	handler := new(MockResourceHandler)
@@ -889,11 +942,11 @@ func TestValidateRulesBadType(t *testing.T) {
 		r := recover()
 		assert.NotNil(r, "Should have panicked")
 	}()
-	api.(*muxAPI).validateRules()
+	api.(*muxAPI).validateRulesOrPanic()
 }
 
-// Ensures that validateRules doesn't panic when the Rules are valid.
-func TestValidateRulesHappyPath(t *testing.T) {
+// Ensures that validateRulesOrPanic doesn't panic when the Rules are valid.
+func TestValidateRulesOrPanicHappyPath(t *testing.T) {
 	assert := assert.New(t)
 	api := NewAPI(&Configuration{})
 	handler := new(MockResourceHandler)
@@ -908,11 +961,11 @@ func TestValidateRulesHappyPath(t *testing.T) {
 		r := recover()
 		assert.Nil(r, "Should not have panicked")
 	}()
-	api.(*muxAPI).validateRules()
+	api.(*muxAPI).validateRulesOrPanic()
 }
 
-// Ensures that validateRules doesn't panic when there are no Rules.
-func TestValidateRulesNoRules(t *testing.T) {
+// Ensures that validateRulesOrPanic doesn't panic when there are no Rules.
+func TestValidateRulesOrPanicNoRules(t *testing.T) {
 	assert := assert.New(t)
 	api := NewAPI(&Configuration{})
 	handler := new(MockResourceHandler)
@@ -924,7 +977,7 @@ func TestValidateRulesNoRules(t *testing.T) {
 		r := recover()
 		assert.Nil(r, "Should not have panicked")
 	}()
-	api.(*muxAPI).validateRules()
+	api.(*muxAPI).validateRulesOrPanic()
 }
 
 type httpHandler struct {

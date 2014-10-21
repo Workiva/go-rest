@@ -135,6 +135,11 @@ type API interface {
 	// ResourceHandlers returns a slice containing the registered ResourceHandlers.
 	ResourceHandlers() []ResourceHandler
 
+	// Validate will validate the Rules configured for this API. It returns nil
+	// if all Rules are valid, otherwise returns the first encountered
+	// validation error.
+	Validate() error
+
 	// responseSerializer returns a ResponseSerializer for the given format type. If the
 	// format is not implemented, the returned serializer will be nil and the error set.
 	responseSerializer(string) (ResponseSerializer, error)
@@ -202,7 +207,7 @@ func (r *muxAPI) StartTLS(addr Address, certFile, keyFile FilePath, middleware .
 // preprocess performs any necessary preprocessing before the server can be started, including
 // Rule validation.
 func (r *muxAPI) preprocess() {
-	r.validateRules()
+	r.validateRulesOrPanic()
 	if r.config.GenerateDocs {
 		newDocGenerator().generateDocs(r)
 	}
@@ -328,6 +333,32 @@ func (r *muxAPI) Configuration() *Configuration {
 	return r.config
 }
 
+// Validate will validate the Rules configured for this API. It returns nil if
+// all Rules are valid, otherwise returns the first encountered validation
+// error.
+func (r *muxAPI) Validate() error {
+	for _, handler := range r.resourceHandlers {
+		rules := handler.Rules()
+		if rules == nil || rules.Size() == 0 {
+			continue
+		}
+
+		if err := rules.Validate(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// validateRulesOrPanic verifies that the Rules for each ResourceHandler
+// registered with the muxAPI are valid, meaning they specify fields that exist
+// and correct types. If a Rule is invalid, this will panic.
+func (r *muxAPI) validateRulesOrPanic() {
+	if err := r.Validate(); err != nil {
+		panic(err)
+	}
+}
+
 // responseSerializer returns a ResponseSerializer for the given format type. If the format
 // is not implemented, the returned serializer will be nil and the error set.
 func (r *muxAPI) responseSerializer(format string) (ResponseSerializer, error) {
@@ -347,20 +378,4 @@ func applyMiddleware(h http.HandlerFunc, middleware []RequestMiddleware) http.Ha
 	}
 
 	return h
-}
-
-// validateRules verifies that the Rules for each ResourceHandler registered with the muxAPI
-// are valid, meaning they specify fields that exist and correct types. If a Rule is invalid,
-// this will panic.
-func (r *muxAPI) validateRules() {
-	for _, handler := range r.resourceHandlers {
-		rules := handler.Rules()
-		if rules == nil || rules.Size() == 0 {
-			continue
-		}
-
-		if err := rules.Validate(); err != nil {
-			panic(err)
-		}
-	}
 }

@@ -1406,7 +1406,7 @@ func TestNewRulesHappyPath(t *testing.T) {
 }
 
 // Ensures that Validate returns an error if a Rule doesn't have a Field or FieldAlias.
-func TestValidateNoName(t *testing.T) {
+func TestRulesValidateNoName(t *testing.T) {
 	assert := assert.New(t)
 	rules := NewRules((*TestResource)(nil), &Rule{})
 
@@ -1414,7 +1414,7 @@ func TestValidateNoName(t *testing.T) {
 }
 
 // Ensures that Validate returns an error if a Rule type is not a struct or map.
-func TestValidateBadType(t *testing.T) {
+func TestRulesValidateBadType(t *testing.T) {
 	assert := assert.New(t)
 	rules := NewRules((*string)(nil), &Rule{})
 
@@ -1423,7 +1423,7 @@ func TestValidateBadType(t *testing.T) {
 
 // Ensures that Validate returns an error if a Rule's field type doesn't match the
 // the resource field type.
-func TestValidateBadFieldType(t *testing.T) {
+func TestRulesValidateBadFieldType(t *testing.T) {
 	assert := assert.New(t)
 	rules := NewRules((*TestResource)(nil), &Rule{Field: "Foo", Type: Int})
 
@@ -1432,7 +1432,7 @@ func TestValidateBadFieldType(t *testing.T) {
 
 // Ensures that Validate returns an error if a Rule's field doesn't exist on the
 // the resource.
-func TestValidateBadField(t *testing.T) {
+func TestRulesValidateBadField(t *testing.T) {
 	assert := assert.New(t)
 	rules := NewRules((*TestResource)(nil), &Rule{Field: "Blah"})
 
@@ -1440,7 +1440,7 @@ func TestValidateBadField(t *testing.T) {
 }
 
 // Ensures that Validate does not return an error for non-resource Rules.
-func TestValidateNonResourceRule(t *testing.T) {
+func TestRulesValidateNonResourceRule(t *testing.T) {
 	assert := assert.New(t)
 	rules := NewRules((*TestResource)(nil), &Rule{FieldAlias: "Blah"})
 
