@@ -19,6 +19,7 @@ package rest
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -59,16 +60,23 @@ func NewClient(authorizer Authorizer) *Client {
 // Client. It contains several informational fields as well as the result
 // value.
 type BaseResponse struct {
-	Status   int         // HTTP status code.
-	Reason   string      // Reason message for the status code.
-	Messages []string    // Any server messages attached to the Response.
-	Next     string      // A cursor to the next result set.
-	Results  interface{} // The actual results of the REST request.
+	Status   int         `json:"status"`   // HTTP status code.
+	Reason   string      `json:"reason"`   // Reason message for the status code.
+	Messages []string    `json:"messages"` // Any server messages attached to the Response.
+	Next     string      `json:"next"`     // A cursor to the next result set.
+	Results  interface{} `json:"results"`  // The actual results of the REST request.
+	Result   interface{} `json:"result"`   // The actual results of the REST request.
 }
 
 func (c *Client) decode(r io.Reader, want interface{}) (*BaseResponse, error) {
-	resp := &BaseResponse{Results: want}
+	resp := &BaseResponse{Results: want, Result: want}
 	err := json.NewDecoder(r).Decode(resp)
+	if err != nil {
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(r)
+		s := buf.String()
+		fmt.Println("Failure in decoding ", s)
+	}
 	return resp, err
 }
 
@@ -111,6 +119,48 @@ func (c *Client) do(method, urlStr string, params map[string]string) (*http.Resp
 	}
 
 	return c.Do(req)
+}
+
+func (c *Client) DoJson(method, urlStr string, data interface{}, responseType interface{}) (*BaseResponse, error) {
+	body, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(
+		method, urlStr, bytes.NewReader(body))
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Set up the form values and request method.
+	req.Method = method
+
+	// TODO: Find a way to push the encoding and authorization into the specific http methods themselves.
+	switch method {
+	//case GET, DELETE:
+	// Combine form and auth into the query string.
+	//req.URL.RawQuery = c.Authorize(urlStr, method, form).Encode()
+	case POST, PUT:
+		// Set the auth params in the query string.
+		req.URL.RawQuery = c.Authorize(urlStr, method, url.Values{}).Encode()
+		// Encode the form values as JSON and put them in the request body.
+
+		//req.Body = ioutil.NopCloser(bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+	}
+
+	response, err := c.Do(req)
+	if err != nil {
+		fmt.Println("Failure in request.")
+		return &BaseResponse{}, err
+	}
+
+	defer response.Body.Close()
+
+	b, _ := ioutil.ReadAll(response.Body)
+	return c.decode(bytes.NewReader(b), responseType)
 }
 
 func (c *Client) doJSON(method, url string, params map[string]string, entity interface{}) (*BaseResponse, error) {
