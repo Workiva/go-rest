@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 // Supported HTTP Methods
@@ -50,9 +51,13 @@ type Client struct {
 // NewClient returns a new Client using the provided Authorizer and http.DefaultClient
 // as the underlying http.Client.
 func NewClient(authorizer Authorizer) *Client {
+	timeout := time.Duration(55 * time.Second)
+	client := &http.Client{
+		Timeout: timeout,
+	}
 	return &Client{
 		authorizer,
-		http.DefaultClient,
+		client,
 	}
 }
 
@@ -157,8 +162,15 @@ func (c *Client) DoJson(method, urlStr string, data interface{}, responseType in
 		return &BaseResponse{}, err
 	}
 
+	if response.StatusCode < 200 || response.StatusCode > 299 {
+		// TODO: Decode body as string and put it in.
+		resp := &BaseResponse{Status: response.StatusCode}
+		return resp, err
+	}
+
 	defer response.Body.Close()
 
+	// TODO: Check status code and only do this if a 200.
 	b, _ := ioutil.ReadAll(response.Body)
 	return c.decode(bytes.NewReader(b), responseType)
 }
