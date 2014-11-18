@@ -26,7 +26,7 @@ func TestClientGet(t *testing.T) {
 	mockResponse := &Response{}
 	mockDo := func(c *http.Client, m, u string, b interface{}, h http.Header) (*Response, error) {
 		assert.Equal(httpClient, c)
-		assert.Equal(GET, m)
+		assert.Equal(httpGet, m)
 		assert.Nil(b)
 		assert.Equal(header, h)
 		assert.Equal(url, u)
@@ -56,7 +56,7 @@ func TestClientPost(t *testing.T) {
 	mockResponse := &Response{}
 	mockDo := func(c *http.Client, m, u string, b interface{}, h http.Header) (*Response, error) {
 		assert.Equal(httpClient, c)
-		assert.Equal(POST, m)
+		assert.Equal(httpPost, m)
 		assert.Equal(body, b)
 		assert.Equal(header, h)
 		assert.Equal(url, u)
@@ -86,7 +86,7 @@ func TestClientPut(t *testing.T) {
 	mockResponse := &Response{}
 	mockDo := func(c *http.Client, m, u string, b interface{}, h http.Header) (*Response, error) {
 		assert.Equal(httpClient, c)
-		assert.Equal(PUT, m)
+		assert.Equal(httpPut, m)
 		assert.Equal(body, b)
 		assert.Equal(header, h)
 		assert.Equal(url, u)
@@ -115,7 +115,7 @@ func TestClientDelete(t *testing.T) {
 	mockResponse := &Response{}
 	mockDo := func(c *http.Client, m, u string, b interface{}, h http.Header) (*Response, error) {
 		assert.Equal(httpClient, c)
-		assert.Equal(DELETE, m)
+		assert.Equal(httpDelete, m)
 		assert.Nil(b)
 		assert.Equal(header, h)
 		assert.Equal(url, u)
@@ -137,13 +137,13 @@ func TestClientDelete(t *testing.T) {
 // marshalable.
 func TestDoInvalidBody(t *testing.T) {
 	var body interface{}
-	_, err := do(http.DefaultClient, POST, "http://localhost", body, nil)
+	_, err := do(http.DefaultClient, httpPost, "http://localhost", body, nil)
 	assert.Error(t, err)
 }
 
 // Ensures that do returns an error if the request fails.
 func TestDoBadRequest(t *testing.T) {
-	_, err := do(http.DefaultClient, GET, "blah", nil, nil)
+	_, err := do(http.DefaultClient, httpGet, "blah", nil, nil)
 	assert.Error(t, err)
 }
 
@@ -156,7 +156,7 @@ func TestDoNotFound(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	resp, err := do(http.DefaultClient, GET, ts.URL, nil, nil)
+	resp, err := do(http.DefaultClient, httpGet, ts.URL, nil, nil)
 
 	if assert.NotNil(resp) {
 		assert.Equal(http.StatusNotFound, resp.Status)
@@ -179,7 +179,7 @@ func TestDoBadResponse(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	_, err := do(http.DefaultClient, GET, ts.URL, nil, nil)
+	_, err := do(http.DefaultClient, httpGet, ts.URL, nil, nil)
 
 	assert.NotNil(err)
 }
@@ -202,7 +202,7 @@ func TestDoDecodeResults(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	resp, err := do(http.DefaultClient, GET, ts.URL, nil, nil)
+	resp, err := do(http.DefaultClient, httpGet, ts.URL, nil, nil)
 
 	if assert.NotNil(resp) {
 		assert.Equal(http.StatusOK, resp.Status)
@@ -238,7 +238,7 @@ func TestDoDecodeResult(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	resp, err := do(http.DefaultClient, GET, ts.URL, nil, nil)
+	resp, err := do(http.DefaultClient, httpGet, ts.URL, nil, nil)
 
 	if assert.NotNil(resp) {
 		assert.Equal(http.StatusOK, resp.Status)

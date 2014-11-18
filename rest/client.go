@@ -9,10 +9,10 @@ import (
 
 // Supported HTTP Methods
 const (
-	DELETE = "DELETE"
-	GET    = "GET"
-	POST   = "POST"
-	PUT    = "PUT"
+	httpDelete = "DELETE"
+	httpGet    = "GET"
+	httpPost   = "POST"
+	httpPut    = "PUT"
 )
 
 // Client is the type that encapsulates and uses the Authorizer to sign any REST
@@ -33,22 +33,22 @@ type Response struct {
 
 // Get will perform an HTTP GET on the specified URL and return the response.
 func (c *Client) Get(url string, header http.Header) (*Response, error) {
-	return do(c.Client, GET, url, nil, header)
+	return do(c.Client, httpGet, url, nil, header)
 }
 
 // Post will perform an HTTP POST on the specified URL and return the response.
 func (c *Client) Post(url string, body interface{}, header http.Header) (*Response, error) {
-	return do(c.Client, POST, url, body, header)
+	return do(c.Client, httpPost, url, body, header)
 }
 
 // Put will perform an HTTP PUT on the specified URL and return the response.
 func (c *Client) Put(url string, body interface{}, header http.Header) (*Response, error) {
-	return do(c.Client, PUT, url, body, header)
+	return do(c.Client, httpPut, url, body, header)
 }
 
 // Delete will perform an HTTP DELETE on the specified URL and return the response.
 func (c *Client) Delete(url string, header http.Header) (*Response, error) {
-	return do(c.Client, DELETE, url, nil, header)
+	return do(c.Client, httpDelete, url, nil, header)
 }
 
 var do = func(c *http.Client, method, url string, body interface{}, header http.Header) (*Response, error) {
@@ -64,7 +64,7 @@ var do = func(c *http.Client, method, url string, body interface{}, header http.
 	req.Header = header
 
 	switch method {
-	case POST, PUT:
+	case httpPost, httpPut:
 		body, err := json.Marshal(body)
 		if err != nil {
 			return nil, err
