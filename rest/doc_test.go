@@ -266,8 +266,8 @@ func TestGenerateDocsHandlesBadTemplate(t *testing.T) {
 	mockParser := new(mockTemplateParser)
 	mockContextGenerator := new(mockContextGenerator)
 	mockDocWriter := new(mockDocWriter)
-	mockParser.On("parse", IndexTemplate).Return(nil, fmt.Errorf("error"))
-	mockParser.On("parse", HandlerTemplate).Return(nil, fmt.Errorf("error"))
+	mockParser.On("parse", indexTemplate).Return(nil, fmt.Errorf("error"))
+	mockParser.On("parse", handlerTemplate).Return(nil, fmt.Errorf("error"))
 	mockDocWriter.On("mkdir", "_docs/", 0777).Return(nil)
 	docGenerator := &docGenerator{mockParser, mockContextGenerator, mockDocWriter}
 
@@ -306,8 +306,8 @@ func TestGenerateDocsWriteFail(t *testing.T) {
 	mockIndexTemplate := new(mockTemplateRenderer)
 	mockHandlerTemplate := new(mockTemplateRenderer)
 
-	mockParser.On("parse", IndexTemplate).Return(mockIndexTemplate, nil)
-	mockParser.On("parse", HandlerTemplate).Return(mockHandlerTemplate, nil)
+	mockParser.On("parse", indexTemplate).Return(mockIndexTemplate, nil)
+	mockParser.On("parse", handlerTemplate).Return(mockHandlerTemplate, nil)
 
 	fooV1Rendered := "foov1"
 	barV1Rendered := "barv1"
@@ -361,7 +361,7 @@ func TestGenerateDocsGenerateFail(t *testing.T) {
 	mockDocWriter := new(mockDocWriter)
 	mockHandlerTemplate := new(mockTemplateRenderer)
 
-	mockParser.On("parse", HandlerTemplate).Return(mockHandlerTemplate, nil)
+	mockParser.On("parse", handlerTemplate).Return(mockHandlerTemplate, nil)
 
 	fooV1Rendered := "foov1"
 	mockHandlerTemplate.On("render", fooV1Context).Return(fooV1Rendered).Once()
@@ -393,8 +393,8 @@ func TestGenerateDocsHappyPath(t *testing.T) {
 	mockIndexTemplate := new(mockTemplateRenderer)
 	mockHandlerTemplate := new(mockTemplateRenderer)
 
-	mockParser.On("parse", IndexTemplate).Return(mockIndexTemplate, nil)
-	mockParser.On("parse", HandlerTemplate).Return(mockHandlerTemplate, nil)
+	mockParser.On("parse", indexTemplate).Return(mockIndexTemplate, nil)
+	mockParser.On("parse", handlerTemplate).Return(mockHandlerTemplate, nil)
 
 	fooV1Rendered := "foov1"
 	barV1Rendered := "barv1"
