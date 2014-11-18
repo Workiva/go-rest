@@ -1,116 +1,257 @@
 package rest
 
 import (
-	"fmt"
-	"math/rand"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
-	"strconv"
 	"testing"
-	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
-type testObj struct{ Prop string }
-
-type testAuthorizer struct{ key, secret string }
-
-// Authorize will provide a testing specific authorization without
-// actually signing the request.
-func (tc testAuthorizer) Authorize(urlStr string, requestType string, form url.Values) url.Values {
-	baseParams := map[string]string{
-		"oauth_consumer_key":     tc.key,
-		"oauth_signature_method": "HMAC-SHA1",
-		"oauth_timestamp":        strconv.FormatInt(time.Now().Unix(), 10),
-		"oauth_version":          "1.0",
-		"oauth_nonce":            strconv.FormatInt(rand.Int63(), 10),
+func newMockDo(response *Response, err error) func(*http.Client, string, interface{}, http.Header) (*Response, error) {
+	return func(*http.Client, string, interface{}, http.Header) (*Response, error) {
+		return response, err
 	}
-	for param, value := range baseParams {
-		form.Set(param, value)
-	}
-	result := requestType + "&" + url.QueryEscape(urlStr)
-	baseString := result + "&" + url.QueryEscape(form.Encode())
-	form.Set("oauth_signature", baseString)
-	return form
 }
 
-func TestJSONMethods(t *testing.T) {
-	returnJSON := `{"Status": 200, "Reason": "", "Messages": [], "Next": "", "Results": {"Prop": "a"}}`
-
-	formData := map[string]string{
-		"oauth_consumer_key":     "token",
-		"oauth_signature_method": "HMAC-SHA1",
-		"oauth_version":          "1.0",
+// Ensures that Get invokes do with the correct HTTP client, method, url and
+// header.
+func TestClientGet(t *testing.T) {
+	assert := assert.New(t)
+	httpClient := http.DefaultClient
+	client := &Client{httpClient}
+	header := http.Header{}
+	url := "http://localhost"
+	mockResponse := &Response{}
+	mockDo := func(c *http.Client, m, u string, b interface{}, h http.Header) (*Response, error) {
+		assert.Equal(httpClient, c)
+		assert.Equal(GET, m)
+		assert.Nil(b)
+		assert.Equal(header, h)
+		assert.Equal(url, u)
+		return mockResponse, nil
 	}
 
-	ts := httptest.NewServer(http.HandlerFunc(func(
-		w http.ResponseWriter, r *http.Request) {
+	before := do
+	do = mockDo
 
-		r.ParseForm()
+	resp, err := client.Get(url, header)
 
-		for _, prop := range []string{"oauth_nonce", "oauth_timestamp"} {
-			if _, ok := r.Form[prop]; !ok {
-				t.Errorf("Form property %s not found", prop)
-			}
-		}
+	assert.Equal(mockResponse, resp)
+	assert.Nil(err)
 
-		for key, value := range formData {
-			if r.Form[key][0] != value {
-				t.Errorf("Form data value %s, want %s", r.Form[key][0], value)
-			}
-		}
+	do = before
+}
 
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintln(w, returnJSON)
+// Ensures that Post invokes do with the correct HTTP client, method, url and
+// header.
+func TestClientPost(t *testing.T) {
+	assert := assert.New(t)
+	httpClient := http.DefaultClient
+	client := &Client{httpClient}
+	header := http.Header{}
+	url := "http://localhost"
+	body := "foo"
+	mockResponse := &Response{}
+	mockDo := func(c *http.Client, m, u string, b interface{}, h http.Header) (*Response, error) {
+		assert.Equal(httpClient, c)
+		assert.Equal(POST, m)
+		assert.Equal(body, b)
+		assert.Equal(header, h)
+		assert.Equal(url, u)
+		return mockResponse, nil
+	}
+
+	before := do
+	do = mockDo
+
+	resp, err := client.Post(url, body, header)
+
+	assert.Equal(mockResponse, resp)
+	assert.Nil(err)
+
+	do = before
+}
+
+// Ensures that Put invokes do with the correct HTTP client, method, url and
+// header.
+func TestClientPut(t *testing.T) {
+	assert := assert.New(t)
+	httpClient := http.DefaultClient
+	client := &Client{httpClient}
+	header := http.Header{}
+	url := "http://localhost"
+	body := "foo"
+	mockResponse := &Response{}
+	mockDo := func(c *http.Client, m, u string, b interface{}, h http.Header) (*Response, error) {
+		assert.Equal(httpClient, c)
+		assert.Equal(PUT, m)
+		assert.Equal(body, b)
+		assert.Equal(header, h)
+		assert.Equal(url, u)
+		return mockResponse, nil
+	}
+
+	before := do
+	do = mockDo
+
+	resp, err := client.Put(url, body, header)
+
+	assert.Equal(mockResponse, resp)
+	assert.Nil(err)
+
+	do = before
+}
+
+// Ensures that Delete invokes do with the correct HTTP client, method, url and
+// header.
+func TestClientDelete(t *testing.T) {
+	assert := assert.New(t)
+	httpClient := http.DefaultClient
+	client := &Client{httpClient}
+	header := http.Header{}
+	url := "http://localhost"
+	mockResponse := &Response{}
+	mockDo := func(c *http.Client, m, u string, b interface{}, h http.Header) (*Response, error) {
+		assert.Equal(httpClient, c)
+		assert.Equal(DELETE, m)
+		assert.Nil(b)
+		assert.Equal(header, h)
+		assert.Equal(url, u)
+		return mockResponse, nil
+	}
+
+	before := do
+	do = mockDo
+
+	resp, err := client.Delete(url, header)
+
+	assert.Equal(mockResponse, resp)
+	assert.Nil(err)
+
+	do = before
+}
+
+// Ensures that do returns an error if the POST/PUT body is not JSON-
+// marshalable.
+func TestDoInvalidBody(t *testing.T) {
+	var body interface{}
+	_, err := do(http.DefaultClient, POST, "http://localhost", body, nil)
+	assert.Error(t, err)
+}
+
+// Ensures that do returns an error if the request fails.
+func TestDoBadRequest(t *testing.T) {
+	_, err := do(http.DefaultClient, GET, "blah", nil, nil)
+	assert.Error(t, err)
+}
+
+// Ensures that do returns a Response with a 404 code and the error is nil
+// when a 404 response is received.
+func TestDoNotFound(t *testing.T) {
+	assert := assert.New(t)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
 	}))
-
 	defer ts.Close()
 
-	var c = NewClient(testAuthorizer{
-		"token",
-		"value",
-	})
+	resp, err := do(http.DefaultClient, GET, ts.URL, nil, nil)
 
-	testObj := testObj{}
-	fs := []func() (*BaseResponse, error){
-		func() (*BaseResponse, error) {
-			return c.GetJSON(ts.URL, nil, &testObj)
-		},
-		func() (*BaseResponse, error) {
-			return c.DeleteJSON(ts.URL, nil, &testObj)
-		},
-		func() (*BaseResponse, error) {
-			return c.PutJSON(ts.URL, nil, &testObj)
-		},
-		func() (*BaseResponse, error) {
-			return c.PostJSON(ts.URL, nil, &testObj)
-		},
+	if assert.NotNil(resp) {
+		assert.Equal(http.StatusNotFound, resp.Status)
+		assert.Equal(http.StatusText(http.StatusNotFound), resp.Reason)
+		assert.Equal([]string{}, resp.Messages)
+		assert.Equal("", resp.Next)
+		assert.NotNil(resp.Raw)
+		assert.Nil(resp.Result)
 	}
 
-	for _, f := range fs {
-		resp, err := f()
-		if err != nil {
-			t.Errorf("Error in request: %s\n", err)
-		}
+	assert.Nil(err)
+}
 
-		if resp.Status != 200 {
-			t.Errorf("REST response status %d, want %d", resp.Status, 200)
-		}
+// Ensures that do returns an error when the response is not valid JSON.
+func TestDoBadResponse(t *testing.T) {
+	assert := assert.New(t)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"foo":`))
+	}))
+	defer ts.Close()
 
-		if resp.Reason != "" {
-			t.Errorf("REST response reason %s, want %s", resp.Reason, "")
-		}
+	_, err := do(http.DefaultClient, GET, ts.URL, nil, nil)
 
-		if len(resp.Messages) != 0 {
-			t.Errorf("REST response message count %d, want %d", len(resp.Messages), 0)
-		}
+	assert.NotNil(err)
+}
 
-		if resp.Next != "" {
-			t.Errorf("REST response next %s, want %s", resp.Next, "")
+// Ensures that do returns a Response with the result decoded correctly for
+// "list" endpoints ("results" key).
+func TestDoDecodeResults(t *testing.T) {
+	assert := assert.New(t)
+	entity := map[string]interface{}{"foo": 1, "bar": "baz"}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		response := Payload{
+			status:   http.StatusOK,
+			reason:   http.StatusText(http.StatusOK),
+			messages: []string{},
+			results:  []interface{}{entity},
 		}
+		responseJSON, _ := json.Marshal(response)
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseJSON)
+	}))
+	defer ts.Close()
 
-		if testObj.Prop != "a" {
-			t.Errorf("testObj prop %s, want %s", testObj.Prop, "a")
+	resp, err := do(http.DefaultClient, GET, ts.URL, nil, nil)
+
+	if assert.NotNil(resp) {
+		assert.Equal(http.StatusOK, resp.Status)
+		assert.Equal(http.StatusText(http.StatusOK), resp.Reason)
+		assert.Equal([]string{}, resp.Messages)
+		assert.Equal("", resp.Next)
+		assert.NotNil(resp.Raw)
+		if assert.NotNil(resp.Result) {
+			m := resp.Result.([]interface{})[0].(map[string]interface{})
+			assert.Equal(1, m["foo"])
+			assert.Equal("baz", m["bar"])
 		}
 	}
+
+	assert.Nil(err)
+}
+
+// Ensures that do returns a Response with the result decoded correctly for
+// "non-list" endpoints ("result" key).
+func TestDoDecodeResult(t *testing.T) {
+	assert := assert.New(t)
+	entity := map[string]interface{}{"foo": 1, "bar": "baz"}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		response := Payload{
+			status:   http.StatusOK,
+			reason:   http.StatusText(http.StatusOK),
+			messages: []string{},
+			result:   entity,
+		}
+		responseJSON, _ := json.Marshal(response)
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseJSON)
+	}))
+	defer ts.Close()
+
+	resp, err := do(http.DefaultClient, GET, ts.URL, nil, nil)
+
+	if assert.NotNil(resp) {
+		assert.Equal(http.StatusOK, resp.Status)
+		assert.Equal(http.StatusText(http.StatusOK), resp.Reason)
+		assert.Equal([]string{}, resp.Messages)
+		assert.Equal("", resp.Next)
+		assert.NotNil(resp.Raw)
+		if assert.NotNil(resp.Result) {
+			m := resp.Result.(map[string]interface{})
+			assert.Equal(1, m["foo"])
+			assert.Equal("baz", m["bar"])
+		}
+	}
+
+	assert.Nil(err)
 }
