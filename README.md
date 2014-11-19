@@ -13,8 +13,7 @@ See the examples to get started.
 
 # Client
 
-The rest package also contains a client implementation for consuming REST APIs.  It
-includes pluggable request authorization and response deserialization.
+The rest package also contains a client implementation for consuming REST APIs.
 
 NOTICE
 ------
