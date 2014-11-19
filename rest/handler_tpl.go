@@ -1,7 +1,7 @@
 package rest
 
-// HandlerTemplate is the mustache template for the handler documentation.
-const HandlerTemplate = `
+// handlerTemplate is the mustache template for the handler documentation.
+const handlerTemplate = `
 <!DOCTYPE HTML>
 <html lang="en">
     <head>

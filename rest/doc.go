@@ -149,7 +149,7 @@ func (d *docGenerator) generateDocs(api API) error {
 func (d *docGenerator) generateIndexDocs(docs map[string][]handlerDoc, versions []string,
 	dir string) error {
 
-	tpl, err := d.parse(IndexTemplate)
+	tpl, err := d.parse(indexTemplate)
 	if err != nil {
 		return err
 	}
@@ -174,7 +174,7 @@ func (d *docGenerator) generateIndexDocs(docs map[string][]handlerDoc, versions 
 func (d *docGenerator) generateHandlerDoc(handler ResourceHandler, version,
 	dir string) (handlerDoc, error) {
 
-	tpl, err := d.parse(HandlerTemplate)
+	tpl, err := d.parse(handlerTemplate)
 	if err != nil {
 		return nil, err
 	}
