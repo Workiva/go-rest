@@ -34,4 +34,8 @@ We make extensive use of this documentation for several reasons. First, it acts 
 
 # Going Forward
 
-go-rest serves as a foundational piece for building production-quality REST APIs in Go. It lays much of the groundwork needed and allows for more rapid development. REST rules provide a convenient way to maintain endpoints. While they offer a great deal of value already, there is more work to be done in order to make them even more useful. This includes pluggable type coercion, which would allow for conversion and validation of custom types. Another item which should be addressed is making the data validation more robust. Whether a custom-written or pre-existing library is used, this would enable semantic validation and custom validation logic. Currently, rules only provide type validation.
+go-rest serves as a foundational piece for building production-quality REST APIs and is intended to fit into existing applications. It lays much of the groundwork needed and allows for more frictionless development.
+
+REST rules provide a convenient way to maintain endpoints. While they offer a great deal of value already, there is more work to be done in order to make them even more useful. This includes pluggable type coercion, which would allow for conversion and validation of custom types. Another item is making the data validation more robust. Whether a custom-written or pre-existing library is used, this would enable semantic validation and custom validation logic. Currently, rules only provide type validation.
+
+Further work might include building a test-harness system to speed up unit and integration testing.
