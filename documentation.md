@@ -6,7 +6,7 @@ At Workiva, we require standardized REST endpoints across all our services. This
 
 go-rest provides the tooling to build RESTful services rapidly and in a way that meets our internal API specification. Because it takes care of a lot of the boilerplate involved with building these types of services and offers some useful utilities, we're opening go-rest up to the open-source community. The remainder of this post explains go-rest in more detail, how it can be used to build REST APIs, and how we use it at Workiva.
 
-# Pluggability 
+# Composition and Extension 
 
 go-rest is designed to be composable and pluggable. It makes no assumptions about your stack and doesn't care what libraries you're using or what your data model looks like. This is important to us at Workiva because it means we don't dictate down to developers what they need to use to solve their problems or force any artificial design constraints. Some services are running on App Engine and use its datastore. Others run off App Engine and don't necessarily use the datastore for persistence or entity modeling. go-rest is suited to either situation.
 
@@ -14,10 +14,20 @@ Several pieces of go-rest are pluggable, meaning custom implementations can be p
 
 go-rest supports a notion of middleware, which are essentially just functions invoked on API requests. This has a wide range of application, ranging from authentication to logging and stats.
 
-# REST Rules
+# Building Stable APIs
 
 In order to provide fine-grained control over API input and output, go-rest uses a concept of REST rules. Rules provide schema validation and type coercion for request input and fine-grained control over response output. They can specify types in which input and output values should be coerced. If coercion fails, a meaningful error will be returned in the response.
 
 Rules provide further control in that they can be used to discard values. For example, input fields which don't have corresponding rules can be ignored. Likewise, output fields with no respective rules will be dropped from the response.
 
 A useful property of stable REST APIs is endpoint versioning. go-rest provides support for this idea, facilitating different codepath execution based on API versions. Furthermore, rules can be specified with versions, allowing for control over input and output of versioned endpoints. This prevents new fields from leaking into old API versions.
+
+We use a [SemVer](http://semver.org/)-like approach to managing endpoint versions. REST rules allow us to accomplish this quite easily. If endpoint stability isn't a concern, you can neglect to specify rule versions or simply return full resource representations. This can be useful for rapid prototyping.
+
+# Generating API Documentation
+
+Using the REST rules described above has a beneficial side effect: they provide a means of self-documentation. go-rest can use rules to generate documentation for your REST API. This documentation describes what endpoints are available and the payloads they expect, including what fields there are, which of these are required, and the expected types as well as what the response looks like. The beautiful thing is you get this all for *free*.
+
+We make extensive use of this documentation for several reasons. First, it acts as a contract for services. We write integration tests which verify our endpoints behave as they say they do. Second, they minimize unneeded communication between teams. We publish API documentation internally and people can look at this to understand how a service is used rather than going to the team directly. Third, and related to the first point, they promote building stable, high-quality APIs. By making this information visible, we expose the surface area of the API and document how it changes. This also forces teams to be held accountable for the services they provide.
+
+![Generated Documentation](https://github.com/Workiva/go-rest/raw/blog_post/docs_example.png)
