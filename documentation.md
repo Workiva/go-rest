@@ -12,11 +12,11 @@ go-rest is designed to be composable and pluggable. It makes no assumptions abou
 
 Several pieces of go-rest are pluggable, meaning custom implementations can be provided. JSON is arguably the most common serialization format for REST APIs and it's what we use at Workiva, so the framework ships with JSON response serialization out of the box. Other response serializers, e.g. YAML or XML, can be provided.
 
-go-rest supports a notion of middleware, which are essentially just functions invoked on API requests. This has a wide range of application, ranging from authentication to logging and stats.
+go-rest supports a notion of middleware, which are essentially just functions invoked on API requests. This has a wide range of application, ranging from authentication to logging and stats. For example, we use OAuth2 middleware to ensure authorized resource access.
 
 # Building Stable APIs
 
-In order to provide fine-grained control over API input and output, go-rest uses a concept of REST rules. Rules provide schema validation and type coercion for request input and fine-grained control over response output. They can specify types in which input and output values should be coerced. If coercion fails, a meaningful error will be returned in the response.
+In order to provide fine-grained control over API input and output, go-rest uses a concept of REST rules. Rules provide schema validation and type coercion for request input and fine-grained control over response output. They can specify types in which input and output values should be coerced. If coercion fails, a meaningful error will be returned in the response. Rule validation is also built in to ensure the names and types specified on rules match up with their corresponding struct properties.
 
 Rules provide further control in that they can be used to discard values. For example, input fields which don't have corresponding rules can be ignored. Likewise, output fields with no respective rules will be dropped from the response.
 
@@ -30,4 +30,8 @@ Using the REST rules described above has a beneficial side effect: they provide 
 
 We make extensive use of this documentation for several reasons. First, it acts as a contract for services. We write integration tests which verify our endpoints behave as they say they do. Second, they minimize unneeded communication between teams. We publish API documentation internally and people can look at this to understand how a service is used rather than going to the team directly. Third, and related to the first point, they promote building stable, high-quality APIs. By making this information visible, we expose the surface area of the API and document how it changes. This also forces teams to be held accountable for the services they provide.
 
-![Generated Documentation](https://github.com/Workiva/go-rest/raw/blog_post/docs_example.png)
+![Generated Documentation](docs_example.png)
+
+# Going Forward
+
+go-rest serves as a foundational piece for building production-quality REST APIs in Go. It lays much of the groundwork needed and allows for more rapid development. REST rules provide a convenient way to maintain endpoints. While they offer a great deal of value already, there is more work to be done in order to make them even more useful. This includes pluggable type coercion, which would allow for conversion and validation of custom types. Another item which should be addressed is making the data validation more robust. Whether a custom-written or pre-existing library is used, this would enable semantic validation and custom validation logic. Currently, rules only provide type validation.
