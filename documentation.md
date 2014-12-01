@@ -1,4 +1,4 @@
-# What is go-rest?
+# Introducing go-rest
 
 The goal of go-rest is to provide a framework that makes it easy to build a flexible and (mostly) unopinionated REST API with little ceremony. More important, it offers a way to build stable, resource-oriented REST endpoints which are production-ready.
 
@@ -8,4 +8,16 @@ go-rest provides the tooling to build RESTful services rapidly and in a way that
 
 # Pluggability 
 
-go-rest is designed to be composable and pluggable. It makes no assumptions about your stack and doesn't care what libraries you're using or what your data model looks like. This is important to us at Workiva because it means we don't dictate down to developers what they need to use to solve their problems or force any artificial design constraints. Some services are running on App Engine and use its datastore. Other services run off App Engine and don't necessarily use the datastore for persistence or entity modeling. go-rest is suited to either situation.
+go-rest is designed to be composable and pluggable. It makes no assumptions about your stack and doesn't care what libraries you're using or what your data model looks like. This is important to us at Workiva because it means we don't dictate down to developers what they need to use to solve their problems or force any artificial design constraints. Some services are running on App Engine and use its datastore. Others run off App Engine and don't necessarily use the datastore for persistence or entity modeling. go-rest is suited to either situation.
+
+Several pieces of go-rest are pluggable, meaning custom implementations can be provided. JSON is arguably the most common serialization format for REST APIs and it's what we use at Workiva, so the framework ships with JSON response serialization out of the box. Other response serializers, e.g. YAML or XML, can be provided.
+
+go-rest supports a notion of middleware, which are essentially just functions invoked on API requests. This has a wide range of application, ranging from authentication to logging and stats.
+
+# REST Rules
+
+In order to provide fine-grained control over API input and output, go-rest uses a concept of REST rules. Rules provide schema validation and type coercion for request input and fine-grained control over response output. They can specify types in which input and output values should be coerced. If coercion fails, a meaningful error will be returned in the response.
+
+Rules provide further control in that they can be used to discard values. For example, input fields which don't have corresponding rules can be ignored. Likewise, output fields with no respective rules will be dropped from the response.
+
+A useful property of stable REST APIs is endpoint versioning. go-rest provides support for this idea, facilitating different codepath execution based on API versions. Furthermore, rules can be specified with versions, allowing for control over input and output of versioned endpoints. This prevents new fields from leaking into old API versions.
