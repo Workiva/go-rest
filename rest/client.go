@@ -19,6 +19,7 @@ package rest
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"net/http"
 )
@@ -68,26 +69,27 @@ func (c *Client) Delete(url string, header http.Header) (*Response, error) {
 }
 
 var do = func(c *http.Client, method, url string, body interface{}, header http.Header) (*Response, error) {
-	req, err := http.NewRequest(method, url, nil)
-	if err != nil {
-		return nil, err
-	}
-
 	if header == nil {
 		header = http.Header{}
 	}
 
-	req.Header = header
-
+	var reqBody io.Reader
 	switch method {
 	case httpPost, httpPut:
 		body, err := json.Marshal(body)
 		if err != nil {
 			return nil, err
 		}
-		req.Body = ioutil.NopCloser(bytes.NewReader(body))
-		req.Header.Set("Content-Type", "application/json")
+		reqBody = bytes.NewReader(body)
+		header.Set("Content-Type", "application/json")
 	}
+
+	req, err := http.NewRequest(method, url, reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header = header
 
 	resp, err := c.Do(req)
 	if err != nil {
