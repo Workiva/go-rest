@@ -1,8 +1,16 @@
 # go-rest
 
-The goal of go-rest is to provide a framework that makes it easy to build a flexible and (mostly) unopinionated REST API with little ceremony. It offers tooling for creating stable, resource-oriented endpoints with fine-grained control over input and output fields. The go-rest framework is platform-agnostic, meaning it works both on- and off- App Engine, and pluggable in that it supports custom response serializers, middleware and authentication. It also includes a utility for generating API documentation.
+The goal of go-rest is to provide a framework that makes it easy to build a flexible and (mostly) unopinionated REST API with little ceremony. It offers tooling for creating stable, resource-oriented endpoints with fine-grained control over input and output fields. The go-rest framework is platform-agnostic, meaning it works both on- and off- App Engine, and pluggable in that it supports custom response serializers, middleware and authentication. It also includes a utility for generating API documentation. Refer to [documentation.md](documentation.md) for more of the motivation behind go-rest.
 
 See the examples to get started. Additionally, the `rest` package contains a simple client implementation for consuming go-rest APIs.
+
+For documentation, see [godoc](http://godoc.org/github.com/Workiva/go-rest/rest).
+
+## Installation
+
+```
+$ go get github.com/Workiva/go-rest/rest
+```
 
 ## Contributing
 
