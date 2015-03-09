@@ -226,7 +226,7 @@ func (r *muxAPI) preprocess() {
 	r.validateRulesOrPanic()
 	if r.config.GenerateDocs {
 		if err := newDocGenerator().generateDocs(r); err != nil {
-			log.Fatal(err)
+			log.Printf("documentation could not be generated: %v", err)
 		}
 	}
 }
