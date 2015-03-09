@@ -128,7 +128,7 @@ func (d *docGenerator) generateDocs(api API) error {
 		dir = dir + "/"
 	}
 
-	if err := d.mkdir(dir, 0777); err != nil {
+	if err := d.mkdir(dir, os.FileMode(0777)); err != nil {
 		api.Configuration().Logger.Println(err)
 		return err
 	}
