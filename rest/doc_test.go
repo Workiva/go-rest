@@ -284,7 +284,7 @@ func TestGenerateDocsHandlesBadTemplate(t *testing.T) {
 	mockDocWriter := new(mockDocWriter)
 	mockParser.On("parse", indexTemplate).Return(nil, fmt.Errorf("error"))
 	mockParser.On("parse", handlerTemplate).Return(nil, fmt.Errorf("error"))
-	mockDocWriter.On("mkdir", "_docs/", 0777).Return(nil)
+	mockDocWriter.On("mkdir", "_docs/", os.FileMode(0777)).Return(nil)
 	docGenerator := &docGenerator{mockParser, mockContextGenerator, mockDocWriter}
 
 	assert.NotNil(docGenerator.generateDocs(api), "Return value should not be nil")
@@ -297,7 +297,7 @@ func TestGenerateDocsHandlesDirectoryFail(t *testing.T) {
 	mockParser := new(mockTemplateParser)
 	mockContextGenerator := new(mockContextGenerator)
 	mockDocWriter := new(mockDocWriter)
-	mockDocWriter.On("mkdir", "_docs/", 0777).Return(fmt.Errorf("error"))
+	mockDocWriter.On("mkdir", "_docs/", os.FileMode(0777)).Return(fmt.Errorf("error"))
 	docGenerator := &docGenerator{mockParser, mockContextGenerator, mockDocWriter}
 
 	assert.NotNil(docGenerator.generateDocs(api), "Return value should not be nil")
@@ -352,11 +352,11 @@ func TestGenerateDocsWriteFail(t *testing.T) {
 	mockIndexTemplate.On("render", indexV1Context).Return(indexV1Rendered).Once()
 	mockIndexTemplate.On("render", indexV2Context).Return(indexV2Rendered).Once()
 
-	mockDocWriter.On("mkdir", "_docs/", 0777).Return(nil)
-	mockDocWriter.On("write", "_docs/fooresource_v1.html", []byte(fooV1Rendered), 0644).Return(nil)
-	mockDocWriter.On("write", "_docs/barresource_v1.html", []byte(barV1Rendered), 0644).Return(nil)
-	mockDocWriter.On("write", "_docs/barresource_v2.html", []byte(barV2Rendered), 0644).Return(nil)
-	mockDocWriter.On("write", "_docs/index_v1.html", []byte(indexV1Rendered), 0644).Return(fmt.Errorf("error"))
+	mockDocWriter.On("mkdir", "_docs/", os.FileMode(0777)).Return(nil)
+	mockDocWriter.On("write", "_docs/fooresource_v1.html", []byte(fooV1Rendered), os.FileMode(0644)).Return(nil)
+	mockDocWriter.On("write", "_docs/barresource_v1.html", []byte(barV1Rendered), os.FileMode(0644)).Return(nil)
+	mockDocWriter.On("write", "_docs/barresource_v2.html", []byte(barV2Rendered), os.FileMode(0644)).Return(nil)
+	mockDocWriter.On("write", "_docs/index_v1.html", []byte(indexV1Rendered), os.FileMode(0644)).Return(fmt.Errorf("error"))
 
 	docGenerator := &docGenerator{mockParser, mockContextGenerator, mockDocWriter}
 
@@ -382,8 +382,8 @@ func TestGenerateDocsGenerateFail(t *testing.T) {
 	fooV1Rendered := "foov1"
 	mockHandlerTemplate.On("render", fooV1Context).Return(fooV1Rendered).Once()
 
-	mockDocWriter.On("mkdir", "_docs/", 0777).Return(nil)
-	mockDocWriter.On("write", "_docs/fooresource_v1.html", []byte(fooV1Rendered), 0644).Return(nil)
+	mockDocWriter.On("mkdir", "_docs/", os.FileMode(0777)).Return(nil)
+	mockDocWriter.On("write", "_docs/fooresource_v1.html", []byte(fooV1Rendered), os.FileMode(0644)).Return(nil)
 
 	docGenerator := &docGenerator{mockParser, mockContextGenerator, mockDocWriter}
 
@@ -439,12 +439,12 @@ func TestGenerateDocsHappyPath(t *testing.T) {
 	mockIndexTemplate.On("render", indexV1Context).Return(indexV1Rendered).Once()
 	mockIndexTemplate.On("render", indexV2Context).Return(indexV2Rendered).Once()
 
-	mockDocWriter.On("mkdir", "_docs/", 0777).Return(nil)
-	mockDocWriter.On("write", "_docs/fooresource_v1.html", []byte(fooV1Rendered), 0644).Return(nil)
-	mockDocWriter.On("write", "_docs/barresource_v1.html", []byte(barV1Rendered), 0644).Return(nil)
-	mockDocWriter.On("write", "_docs/barresource_v2.html", []byte(barV2Rendered), 0644).Return(nil)
-	mockDocWriter.On("write", "_docs/index_v1.html", []byte(indexV1Rendered), 0644).Return(nil)
-	mockDocWriter.On("write", "_docs/index_v2.html", []byte(indexV2Rendered), 0644).Return(nil)
+	mockDocWriter.On("mkdir", "_docs/", os.FileMode(0777)).Return(nil)
+	mockDocWriter.On("write", "_docs/fooresource_v1.html", []byte(fooV1Rendered), os.FileMode(0644)).Return(nil)
+	mockDocWriter.On("write", "_docs/barresource_v1.html", []byte(barV1Rendered), os.FileMode(0644)).Return(nil)
+	mockDocWriter.On("write", "_docs/barresource_v2.html", []byte(barV2Rendered), os.FileMode(0644)).Return(nil)
+	mockDocWriter.On("write", "_docs/index_v1.html", []byte(indexV1Rendered), os.FileMode(0644)).Return(nil)
+	mockDocWriter.On("write", "_docs/index_v2.html", []byte(indexV2Rendered), os.FileMode(0644)).Return(nil)
 
 	docGenerator := &docGenerator{mockParser, mockContextGenerator, mockDocWriter}
 
