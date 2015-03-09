@@ -21,7 +21,8 @@ import "gopkg.in/yaml.v1"
 // YAMLSerializer implements the ResponseSerializer interface.
 type YAMLSerializer struct{}
 
-// Serialize marshals a response payload into a byte slice to be sent over the wire.
+// Serialize marshals a response payload into a byte slice to be sent over the
+// wire.
 func (y YAMLSerializer) Serialize(p Payload) ([]byte, error) {
 	return yaml.Marshal(p)
 }
@@ -31,10 +32,10 @@ func (y YAMLSerializer) ContentType() string {
 	return "text/yaml"
 }
 
-// This example shows how to implement a custom ResponseSerializer. The format responses
-// are sent in is specified by the "format" query string parameter. By default, json is
-// the only available format, but the ResponseSerializer interface allows different
-// formats to be implemented.
+// This example shows how to implement a custom ResponseSerializer. The format
+// responses are sent in is specified by the "format" query string parameter. By
+// default, json is the only available format, but the ResponseSerializer
+// interface allows different formats to be implemented.
 func Example_responseSerializer() {
 	api := NewAPI(NewConfiguration())
 

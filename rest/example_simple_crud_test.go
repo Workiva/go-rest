@@ -23,30 +23,31 @@ import (
 	"strconv"
 )
 
-// FooResource represents a domain model for which we want to perform CRUD operations with.
-// Endpoints can operate on any type of entity -- primitive, struct, or composite -- so long
-// as it is serializable (by default, this means JSON-serializable via either MarshalJSON
-// or JSON struct tags).
+// FooResource represents a domain model for which we want to perform CRUD
+// operations with. Endpoints can operate on any type of entity -- primitive,
+// struct, or composite -- so long as it is serializable (by default, this means
+// JSON-serializable via either MarshalJSON or JSON struct tags).
 type FooResource struct {
 	ID     int    `json:"id"`
 	Foobar string `json:"foobar"`
 }
 
-// FooHandler implements the ResourceHandler interface. It specifies the business
-// logic for performing CRUD operations.
+// FooHandler implements the ResourceHandler interface. It specifies the
+// business logic for performing CRUD operations.
 type FooHandler struct {
 	BaseResourceHandler
 }
 
-// ResourceName is used to identify what resource a handler corresponds to and is used
-// in the endpoint URLs, i.e. /api/:version/foo.
+// ResourceName is used to identify what resource a handler corresponds to and
+// is used in the endpoint URLs, i.e. /api/:version/foo.
 func (f FooHandler) ResourceName() string {
 	return "foo"
 }
 
 // CreateResource is the logic that corresponds to creating a new resource at
-// POST /api/:version/foo. Typically, this would insert a record into a database.
-// It returns the newly created resource or an error if the create failed.
+// POST /api/:version/foo. Typically, this would insert a record into a
+// database. It returns the newly created resource or an error if the create
+// failed.
 func (f FooHandler) CreateResource(ctx RequestContext, data Payload,
 	version string) (Resource, error) {
 	// Make a database call here.
@@ -56,10 +57,10 @@ func (f FooHandler) CreateResource(ctx RequestContext, data Payload,
 	return created, nil
 }
 
-// ReadResource is the logic that corresponds to reading a single resource by its ID at
-// GET /api/:version/foo/{id}. Typically, this would make some sort of database query to
-// load the resource. If the resource doesn't exist, nil should be returned along with
-// an appropriate error.
+// ReadResource is the logic that corresponds to reading a single resource by
+// its ID at GET /api/:version/foo/{id}. Typically, this would make some sort of
+// database query to load the resource. If the resource doesn't exist, nil
+// should be returned along with an appropriate error.
 func (f FooHandler) ReadResource(ctx RequestContext, id string,
 	version string) (Resource, error) {
 	// Make a database call here.
@@ -69,11 +70,11 @@ func (f FooHandler) ReadResource(ctx RequestContext, id string,
 	return nil, ResourceNotFound(fmt.Sprintf("No resource with id %s", id))
 }
 
-// ReadResourceList is the logic that corresponds to reading multiple resources, perhaps
-// with specified query parameters accessed through the RequestContext. This is
-// mapped to GET /api/:version/foo. Typically, this would make some sort of database query
-// to fetch the resources. It returns the slice of results, a cursor (or empty) string,
-// and error (or nil).
+// ReadResourceList is the logic that corresponds to reading multiple resources,
+// perhaps with specified query parameters accessed through the RequestContext.
+// This is mapped to GET /api/:version/foo. Typically, this would make some sort
+// of database query to fetch the resources. It returns the slice of results, a
+// cursor (or empty) string, and error (or nil).
 func (f FooHandler) ReadResourceList(ctx RequestContext, limit int,
 	cursor string, version string) ([]Resource, string, error) {
 	// Make a database call here.
@@ -83,9 +84,10 @@ func (f FooHandler) ReadResourceList(ctx RequestContext, limit int,
 	return resources, "", nil
 }
 
-// UpdateResource is the logic that corresponds to updating an existing resource at
-// PUT /api/:version/foo/{id}. Typically, this would make some sort of database update
-// call. It returns the updated resource or an error if the update failed.
+// UpdateResource is the logic that corresponds to updating an existing resource
+// at PUT /api/:version/foo/{id}. Typically, this would make some sort of
+// database update call. It returns the updated resource or an error if the
+// update failed.
 func (f FooHandler) UpdateResource(ctx RequestContext, id string, data Payload,
 	version string) (Resource, error) {
 	// Make a database call here.
@@ -95,9 +97,10 @@ func (f FooHandler) UpdateResource(ctx RequestContext, id string, data Payload,
 	return foo, nil
 }
 
-// DeleteResource is the logic that corresponds to deleting an existing resource at
-// DELETE /api/:version/foo/{id}. Typically, this would make some sort of database
-// delete call. It returns the deleted resource or an error if the delete failed.
+// DeleteResource is the logic that corresponds to deleting an existing resource
+// at DELETE /api/:version/foo/{id}. Typically, this would make some sort of
+// database delete call. It returns the deleted resource or an error if the
+// delete failed.
 func (f FooHandler) DeleteResource(ctx RequestContext, id string,
 	version string) (Resource, error) {
 	// Make a database call here.
@@ -106,10 +109,11 @@ func (f FooHandler) DeleteResource(ctx RequestContext, id string,
 	return foo, nil
 }
 
-// Authenticate is logic that is used to authenticate requests. The default behavior
-// of Authenticate, seen in BaseResourceHandler, always returns nil, meaning
-// all requests are authenticated. Returning an error means that the request is
-// unauthorized and any error message will be sent back with the response.
+// Authenticate is logic that is used to authenticate requests. The default
+// behavior of Authenticate, seen in BaseResourceHandler, always returns nil,
+// meaning all requests are authenticated. Returning an error means that the
+// request is unauthorized and any error message will be sent back with the
+// response.
 func (f FooHandler) Authenticate(r *http.Request) error {
 	if secrets, ok := r.Header["Authorization"]; ok {
 		if secrets[0] == "secret" {
@@ -120,8 +124,8 @@ func (f FooHandler) Authenticate(r *http.Request) error {
 	return UnauthorizedRequest("You shall not pass")
 }
 
-// This example shows how to fully implement a basic ResourceHandler for performing
-// CRUD operations.
+// This example shows how to fully implement a basic ResourceHandler for
+// performing CRUD operations.
 func Example_simpleCrud() {
 	api := NewAPI(NewConfiguration())
 
