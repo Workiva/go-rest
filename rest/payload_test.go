@@ -53,7 +53,7 @@ func TestGetIntBadValue(t *testing.T) {
 
 	actual, err := payload.GetInt("foo")
 
-	assert.Equal(0, actual, "Incorrect return value")
+	assert.Equal(int(0), actual, "Incorrect return value")
 	assert.Equal(fmt.Errorf("Value with key 'foo' not an int"), err, "Incorrect error value")
 }
 
@@ -141,7 +141,7 @@ func TestGetInt64BadValue(t *testing.T) {
 
 	actual, err := payload.GetInt64("foo")
 
-	assert.Equal(0, actual, "Incorrect return value")
+	assert.Equal(int64(0), actual, "Incorrect return value")
 	assert.Equal(fmt.Errorf("Value with key 'foo' not an int64"), err, "Incorrect error value")
 }
 
@@ -163,7 +163,7 @@ func TestGetUintBadValue(t *testing.T) {
 
 	actual, err := payload.GetUint("foo")
 
-	assert.Equal(0, actual, "Incorrect return value")
+	assert.Equal(uint(0), actual, "Incorrect return value")
 	assert.Equal(fmt.Errorf("Value with key 'foo' not a uint"), err, "Incorrect error value")
 }
 
@@ -185,7 +185,7 @@ func TestGetUint8BadValue(t *testing.T) {
 
 	actual, err := payload.GetUint8("foo")
 
-	assert.Equal(0, actual, "Incorrect return value")
+	assert.Equal(uint8(0), actual, "Incorrect return value")
 	assert.Equal(fmt.Errorf("Value with key 'foo' not a uint8"), err, "Incorrect error value")
 }
 
@@ -207,7 +207,7 @@ func TestGetUint16BadValue(t *testing.T) {
 
 	actual, err := payload.GetUint16("foo")
 
-	assert.Equal(0, actual, "Incorrect return value")
+	assert.Equal(uint16(0), actual, "Incorrect return value")
 	assert.Equal(fmt.Errorf("Value with key 'foo' not a uint16"), err, "Incorrect error value")
 }
 
@@ -229,7 +229,7 @@ func TestGetUint32BadValue(t *testing.T) {
 
 	actual, err := payload.GetUint32("foo")
 
-	assert.Equal(0, actual, "Incorrect return value")
+	assert.Equal(uint32(0), actual, "Incorrect return value")
 	assert.Equal(fmt.Errorf("Value with key 'foo' not a uint32"), err, "Incorrect error value")
 }
 
@@ -251,7 +251,7 @@ func TestGetUint64BadValue(t *testing.T) {
 
 	actual, err := payload.GetUint64("foo")
 
-	assert.Equal(0, actual, "Incorrect return value")
+	assert.Equal(uint64(0), actual, "Incorrect return value")
 	assert.Equal(fmt.Errorf("Value with key 'foo' not a uint64"), err, "Incorrect error value")
 }
 
@@ -317,7 +317,7 @@ func TestGetByteBadValue(t *testing.T) {
 
 	actual, err := payload.GetByte("foo")
 
-	assert.Equal(0, actual, "Incorrect return value")
+	assert.Equal(byte(0), actual, "Incorrect return value")
 	assert.Equal(fmt.Errorf("Value with key 'foo' not a byte"), err, "Incorrect error value")
 }
 
