@@ -225,7 +225,9 @@ func (r *muxAPI) StartTLS(addr Address, certFile, keyFile FilePath, middleware .
 func (r *muxAPI) preprocess() {
 	r.validateRulesOrPanic()
 	if r.config.GenerateDocs {
-		newDocGenerator().generateDocs(r)
+		if err := newDocGenerator().generateDocs(r); err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
