@@ -231,6 +231,17 @@ func (r *muxAPI) preprocess() {
 	}
 }
 
+// Check the route for an error and log the error if it exists.
+func (r *muxAPI) checkRoute(method, uri string, route *mux.Route) {
+	err := route.GetError()
+
+	if err != nil {
+		log.Printf("Failed to setup route %s with %v", uri, err)
+	} else {
+		r.config.Debugf("Registered create handler at %s %s", method, uri)
+	}
+}
+
 // RegisterResourceHandler binds the provided ResourceHandler to the appropriate REST endpoints and
 // applies any specified middleware. Endpoints will have the following base URL:
 // /api/:version/resourceName.
@@ -239,50 +250,61 @@ func (r *muxAPI) RegisterResourceHandler(h ResourceHandler, middleware ...Reques
 	resource := h.ResourceName()
 	middleware = append(middleware, newAuthMiddleware(h.Authenticate))
 
+	// Some browsers don't support PUT and DELETE, so allow method overriding.
+	// POST requests with X-HTTP-Method-Override=PUT/DELETE will route to the
+	// respective handlers.
+
+	route := r.router.HandleFunc(
+		h.ReadListURI(), applyMiddleware(r.handler.handleReadList(h), middleware),
+	).Methods("POST").Headers("X-HTTP-Method-Override", "GET").Name(resource + ":readListOverride")
+	r.checkRoute(h.ReadListURI(), "OVERRIDE-GET", route)
+
+	route = r.router.HandleFunc(
+		h.UpdateListURI(), applyMiddleware(r.handler.handleUpdateList(h), middleware),
+	).Methods("POST").Headers("X-HTTP-Method-Override", "PUT").Name(resource + ":updateListOverride")
+	r.checkRoute(h.UpdateListURI(), "OVERRIDE-PUT", route)
+
+	route = r.router.HandleFunc(
+		h.UpdateURI(), applyMiddleware(r.handler.handleUpdate(h), middleware),
+	).Methods("POST").Headers("X-HTTP-Method-Override", "PUT").Name(resource + ":updateOverride")
+	r.checkRoute(h.UpdateURI(), "OVERRIDE-PUT", route)
+
+	route = r.router.HandleFunc(
+		h.DeleteURI(), applyMiddleware(r.handler.handleDelete(h), middleware),
+	).Methods("POST").Headers("X-HTTP-Method-Override", "DELETE").Name(resource + ":deleteOverride")
+	r.checkRoute(h.DeleteURI(), "OVERRIDE-DELETE", route)
+
+	// These return a Route which has a GetError command. Probably should check
+	// that and log it if it fails :)
 	r.router.HandleFunc(
 		h.CreateURI(), applyMiddleware(r.handler.handleCreate(h), middleware),
 	).Methods("POST").Name(resource + ":create")
-	r.config.Debugf("Registered create handler at POST %s", h.CreateURI())
+	r.checkRoute(h.CreateURI(), "POST", route)
 
 	r.router.HandleFunc(
 		h.ReadListURI(), applyMiddleware(r.handler.handleReadList(h), middleware),
 	).Methods("GET").Name(resource + ":readList")
-	r.config.Debugf("Registered read list handler at GET %s", h.ReadListURI())
+	r.checkRoute(h.ReadListURI(), "GET", route)
 
 	r.router.HandleFunc(
 		h.ReadURI(), applyMiddleware(r.handler.handleRead(h), middleware),
 	).Methods("GET").Name(resource + ":read")
-	r.config.Debugf("Registered read handler at GET %s", h.ReadURI())
+	r.checkRoute(h.ReadURI(), "GET", route)
 
 	r.router.HandleFunc(
 		h.UpdateListURI(), applyMiddleware(r.handler.handleUpdateList(h), middleware),
 	).Methods("PUT").Name(resource + ":updateList")
-	r.config.Debugf("Registered update list handler at PUT %s", h.UpdateListURI())
+	r.checkRoute(h.UpdateListURI(), "PUT", route)
 
 	r.router.HandleFunc(
 		h.UpdateURI(), applyMiddleware(r.handler.handleUpdate(h), middleware),
 	).Methods("PUT").Name(resource + ":update")
-	r.config.Debugf("Registered update handler at PUT %s", h.UpdateURI())
+	r.checkRoute(h.UpdateURI(), "PUT", route)
 
 	r.router.HandleFunc(
 		h.DeleteURI(), applyMiddleware(r.handler.handleDelete(h), middleware),
 	).Methods("DELETE").Name(resource + ":delete")
-	r.config.Debugf("Registered delete handler at DELETE %s", h.DeleteURI())
-
-	// Some browsers don't support PUT and DELETE, so allow method overriding.
-	// POST requests with X-HTTP-Method-Override=PUT/DELETE will route to the
-	// respective handlers.
-	r.router.HandleFunc(
-		h.UpdateListURI(), applyMiddleware(r.handler.handleUpdateList(h), middleware),
-	).Methods("POST").Headers("X-HTTP-Method-Override", "PUT").Name(resource + ":updateListOverride")
-
-	r.router.HandleFunc(
-		h.UpdateURI(), applyMiddleware(r.handler.handleUpdate(h), middleware),
-	).Methods("POST").Headers("X-HTTP-Method-Override", "PUT").Name(resource + ":updateOverride")
-
-	r.router.HandleFunc(
-		h.DeleteURI(), applyMiddleware(r.handler.handleDelete(h), middleware),
-	).Methods("POST").Headers("X-HTTP-Method-Override", "DELETE").Name(resource + ":deleteOverride")
+	r.checkRoute(h.DeleteURI(), "DELETE", route)
 
 	r.resourceHandlers = append(r.resourceHandlers, h)
 }
