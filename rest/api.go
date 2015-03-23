@@ -232,13 +232,13 @@ func (r *muxAPI) preprocess() {
 }
 
 // Check the route for an error and log the error if it exists.
-func (r *muxAPI) checkRoute(method, uri string, route *mux.Route) {
+func (r *muxAPI) checkRoute(handler, method, uri string, route *mux.Route) {
 	err := route.GetError()
 
 	if err != nil {
 		log.Printf("Failed to setup route %s with %v", uri, err)
 	} else {
-		r.config.Debugf("Registered create handler at %s %s", method, uri)
+		r.config.Debugf("Registered %s handler at %s %s", handler, method, uri)
 	}
 }
 
@@ -257,54 +257,54 @@ func (r *muxAPI) RegisterResourceHandler(h ResourceHandler, middleware ...Reques
 	route := r.router.HandleFunc(
 		h.ReadListURI(), applyMiddleware(r.handler.handleReadList(h), middleware),
 	).Methods("POST").Headers("X-HTTP-Method-Override", "GET").Name(resource + ":readListOverride")
-	r.checkRoute(h.ReadListURI(), "OVERRIDE-GET", route)
+	r.checkRoute("read override", h.ReadListURI(), "OVERRIDE-GET", route)
 
 	route = r.router.HandleFunc(
 		h.UpdateListURI(), applyMiddleware(r.handler.handleUpdateList(h), middleware),
 	).Methods("POST").Headers("X-HTTP-Method-Override", "PUT").Name(resource + ":updateListOverride")
-	r.checkRoute(h.UpdateListURI(), "OVERRIDE-PUT", route)
+	r.checkRoute("update list override", h.UpdateListURI(), "OVERRIDE-PUT", route)
 
 	route = r.router.HandleFunc(
 		h.UpdateURI(), applyMiddleware(r.handler.handleUpdate(h), middleware),
 	).Methods("POST").Headers("X-HTTP-Method-Override", "PUT").Name(resource + ":updateOverride")
-	r.checkRoute(h.UpdateURI(), "OVERRIDE-PUT", route)
+	r.checkRoute("update override", h.UpdateURI(), "OVERRIDE-PUT", route)
 
 	route = r.router.HandleFunc(
 		h.DeleteURI(), applyMiddleware(r.handler.handleDelete(h), middleware),
 	).Methods("POST").Headers("X-HTTP-Method-Override", "DELETE").Name(resource + ":deleteOverride")
-	r.checkRoute(h.DeleteURI(), "OVERRIDE-DELETE", route)
+	r.checkRoute("delete override", h.DeleteURI(), "OVERRIDE-DELETE", route)
 
 	// These return a Route which has a GetError command. Probably should check
 	// that and log it if it fails :)
 	r.router.HandleFunc(
 		h.CreateURI(), applyMiddleware(r.handler.handleCreate(h), middleware),
 	).Methods("POST").Name(resource + ":create")
-	r.checkRoute(h.CreateURI(), "POST", route)
+	r.checkRoute("create", h.CreateURI(), "POST", route)
 
 	r.router.HandleFunc(
 		h.ReadListURI(), applyMiddleware(r.handler.handleReadList(h), middleware),
 	).Methods("GET").Name(resource + ":readList")
-	r.checkRoute(h.ReadListURI(), "GET", route)
+	r.checkRoute("read list", h.ReadListURI(), "GET", route)
 
 	r.router.HandleFunc(
 		h.ReadURI(), applyMiddleware(r.handler.handleRead(h), middleware),
 	).Methods("GET").Name(resource + ":read")
-	r.checkRoute(h.ReadURI(), "GET", route)
+	r.checkRoute("read", h.ReadURI(), "GET", route)
 
 	r.router.HandleFunc(
 		h.UpdateListURI(), applyMiddleware(r.handler.handleUpdateList(h), middleware),
 	).Methods("PUT").Name(resource + ":updateList")
-	r.checkRoute(h.UpdateListURI(), "PUT", route)
+	r.checkRoute("update list", h.UpdateListURI(), "PUT", route)
 
 	r.router.HandleFunc(
 		h.UpdateURI(), applyMiddleware(r.handler.handleUpdate(h), middleware),
 	).Methods("PUT").Name(resource + ":update")
-	r.checkRoute(h.UpdateURI(), "PUT", route)
+	r.checkRoute("update", h.UpdateURI(), "PUT", route)
 
 	r.router.HandleFunc(
 		h.DeleteURI(), applyMiddleware(r.handler.handleDelete(h), middleware),
 	).Methods("DELETE").Name(resource + ":delete")
-	r.checkRoute(h.DeleteURI(), "DELETE", route)
+	r.checkRoute("delete", h.DeleteURI(), "DELETE", route)
 
 	r.resourceHandlers = append(r.resourceHandlers, h)
 }
