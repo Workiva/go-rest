@@ -49,7 +49,7 @@ type Configuration struct {
 // Debugf prints the formatted string to the Configuration Logger if Debug is enabled.
 func (c *Configuration) Debugf(format string, v ...interface{}) {
 	if c.Debug {
-		c.Logger.Printf(format, v)
+		c.Logger.Printf(format, v...)
 	}
 }
 
