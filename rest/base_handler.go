@@ -100,37 +100,37 @@ func (b BaseResourceHandler) DeleteDocumentation() string {
 // CreateResource is a stub. Implement if necessary.
 func (b BaseResourceHandler) CreateResource(ctx RequestContext, data Payload,
 	version string) (Resource, error) {
-	return nil, NotImplemented("CreateResource is not implemented")
+	return nil, MethodNotAllowed("CreateResource is not implemented")
 }
 
 // ReadResourceList is a stub. Implement if necessary.
 func (b BaseResourceHandler) ReadResourceList(ctx RequestContext, limit int,
 	cursor string, version string) ([]Resource, string, error) {
-	return nil, "", NotImplemented("ReadResourceList not implemented")
+	return nil, "", MethodNotAllowed("ReadResourceList not implemented")
 }
 
 // ReadResource is a stub. Implement if necessary.
 func (b BaseResourceHandler) ReadResource(ctx RequestContext, id string,
 	version string) (Resource, error) {
-	return nil, NotImplemented("ReadResource not implemented")
+	return nil, MethodNotAllowed("ReadResource not implemented")
 }
 
 // UpdateResourceList is a stub. Implement if necessary.
 func (b BaseResourceHandler) UpdateResourceList(ctx RequestContext, data []Payload,
 	version string) ([]Resource, error) {
-	return nil, NotImplemented("UpdateResourceList not implemented")
+	return nil, MethodNotAllowed("UpdateResourceList not implemented")
 }
 
 // UpdateResource is a stub. Implement if necessary.
 func (b BaseResourceHandler) UpdateResource(ctx RequestContext, id string,
 	data Payload, version string) (Resource, error) {
-	return nil, NotImplemented("UpdateResource not implemented")
+	return nil, MethodNotAllowed("UpdateResource not implemented")
 }
 
 // DeleteResource is a stub. Implement if necessary.
 func (b BaseResourceHandler) DeleteResource(ctx RequestContext, id string,
 	version string) (Resource, error) {
-	return nil, NotImplemented("DeleteResource not implemented")
+	return nil, MethodNotAllowed("DeleteResource not implemented")
 }
 
 // Authenticate is the default authentication logic. All requests are authorized.
