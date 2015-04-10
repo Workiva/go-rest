@@ -18,6 +18,10 @@ package rest
 
 import "net/http"
 
+// statusUnprocessableEntity indicates the request was well-formed but was
+// unable to be followed due to semantic errors.
+const statusUnprocessableEntity = 422
+
 // Error is an implementation of the error interface representing an HTTP error.
 type Error struct {
 	reason string
@@ -52,7 +56,7 @@ func BadRequest(reason string) Error {
 
 // UnprocessableRequest returns a Error for a 422 Unprocessable Entity error.
 func UnprocessableRequest(reason string) Error {
-	return Error{reason, 422}
+	return Error{reason, statusUnprocessableEntity}
 }
 
 // UnauthorizedRequest returns a Error for a 401 Unauthorized error.
@@ -60,9 +64,9 @@ func UnauthorizedRequest(reason string) Error {
 	return Error{reason, http.StatusUnauthorized}
 }
 
-// NotImplemented returns a Error for a 501 Not Implemented error.
-func NotImplemented(reason string) Error {
-	return Error{reason, http.StatusNotImplemented}
+// MethodNotAllowed returns a Error for a 405 Method Not Allowed error.
+func MethodNotAllowed(reason string) Error {
+	return Error{reason, http.StatusMethodNotAllowed}
 }
 
 // InternalServerError returns a Error for a 500 Internal Server error.

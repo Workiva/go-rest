@@ -328,7 +328,7 @@ func (h requestHandler) sendResponse(w http.ResponseWriter, ctx RequestContext) 
 	if err != nil {
 		// Fall back to json serialization.
 		serializer = jsonSerializer{}
-		ctx = ctx.setError(NotImplemented(fmt.Sprintf("Format not implemented: %s", format)))
+		ctx = ctx.setError(BadRequest(fmt.Sprintf("Format not implemented: %s", format)))
 	}
 
 	sendResponse(w, NewResponse(ctx), serializer)

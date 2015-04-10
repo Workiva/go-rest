@@ -126,7 +126,7 @@ func (r *muxAPI) getRouteHandler(name string) (http.Handler, error) {
 	return route.GetHandler(), nil
 }
 
-// Ensures that the create handler returns a Not Implemented code if an invalid response
+// Ensures that the create handler returns a Bad Request code if an invalid response
 // format is provided.
 func TestHandleCreateBadFormat(t *testing.T) {
 	assert := assert.New(t)
@@ -149,9 +149,9 @@ func TestHandleCreateBadFormat(t *testing.T) {
 	createHandler.ServeHTTP(resp, req)
 
 	handler.Mock.AssertExpectations(t)
-	assert.Equal(http.StatusNotImplemented, resp.Code, "Incorrect response code")
+	assert.Equal(http.StatusBadRequest, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"messages":["Format not implemented: blah"],"reason":"Not Implemented","status":501}`,
+		`{"messages":["Format not implemented: blah"],"reason":"Bad Request","status":400}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -244,7 +244,7 @@ func TestHandleCreateNotAuthorized(t *testing.T) {
 	assert.Equal("Not authorized", resp.Body.String(), "Incorrect response string")
 }
 
-// Ensures that the read list handler returns a Not Implemented code if an invalid response
+// Ensures that the read list handler returns a Bad Request code if an invalid response
 // format is provided.
 func TestHandleReadListBadFormat(t *testing.T) {
 	assert := assert.New(t)
@@ -265,9 +265,9 @@ func TestHandleReadListBadFormat(t *testing.T) {
 	readHandler.ServeHTTP(resp, req)
 
 	handler.Mock.AssertExpectations(t)
-	assert.Equal(http.StatusNotImplemented, resp.Code, "Incorrect response code")
+	assert.Equal(http.StatusBadRequest, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"messages":["Format not implemented: blah"],"reason":"Not Implemented","status":501}`,
+		`{"messages":["Format not implemented: blah"],"reason":"Bad Request","status":400}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -330,7 +330,7 @@ func TestHandleReadListHappyPath(t *testing.T) {
 	)
 }
 
-// Ensures that the read handler returns a Not Implemented code if an invalid response format is provided.
+// Ensures that the read handler returns a Bad Request code if an invalid response format is provided.
 func TestHandleReadBadFormat(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
@@ -350,9 +350,9 @@ func TestHandleReadBadFormat(t *testing.T) {
 	readHandler.ServeHTTP(resp, req)
 
 	handler.Mock.AssertExpectations(t)
-	assert.Equal(http.StatusNotImplemented, resp.Code, "Incorrect response code")
+	assert.Equal(http.StatusBadRequest, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"messages":["Format not implemented: blah"],"reason":"Not Implemented","status":501}`,
+		`{"messages":["Format not implemented: blah"],"reason":"Bad Request","status":400}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -414,7 +414,7 @@ func TestHandleReadHappyPath(t *testing.T) {
 	)
 }
 
-// Ensures that the update list handler returns a Not Implemented code if an invalid response format
+// Ensures that the update list handler returns a Bad Request code if an invalid response format
 // is provided.
 func TestHandleUpdateListBadFormat(t *testing.T) {
 	assert := assert.New(t)
@@ -437,9 +437,9 @@ func TestHandleUpdateListBadFormat(t *testing.T) {
 	updateHandler.ServeHTTP(resp, req)
 
 	handler.Mock.AssertExpectations(t)
-	assert.Equal(http.StatusNotImplemented, resp.Code, "Incorrect response code")
+	assert.Equal(http.StatusBadRequest, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"messages":["Format not implemented: blah"],"reason":"Not Implemented","status":501}`,
+		`{"messages":["Format not implemented: blah"],"reason":"Bad Request","status":400}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -537,7 +537,7 @@ func TestHandleUpdateListHappyPath(t *testing.T) {
 	)
 }
 
-// Ensures that the update handler returns a Not Implemented code if an invalid response format is provided.
+// Ensures that the update handler returns a Bad Request code if an invalid response format is provided.
 func TestHandleUpdateBadFormat(t *testing.T) {
 	assert := assert.New(t)
 	handler := new(MockResourceHandler)
@@ -559,9 +559,9 @@ func TestHandleUpdateBadFormat(t *testing.T) {
 	updateHandler.ServeHTTP(resp, req)
 
 	handler.Mock.AssertExpectations(t)
-	assert.Equal(http.StatusNotImplemented, resp.Code, "Incorrect response code")
+	assert.Equal(http.StatusBadRequest, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"messages":["Format not implemented: blah"],"reason":"Not Implemented","status":501}`,
+		`{"messages":["Format not implemented: blah"],"reason":"Bad Request","status":400}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)
@@ -628,7 +628,7 @@ func TestHandleUpdateHappyPath(t *testing.T) {
 	)
 }
 
-// Ensures that the delete handler returns a Not Implemented code if an invalid response format is
+// Ensures that the delete handler returns a Bad Request code if an invalid response format is
 // provided.
 func TestHandleDeleteBadFormat(t *testing.T) {
 	assert := assert.New(t)
@@ -649,9 +649,9 @@ func TestHandleDeleteBadFormat(t *testing.T) {
 	deleteHandler.ServeHTTP(resp, req)
 
 	handler.Mock.AssertExpectations(t)
-	assert.Equal(http.StatusNotImplemented, resp.Code, "Incorrect response code")
+	assert.Equal(http.StatusBadRequest, resp.Code, "Incorrect response code")
 	assert.Equal(
-		`{"messages":["Format not implemented: blah"],"reason":"Not Implemented","status":501}`,
+		`{"messages":["Format not implemented: blah"],"reason":"Bad Request","status":400}`,
 		resp.Body.String(),
 		"Incorrect response string",
 	)

@@ -45,15 +45,15 @@ func TestErrors(t *testing.T) {
 
 	err = UnprocessableRequest("foo")
 	assert.Equal("foo", err.Error())
-	assert.Equal(422, err.Status())
+	assert.Equal(statusUnprocessableEntity, err.Status())
 
 	err = UnauthorizedRequest("foo")
 	assert.Equal("foo", err.Error())
 	assert.Equal(http.StatusUnauthorized, err.Status())
 
-	err = NotImplemented("foo")
+	err = MethodNotAllowed("foo")
 	assert.Equal("foo", err.Error())
-	assert.Equal(http.StatusNotImplemented, err.Status())
+	assert.Equal(http.StatusMethodNotAllowed, err.Status())
 
 	err = ResourceNotPermitted("foo")
 	assert.Equal("foo", err.Error())
