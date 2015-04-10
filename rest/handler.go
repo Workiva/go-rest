@@ -129,8 +129,8 @@ type requestHandler struct {
 // handleCreate returns a HandlerFunc which will deserialize the request payload, pass
 // it to the provided create function, and then serialize and dispatch the response.
 // The serialization mechanism used is specified by the "format" query parameter.
-func (h requestHandler) handleCreate(handler ResourceHandler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (h requestHandler) handleCreate(handler ResourceHandler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
 		version := ctx.Version()
 		rules := handler.Rules()
@@ -159,14 +159,14 @@ func (h requestHandler) handleCreate(handler ResourceHandler) http.HandlerFunc {
 		}
 
 		h.sendResponse(w, ctx)
-	}
+	})
 }
 
-// handleReadList returns a HandlerFunc which will pass the request context to the
+// handleReadList returns a Handler which will pass the request context to the
 // provided read function and then serialize and dispatch the response. The
 // serialization mechanism used is specified by the "format" query parameter.
-func (h requestHandler) handleReadList(handler ResourceHandler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (h requestHandler) handleReadList(handler ResourceHandler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
 		version := ctx.Version()
 		rules := handler.Rules()
@@ -187,14 +187,14 @@ func (h requestHandler) handleReadList(handler ResourceHandler) http.HandlerFunc
 		ctx = ctx.setStatus(http.StatusOK)
 
 		h.sendResponse(w, ctx)
-	}
+	})
 }
 
-// handleRead returns a HandlerFunc which will pass the resource id to the provided
+// handleRead returns a Handler which will pass the resource id to the provided
 // read function and then serialize and dispatch the response. The serialization
 // mechanism used is specified by the "format" query parameter.
-func (h requestHandler) handleRead(handler ResourceHandler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (h requestHandler) handleRead(handler ResourceHandler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
 		version := ctx.Version()
 		rules := handler.Rules()
@@ -209,15 +209,15 @@ func (h requestHandler) handleRead(handler ResourceHandler) http.HandlerFunc {
 		ctx = ctx.setStatus(http.StatusOK)
 
 		h.sendResponse(w, ctx)
-	}
+	})
 }
 
-// handleUpdateList returns a HandlerFunc which will deserialize the request payload,
+// handleUpdateList returns a Handler which will deserialize the request payload,
 // pass it to the provided update function, and then serialize and dispatch the
 // response. The serialization mechanism used is specified by the "format" query
 // parameter.
-func (h requestHandler) handleUpdateList(handler ResourceHandler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (h requestHandler) handleUpdateList(handler ResourceHandler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
 		version := ctx.Version()
 		rules := handler.Rules()
@@ -258,15 +258,15 @@ func (h requestHandler) handleUpdateList(handler ResourceHandler) http.HandlerFu
 		}
 
 		h.sendResponse(w, ctx)
-	}
+	})
 }
 
-// handleUpdate returns a HandlerFunc which will deserialize the request payload,
+// handleUpdate returns a Handler which will deserialize the request payload,
 // pass it to the provided update function, and then serialize and dispatch the
 // response. The serialization mechanism used is specified by the "format" query
 // parameter.
-func (h requestHandler) handleUpdate(handler ResourceHandler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (h requestHandler) handleUpdate(handler ResourceHandler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
 		version := ctx.Version()
 		rules := handler.Rules()
@@ -295,14 +295,14 @@ func (h requestHandler) handleUpdate(handler ResourceHandler) http.HandlerFunc {
 		}
 
 		h.sendResponse(w, ctx)
-	}
+	})
 }
 
-// handleDelete returns a HandlerFunc which will pass the resource id to the provided
+// handleDelete returns a Handler which will pass the resource id to the provided
 // delete function and then serialize and dispatch the response. The serialization
 // mechanism used is specified by the "format" query parameter.
-func (h requestHandler) handleDelete(handler ResourceHandler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (h requestHandler) handleDelete(handler ResourceHandler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(nil, r)
 		version := ctx.Version()
 		rules := handler.Rules()
@@ -317,7 +317,7 @@ func (h requestHandler) handleDelete(handler ResourceHandler) http.HandlerFunc {
 		ctx = ctx.setStatus(http.StatusOK)
 
 		h.sendResponse(w, ctx)
-	}
+	})
 }
 
 // sendResponse writes a success or error response to the provided http.ResponseWriter
