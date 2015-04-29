@@ -138,8 +138,7 @@ func (h requestHandler) handleCreate(handler ResourceHandler) http.HandlerFunc {
 		data, err := decodePayload(payloadString(r.Body))
 		if err != nil {
 			// Payload decoding failed.
-			ctx = ctx.setError(err)
-			ctx = ctx.setStatus(http.StatusInternalServerError)
+			ctx = ctx.setError(BadRequest(err.Error()))
 		} else {
 			data, err := applyInboundRules(data, rules, version)
 			if err != nil {
