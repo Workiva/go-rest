@@ -75,7 +75,7 @@ func TestGetInt8BadValue(t *testing.T) {
 
 	actual, err := payload.GetInt8("foo")
 
-	assert.Equal(0, actual, "Incorrect return value")
+	assert.Equal(int8(0), actual, "Incorrect return value")
 	assert.Equal(fmt.Errorf("Value with key 'foo' not an int8"), err, "Incorrect error value")
 }
 
@@ -97,7 +97,7 @@ func TestGetInt16BadValue(t *testing.T) {
 
 	actual, err := payload.GetInt16("foo")
 
-	assert.Equal(0, actual, "Incorrect return value")
+	assert.Equal(int16(0), actual, "Incorrect return value")
 	assert.Equal(fmt.Errorf("Value with key 'foo' not an int16"), err, "Incorrect error value")
 }
 
@@ -119,7 +119,7 @@ func TestGetInt32BadValue(t *testing.T) {
 
 	actual, err := payload.GetInt32("foo")
 
-	assert.Equal(0, actual, "Incorrect return value")
+	assert.Equal(int32(0), actual, "Incorrect return value")
 	assert.Equal(fmt.Errorf("Value with key 'foo' not an int32"), err, "Incorrect error value")
 }
 
@@ -273,7 +273,7 @@ func TestGetFloat32BadValue(t *testing.T) {
 
 	actual, err := payload.GetFloat32("foo")
 
-	assert.Equal(0, actual, "Incorrect return value")
+	assert.Equal(float32(0), actual, "Incorrect return value")
 	assert.Equal(fmt.Errorf("Value with key 'foo' not a float32"), err, "Incorrect error value")
 }
 
@@ -295,7 +295,7 @@ func TestGetFloat64BadValue(t *testing.T) {
 
 	actual, err := payload.GetFloat64("foo")
 
-	assert.Equal(0, actual, "Incorrect return value")
+	assert.Equal(float64(0), actual, "Incorrect return value")
 	assert.Equal(fmt.Errorf("Value with key 'foo' not a float64"), err, "Incorrect error value")
 }
 
@@ -428,7 +428,7 @@ func TestGetDurationBadValue(t *testing.T) {
 
 	actual, err := payload.GetDuration("foo")
 
-	assert.Equal(0, actual, "Incorrect return value")
+	assert.Equal(time.Duration(0), actual, "Incorrect return value")
 	assert.Equal(fmt.Errorf("Value with key 'foo' not a time.Duration"),
 		err, "Incorrect error value")
 }

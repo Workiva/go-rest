@@ -228,7 +228,7 @@ func TestDoDecodeResults(t *testing.T) {
 		assert.NotNil(resp.Raw)
 		if assert.NotNil(resp.Result) {
 			m := resp.Result.([]interface{})[0].(map[string]interface{})
-			assert.Equal(1, m["foo"])
+			assert.Equal(float64(1.0), m["foo"])
 			assert.Equal("baz", m["bar"])
 		}
 	}
@@ -264,7 +264,7 @@ func TestDoDecodeResult(t *testing.T) {
 		assert.NotNil(resp.Raw)
 		if assert.NotNil(resp.Result) {
 			m := resp.Result.(map[string]interface{})
-			assert.Equal(1, m["foo"])
+			assert.Equal(float64(1), m["foo"])
 			assert.Equal("baz", m["bar"])
 		}
 	}
