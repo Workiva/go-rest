@@ -69,12 +69,12 @@ func (e MiddlewareHandler) ReadResource(ctx RequestContext, id string, version s
 }
 
 // ResourceHandler middleware is implemented as a closure which takes an
-// http.HandlerFunc and returns one.
-func HandlerMiddleware(wrapped http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+// http.Handler and returns one.
+func HandlerMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Request: %s", r.URL.String())
-		wrapped(w, r)
-	}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // Global API middleware is implemented as a function which takes an

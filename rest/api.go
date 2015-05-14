@@ -161,21 +161,21 @@ type API interface {
 	responseSerializer(string) (ResponseSerializer, error)
 }
 
-// RequestMiddleware is a function that returns a HandlerFunc wrapping the provided HandlerFunc.
+// RequestMiddleware is a function that returns a Handler wrapping the provided Handler.
 // This allows injecting custom logic to operate on requests (e.g. performing authentication).
-type RequestMiddleware func(http.HandlerFunc) http.HandlerFunc
+type RequestMiddleware func(http.Handler) http.Handler
 
 // newAuthMiddleware returns a RequestMiddleware used to authenticate requests.
 func newAuthMiddleware(authenticate func(*http.Request) error) RequestMiddleware {
-	return func(wrapped http.HandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if err := authenticate(r); err != nil {
 				w.WriteHeader(http.StatusUnauthorized)
 				w.Write([]byte(err.Error()))
 				return
 			}
-			wrapped(w, r)
-		}
+			next.ServeHTTP(w, r)
+		})
 	}
 }
 
@@ -254,54 +254,54 @@ func (r *muxAPI) RegisterResourceHandler(h ResourceHandler, middleware ...Reques
 	// POST requests with X-HTTP-Method-Override=PUT/DELETE will route to the
 	// respective handlers.
 
-	route := r.router.HandleFunc(
+	route := r.router.Handle(
 		h.ReadListURI(), applyMiddleware(r.handler.handleReadList(h), middleware),
 	).Methods("POST").Headers("X-HTTP-Method-Override", "GET").Name(resource + ":readListOverride")
 	r.checkRoute("read override", h.ReadListURI(), "OVERRIDE-GET", route)
 
-	route = r.router.HandleFunc(
+	route = r.router.Handle(
 		h.UpdateListURI(), applyMiddleware(r.handler.handleUpdateList(h), middleware),
 	).Methods("POST").Headers("X-HTTP-Method-Override", "PUT").Name(resource + ":updateListOverride")
 	r.checkRoute("update list override", h.UpdateListURI(), "OVERRIDE-PUT", route)
 
-	route = r.router.HandleFunc(
+	route = r.router.Handle(
 		h.UpdateURI(), applyMiddleware(r.handler.handleUpdate(h), middleware),
 	).Methods("POST").Headers("X-HTTP-Method-Override", "PUT").Name(resource + ":updateOverride")
 	r.checkRoute("update override", h.UpdateURI(), "OVERRIDE-PUT", route)
 
-	route = r.router.HandleFunc(
+	route = r.router.Handle(
 		h.DeleteURI(), applyMiddleware(r.handler.handleDelete(h), middleware),
 	).Methods("POST").Headers("X-HTTP-Method-Override", "DELETE").Name(resource + ":deleteOverride")
 	r.checkRoute("delete override", h.DeleteURI(), "OVERRIDE-DELETE", route)
 
 	// These return a Route which has a GetError command. Probably should check
 	// that and log it if it fails :)
-	r.router.HandleFunc(
+	r.router.Handle(
 		h.CreateURI(), applyMiddleware(r.handler.handleCreate(h), middleware),
 	).Methods("POST").Name(resource + ":create")
 	r.checkRoute("create", h.CreateURI(), "POST", route)
 
-	r.router.HandleFunc(
+	r.router.Handle(
 		h.ReadListURI(), applyMiddleware(r.handler.handleReadList(h), middleware),
 	).Methods("GET").Name(resource + ":readList")
 	r.checkRoute("read list", h.ReadListURI(), "GET", route)
 
-	r.router.HandleFunc(
+	r.router.Handle(
 		h.ReadURI(), applyMiddleware(r.handler.handleRead(h), middleware),
 	).Methods("GET").Name(resource + ":read")
 	r.checkRoute("read", h.ReadURI(), "GET", route)
 
-	r.router.HandleFunc(
+	r.router.Handle(
 		h.UpdateListURI(), applyMiddleware(r.handler.handleUpdateList(h), middleware),
 	).Methods("PUT").Name(resource + ":updateList")
 	r.checkRoute("update list", h.UpdateListURI(), "PUT", route)
 
-	r.router.HandleFunc(
+	r.router.Handle(
 		h.UpdateURI(), applyMiddleware(r.handler.handleUpdate(h), middleware),
 	).Methods("PUT").Name(resource + ":update")
 	r.checkRoute("update", h.UpdateURI(), "PUT", route)
 
-	r.router.HandleFunc(
+	r.router.Handle(
 		h.DeleteURI(), applyMiddleware(r.handler.handleDelete(h), middleware),
 	).Methods("DELETE").Name(resource + ":delete")
 	r.checkRoute("delete", h.DeleteURI(), "DELETE", route)
@@ -311,22 +311,22 @@ func (r *muxAPI) RegisterResourceHandler(h ResourceHandler, middleware ...Reques
 
 // RegisterHandlerFunc binds the http.HandlerFunc to the provided URI and applies any
 // specified middleware.
-func (r *muxAPI) RegisterHandlerFunc(uri string, handler http.HandlerFunc,
+func (r *muxAPI) RegisterHandlerFunc(uri string, handlerfunc http.HandlerFunc,
 	middleware ...RequestMiddleware) {
-	r.router.HandleFunc(uri, applyMiddleware(handler, middleware))
+	r.router.Handle(uri, applyMiddleware(http.HandlerFunc(handlerfunc), middleware))
 }
 
 // RegisterHandler binds the http.Handler to the provided URI and applies any specified
 // middleware.
 func (r *muxAPI) RegisterHandler(uri string, handler http.Handler, middleware ...RequestMiddleware) {
-	r.router.HandleFunc(uri, applyMiddleware(handler.ServeHTTP, middleware))
+	r.router.Handle(uri, applyMiddleware(handler, middleware))
 }
 
 // RegisterPathPrefix binds the http.HandlerFunc to URIs matched by the given path
 // prefix and applies any specified middleware.
 func (r *muxAPI) RegisterPathPrefix(uri string, handler http.HandlerFunc,
 	middleware ...RequestMiddleware) {
-	r.router.PathPrefix(uri).HandlerFunc(applyMiddleware(handler, middleware))
+	r.router.PathPrefix(uri).Handler(applyMiddleware(handler, middleware))
 }
 
 // ServeHTTP handles an HTTP request.
@@ -410,9 +410,8 @@ func (r *muxAPI) responseSerializer(format string) (ResponseSerializer, error) {
 	return nil, fmt.Errorf("Format not implemented: %s", format)
 }
 
-// applyMiddleware wraps the HandlerFunc with the provided RequestMiddleware and returns the
-// function composition.
-func applyMiddleware(h http.HandlerFunc, middleware []RequestMiddleware) http.HandlerFunc {
+// applyMiddleware wraps the Handler with the provided RequestMiddleware and returns another Handler.
+func applyMiddleware(h http.Handler, middleware []RequestMiddleware) http.Handler {
 	for _, m := range middleware {
 		h = m(h)
 	}

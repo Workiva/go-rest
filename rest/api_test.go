@@ -715,11 +715,11 @@ func TestHandleDeleteHappyPath(t *testing.T) {
 }
 
 func getMiddleware(called *bool) RequestMiddleware {
-	return func(h http.HandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			*called = true
-			h(w, r)
-		}
+			h.ServeHTTP(w, r)
+		})
 	}
 }
 
