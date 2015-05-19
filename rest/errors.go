@@ -73,3 +73,8 @@ func MethodNotAllowed(reason string) Error {
 func InternalServerError(reason string) Error {
 	return Error{reason, http.StatusInternalServerError}
 }
+
+// CustomError returns an Error for the given HTTP status code.
+func CustomError(reason string, status int) Error {
+	return Error{reason, status}
+}
