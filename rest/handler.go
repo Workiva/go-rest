@@ -149,8 +149,14 @@ func (h requestHandler) handleCreate(handler ResourceHandler) http.Handler {
 				if err == nil {
 					resource = applyOutboundRules(resource, rules, version)
 				}
-				ctx = ctx.setResult(resource)
-				ctx = ctx.setStatus(http.StatusCreated)
+
+				if resource != nil {
+					ctx = ctx.setResult(resource)
+					ctx = ctx.setStatus(http.StatusCreated)
+				} else {
+					ctx = ctx.setStatus(http.StatusNoContent)
+				}
+
 				if err != nil {
 					ctx = ctx.setError(err)
 				}
@@ -336,12 +342,17 @@ func (h requestHandler) sendResponse(w http.ResponseWriter, ctx RequestContext) 
 func sendResponse(w http.ResponseWriter, r response, serializer ResponseSerializer) {
 	status := r.Status
 	contentType := serializer.ContentType()
-	response, err := serializer.Serialize(r.Payload)
-	if err != nil {
-		log.Printf("Response serialization failed: %s", err)
-		status = http.StatusInternalServerError
-		contentType = "text/plain"
-		response = []byte(err.Error())
+
+	var response []byte
+	var err error
+	if r.Payload != nil {
+		response, err = serializer.Serialize(r.Payload)
+		if err != nil {
+			log.Printf("Response serialization failed: %s", err)
+			status = http.StatusInternalServerError
+			contentType = "text/plain"
+			response = []byte(err.Error())
+		}
 	}
 
 	w.Header().Set("Content-Type", contentType)

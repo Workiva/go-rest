@@ -83,20 +83,21 @@ func newSuccessResponse(ctx RequestContext) response {
 	}
 
 	s := ctx.Status()
-	payload := Payload{
-		status:    s,
-		reason:    http.StatusText(s),
-		messages:  ctx.Messages(),
-		resultKey: r,
-	}
+	response := response{Status: s}
 
-	if nextURL, err := ctx.NextURL(); err == nil && nextURL != "" {
-		payload[next] = nextURL
-	}
+	if s != http.StatusNoContent {
+		payload := Payload{
+			status:    s,
+			reason:    http.StatusText(s),
+			messages:  ctx.Messages(),
+			resultKey: r,
+		}
 
-	response := response{
-		Payload: payload,
-		Status:  s,
+		if nextURL, err := ctx.NextURL(); err == nil && nextURL != "" {
+			payload[next] = nextURL
+		}
+
+		response.Payload = payload
 	}
 
 	return response
