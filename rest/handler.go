@@ -344,8 +344,8 @@ func sendResponse(w http.ResponseWriter, r response, serializer ResponseSerializ
 	contentType := serializer.ContentType()
 
 	var response []byte
-	var err error
 	if r.Payload != nil {
+		var err error
 		response, err = serializer.Serialize(r.Payload)
 		if err != nil {
 			log.Printf("Response serialization failed: %s", err)
