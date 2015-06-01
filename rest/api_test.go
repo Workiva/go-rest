@@ -219,6 +219,37 @@ func TestHandleCreateHappyPath(t *testing.T) {
 	)
 }
 
+// Ensures that the create handler returns No Content status code and
+// an empty body when Resource is nil.
+func TestHandleCreateNoContent(t *testing.T) {
+	assert := assert.New(t)
+	handler := new(MockResourceHandler)
+	api := NewAPI(&Configuration{})
+
+	handler.On("ResourceName").Return("foo")
+	handler.On("Authenticate").Return(nil)
+	handler.On("Rules").Return(&rules{})
+	handler.On("CreateResource").Return(nil, nil)
+
+	api.RegisterResourceHandler(handler)
+	createHandler, _ := api.(*muxAPI).getRouteHandler("foo:create")
+
+	payload := []byte(`{"foo": "bar"}`)
+	r := bytes.NewReader(payload)
+	req, _ := http.NewRequest("POST", "http://foo.com/api/v0.1/foo", r)
+	resp := httptest.NewRecorder()
+
+	createHandler.ServeHTTP(resp, req)
+
+	handler.Mock.AssertExpectations(t)
+	assert.Equal(http.StatusNoContent, resp.Code, "Incorrect response code")
+	assert.Equal(
+		"",
+		resp.Body.String(),
+		"Incorrect response string",
+	)
+}
+
 // Ensures that the create handler returns an Unauthorized code when the request is not
 // authorized.
 func TestHandleCreateNotAuthorized(t *testing.T) {
