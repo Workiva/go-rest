@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,7 +29,7 @@ import (
 func TestLimitDefault(t *testing.T) {
 	assert := assert.New(t)
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
-	ctx := NewContext(nil, req)
+	ctx := NewContext(nil, req, mux.NewRouter())
 	assert.Equal(100, ctx.Limit())
 }
 
@@ -36,7 +37,7 @@ func TestLimitDefault(t *testing.T) {
 func TestLimitBadValue(t *testing.T) {
 	assert := assert.New(t)
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
-	ctx := NewContext(nil, req)
+	ctx := NewContext(nil, req, mux.NewRouter())
 	ctx = ctx.WithValue(limitKey, "blah")
 	assert.Equal(100, ctx.Limit())
 }
@@ -45,7 +46,7 @@ func TestLimitBadValue(t *testing.T) {
 func TestLimit(t *testing.T) {
 	assert := assert.New(t)
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
-	ctx := NewContext(nil, req)
+	ctx := NewContext(nil, req, mux.NewRouter())
 	ctx = ctx.WithValue(limitKey, "5")
 	assert.Equal(5, ctx.Limit())
 }
@@ -54,7 +55,7 @@ func TestLimit(t *testing.T) {
 func TestMessagesNoError(t *testing.T) {
 	assert := assert.New(t)
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
-	ctx := NewContext(nil, req)
+	ctx := NewContext(nil, req, mux.NewRouter())
 	message := "foo"
 
 	assert.Equal(0, len(ctx.Messages()))
@@ -71,7 +72,7 @@ func TestMessagesNoError(t *testing.T) {
 func TestMessagesWithError(t *testing.T) {
 	assert := assert.New(t)
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
-	ctx := NewContext(nil, req)
+	ctx := NewContext(nil, req, mux.NewRouter())
 	message := "foo"
 	errMessage := "blah"
 	err := fmt.Errorf(errMessage)
@@ -93,7 +94,7 @@ func TestMessagesWithError(t *testing.T) {
 func TestHeader(t *testing.T) {
 	assert := assert.New(t)
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
-	ctx := NewContext(nil, req)
+	ctx := NewContext(nil, req, mux.NewRouter())
 
 	assert.Equal(req.Header, ctx.Header())
 }

@@ -18,6 +18,7 @@ package rest
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -71,6 +72,8 @@ type RequestContext interface {
 	// cursor. If there is no cursor for this request or the URL fails to be built, an empty
 	// string is returned with the error set.
 	NextURL() (string, error)
+
+	BuildURL(string, string) (string, error)
 
 	// ResponseFormat returns the response format for the request, defaulting to "json" if
 	// one is not specified using the "format" query parameter.
@@ -130,12 +133,13 @@ type RequestContext interface {
 type gorillaRequestContext struct {
 	context.Context
 	req      *http.Request
+	router   *mux.Router
 	messages []string
 }
 
 // NewContext returns a RequestContext populated with parameters from the request path and
 // query string.
-func NewContext(parent context.Context, req *http.Request) RequestContext {
+func NewContext(parent context.Context, req *http.Request, router *mux.Router) RequestContext {
 	if parent == nil {
 		parent = context.Background()
 	}
@@ -162,14 +166,14 @@ func NewContext(parent context.Context, req *http.Request) RequestContext {
 	// parameters with the same name as query string values. Figure out a
 	// better way to handle this.
 
-	return &gorillaRequestContext{parent, req, []string{}}
+	return &gorillaRequestContext{parent, req, router, []string{}}
 }
 
 // WithValue returns a new RequestContext with the provided key-value pair and this context
 // as the parent.
 func (ctx *gorillaRequestContext) WithValue(key, value interface{}) RequestContext {
 	if r, ok := ctx.Request(); ok {
-		return &gorillaRequestContext{context.WithValue(ctx, key, value), r, ctx.messages}
+		return &gorillaRequestContext{context.WithValue(ctx, key, value), r, ctx.router, ctx.messages}
 	}
 
 	// Should not reach this.
@@ -323,6 +327,30 @@ func (ctx *gorillaRequestContext) NextURL() (string, error) {
 	q.Set("next", cursor)
 	u.RawQuery = q.Encode()
 	return u.String(), nil
+}
+
+func (ctx *gorillaRequestContext) BuildURL(routeName, resourceID string) (string, error) {
+	r, ok := ctx.Request()
+	if !ok {
+		return "", fmt.Errorf("Unable to build next url: no request")
+	}
+
+	scheme := "http"
+	if r.TLS != nil {
+		scheme += "s"
+	}
+
+	// Need a way to get route name without knowledge of go-rest internals
+	// routeName := resourceName + ":read"
+	uri, err := ctx.router.Get(routeName).
+		Schemes(scheme).
+		Host(r.Host).
+		URL("version", ctx.Version(),
+		"resource_id", resourceID)
+	if err != nil {
+		log.Println(err)
+	}
+	return fmt.Sprintf("%v", uri), nil
 }
 
 // Messages returns all of the messages set by the request handler to be included in
