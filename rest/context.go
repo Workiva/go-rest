@@ -72,7 +72,8 @@ type RequestContext interface {
 	// string is returned with the error set.
 	NextURL() (string, error)
 
-	BuildURL(string, string) (string, error)
+	// BuildURL builds the URL for the given route name and resource ID.
+	BuildURL(routeName, resourceID string) (string, error)
 
 	// ResponseFormat returns the response format for the request, defaulting to "json" if
 	// one is not specified using the "format" query parameter.
