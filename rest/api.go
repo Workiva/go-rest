@@ -159,8 +159,6 @@ type API interface {
 	// responseSerializer returns a ResponseSerializer for the given format type. If the
 	// format is not implemented, the returned serializer will be nil and the error set.
 	responseSerializer(string) (ResponseSerializer, error)
-
-	Router() *mux.Router
 }
 
 // RequestMiddleware is a function that returns a Handler wrapping the provided Handler.
@@ -192,10 +190,6 @@ type muxAPI struct {
 	resourceHandlers   []ResourceHandler
 }
 
-func (r *muxAPI) Router() *mux.Router {
-	return r.router
-}
-
 // NewAPI returns a newly allocated API instance.
 func NewAPI(config *Configuration) API {
 	r := mux.NewRouter()
@@ -205,7 +199,7 @@ func NewAPI(config *Configuration) API {
 		serializerRegistry: map[string]ResponseSerializer{"json": &jsonSerializer{}},
 		resourceHandlers:   make([]ResourceHandler, 0),
 	}
-	restAPI.handler = &requestHandler{restAPI}
+	restAPI.handler = &requestHandler{restAPI, r}
 	return restAPI
 }
 
