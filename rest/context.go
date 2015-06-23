@@ -18,7 +18,6 @@ package rest
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -332,7 +331,8 @@ func (ctx *gorillaRequestContext) NextURL() (string, error) {
 func (ctx *gorillaRequestContext) BuildURL(routeName, resourceID string) (string, error) {
 	r, ok := ctx.Request()
 	if !ok {
-		return "", fmt.Errorf("Unable to build next url: no request")
+		return "", fmt.Errorf("Unable to build URL for route name %q with resource ID %q: No request available.",
+			routeName, resourceID)
 	}
 
 	scheme := "http"
@@ -348,9 +348,10 @@ func (ctx *gorillaRequestContext) BuildURL(routeName, resourceID string) (string
 		URL("version", ctx.Version(),
 		"resource_id", resourceID)
 	if err != nil {
-		log.Println(err)
+		return "", err
 	}
-	return fmt.Sprintf("%v", uri), nil
+
+	return uri.String(), nil
 }
 
 // Messages returns all of the messages set by the request handler to be included in
