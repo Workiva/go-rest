@@ -139,7 +139,7 @@ type gorillaRequestContext struct {
 
 // NewContext returns a RequestContext populated with parameters from the request path and
 // query string.
-func NewContext(parent context.Context, req *http.Request, router *mux.Router) RequestContext {
+func NewContext(parent context.Context, req *http.Request) RequestContext {
 	if parent == nil {
 		parent = context.Background()
 	}
@@ -166,7 +166,13 @@ func NewContext(parent context.Context, req *http.Request, router *mux.Router) R
 	// parameters with the same name as query string values. Figure out a
 	// better way to handle this.
 
-	return &gorillaRequestContext{parent, req, router, []string{}}
+	return &gorillaRequestContext{parent, req, nil, []string{}}
+}
+
+func NewContextWithRouter(parent context.Context, req *http.Request, router *mux.Router) RequestContext {
+	context := NewContext(parent, req)
+	context.(*gorillaRequestContext).router = router
+	return context
 }
 
 // WithValue returns a new RequestContext with the provided key-value pair and this context
