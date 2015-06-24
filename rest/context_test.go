@@ -17,10 +17,13 @@ limitations under the License.
 package rest
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"testing"
 
+	gContext "github.com/gorilla/context"
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -96,4 +99,35 @@ func TestHeader(t *testing.T) {
 	ctx := NewContext(nil, req)
 
 	assert.Equal(req.Header, ctx.Header())
+}
+
+func TestBuildURL(t *testing.T) {
+	assert := assert.New(t)
+
+	router := mux.NewRouter()
+	router.
+		Path("/api/v{version}/widgets/{resource_id}").
+		Methods("POST").
+		Schemes("http", "https").
+		Name("test_post_route")
+
+	router.
+		Path("/api/v{version}/widgets").
+		Methods("GET").
+		Schemes("http", "https").
+		Name("test_get_route")
+
+	req, _ := http.NewRequest("GET", "https://example.com/api/v1/widgets", nil)
+	gContext.Set(req, "version", "1")
+
+	ctx := NewContextWithRouter(nil, req, router)
+
+	url, _ := ctx.BuildURL("test_post_route", "111")
+	assert.Equal(url, "http://example.com/api/v1/widgets/111")
+
+	// Secure request should produce https URL
+	req.TLS = &tls.ConnectionState{}
+	url, _ = ctx.BuildURL("test_post_route", "222")
+	assert.Equal(url, "https://example.com/api/v1/widgets/222")
+
 }

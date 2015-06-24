@@ -342,15 +342,9 @@ func (ctx *gorillaRequestContext) BuildURL(routeName, resourceID string) (string
 			routeName, resourceID)
 	}
 
-	scheme := "http"
-	if r.TLS != nil {
-		scheme += "s"
-	}
-
 	// Need a way to get route name without knowledge of go-rest internals
 	// routeName := resourceName + ":read"
-	uri, err := ctx.router.Get(routeName).
-		Schemes(scheme).
+	url, err := ctx.router.Get(routeName).
 		Host(r.Host).
 		URL("version", ctx.Version(),
 		"resource_id", resourceID)
@@ -358,7 +352,11 @@ func (ctx *gorillaRequestContext) BuildURL(routeName, resourceID string) (string
 		return "", err
 	}
 
-	return uri.String(), nil
+	if r.TLS != nil {
+		url.Scheme = "https"
+	}
+
+	return url.String(), nil
 }
 
 // Messages returns all of the messages set by the request handler to be included in
