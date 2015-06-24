@@ -117,17 +117,32 @@ func TestBuildURL(t *testing.T) {
 		Schemes("http", "https").
 		Name("test_get_route")
 
+	router.
+		Path("/api/v{version}/{company}/{category}/widgets").
+		Methods("GET").
+		Schemes("http", "https").
+		Name("test_complex_get_route")
+
 	req, _ := http.NewRequest("GET", "https://example.com/api/v1/widgets", nil)
 	gContext.Set(req, "version", "1")
 
 	ctx := NewContextWithRouter(nil, req, router)
 
-	url, _ := ctx.BuildURL("test_post_route", "111")
+	url, _ := ctx.BuildURL("test_post_route", "resource_id", "111")
 	assert.Equal(url, "http://example.com/api/v1/widgets/111")
+
+	url, _ = ctx.BuildPath("test_post_route", "resource_id", "111")
+	assert.Equal(url, "/api/v1/widgets/111")
 
 	// Secure request should produce https URL
 	req.TLS = &tls.ConnectionState{}
-	url, _ = ctx.BuildURL("test_post_route", "222")
+	url, _ = ctx.BuildURL("test_post_route", "resource_id", "222")
 	assert.Equal(url, "https://example.com/api/v1/widgets/222")
+
+	url, _ = ctx.BuildURL(
+		"test_complex_get_route",
+		"company", "acme",
+		"category", "anvils")
+	assert.Equal(url, "https://example.com/api/v1/acme/anvils/widgets")
 
 }

@@ -72,8 +72,13 @@ type RequestContext interface {
 	// string is returned with the error set.
 	NextURL() (string, error)
 
-	// BuildURL builds the URL for the given route name and resource ID.
-	BuildURL(routeName, resourceID string) (string, error)
+	// BuildURL builds a full URL for the given route name with the
+	// key/value pairs for the route variables
+	BuildURL(routeName string, pairs ...string) (string, error)
+
+	// BuildPath builds a URL path for the given route name with the
+	// key/value pairs for the route variables
+	BuildPath(routeName string, pairs ...string) (string, error)
 
 	// ResponseFormat returns the response format for the request, defaulting to "json" if
 	// one is not specified using the "format" query parameter.
@@ -335,19 +340,24 @@ func (ctx *gorillaRequestContext) NextURL() (string, error) {
 	return u.String(), nil
 }
 
-func (ctx *gorillaRequestContext) BuildURL(routeName, resourceID string) (string, error) {
+func (ctx *gorillaRequestContext) buildURL(fullPath bool, routeName string, pairs ...string) (string, error) {
 	r, ok := ctx.Request()
 	if !ok {
-		return "", fmt.Errorf("Unable to build URL for route name %q with resource ID %q: No request available.",
-			routeName, resourceID)
+		return "", fmt.Errorf("unable to build URL for route name %q: no request available.",
+			routeName)
 	}
 
-	// Need a way to get route name without knowledge of go-rest internals
-	// routeName := resourceName + ":read"
-	url, err := ctx.router.Get(routeName).
-		Host(r.Host).
-		URL("version", ctx.Version(),
-		"resource_id", resourceID)
+	route := ctx.router.Get(routeName).Host(r.Host)
+
+	var builder func(pairs ...string) (*url.URL, error)
+	if fullPath {
+		builder = route.URL
+	} else {
+		builder = route.URLPath
+	}
+
+	pairs = append(pairs, "version", ctx.Version())
+	url, err := builder(pairs...)
 	if err != nil {
 		return "", err
 	}
@@ -357,6 +367,18 @@ func (ctx *gorillaRequestContext) BuildURL(routeName, resourceID string) (string
 	}
 
 	return url.String(), nil
+}
+
+// BuildURL builds a full URL for the given route name with the
+// key/value pairs for the route variables
+func (ctx *gorillaRequestContext) BuildURL(routeName string, pairs ...string) (string, error) {
+	return ctx.buildURL(true, routeName, pairs...)
+}
+
+// BuildPath builds a URL path for the given route name with the
+// key/value pairs for the route variables
+func (ctx *gorillaRequestContext) BuildPath(routeName string, pairs ...string) (string, error) {
+	return ctx.buildURL(false, routeName, pairs...)
 }
 
 // Messages returns all of the messages set by the request handler to be included in
