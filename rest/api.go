@@ -30,6 +30,14 @@ import (
 const (
 	defaultLogPrefix     = "rest "
 	defaultDocsDirectory = "_docs/"
+
+	// Handler names
+	HandleCreate     = "create"
+	HandleRead       = "read"
+	HandleUpdate     = "update"
+	HandleDelete     = "delete"
+	HandleReadList   = "readList"
+	HandleUpdateList = "updateList"
 )
 
 // Address is the address and port to bind to (e.g. ":8080").
@@ -278,32 +286,32 @@ func (r *muxAPI) RegisterResourceHandler(h ResourceHandler, middleware ...Reques
 	// that and log it if it fails :)
 	r.router.Handle(
 		h.CreateURI(), applyMiddleware(r.handler.handleCreate(h), middleware),
-	).Methods("POST").Name(resource + ":create")
+	).Methods("POST").Name(resource + ":" + HandleCreate)
 	r.checkRoute("create", h.CreateURI(), "POST", route)
 
 	r.router.Handle(
 		h.ReadListURI(), applyMiddleware(r.handler.handleReadList(h), middleware),
-	).Methods("GET").Name(resource + ":readList")
+	).Methods("GET").Name(resource + ":" + HandleReadList)
 	r.checkRoute("read list", h.ReadListURI(), "GET", route)
 
 	r.router.Handle(
 		h.ReadURI(), applyMiddleware(r.handler.handleRead(h), middleware),
-	).Methods("GET").Name(resource + ":read")
+	).Methods("GET").Name(resource + ":" + HandleRead)
 	r.checkRoute("read", h.ReadURI(), "GET", route)
 
 	r.router.Handle(
 		h.UpdateListURI(), applyMiddleware(r.handler.handleUpdateList(h), middleware),
-	).Methods("PUT").Name(resource + ":updateList")
+	).Methods("PUT").Name(resource + ":" + HandleUpdateList)
 	r.checkRoute("update list", h.UpdateListURI(), "PUT", route)
 
 	r.router.Handle(
 		h.UpdateURI(), applyMiddleware(r.handler.handleUpdate(h), middleware),
-	).Methods("PUT").Name(resource + ":update")
+	).Methods("PUT").Name(resource + ":" + HandleUpdate)
 	r.checkRoute("update", h.UpdateURI(), "PUT", route)
 
 	r.router.Handle(
 		h.DeleteURI(), applyMiddleware(r.handler.handleDelete(h), middleware),
-	).Methods("DELETE").Name(resource + ":delete")
+	).Methods("DELETE").Name(resource + ":" + HandleDelete)
 	r.checkRoute("delete", h.DeleteURI(), "DELETE", route)
 
 	r.resourceHandlers = append(r.resourceHandlers, h)

@@ -23,9 +23,41 @@ import (
 	"testing"
 
 	gContext "github.com/gorilla/context"
-	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 )
+
+// Test Handlers
+type TestResourceHandler struct{ BaseResourceHandler }
+
+func (t TestResourceHandler) ResourceName() string { return "widgets" }
+
+func (t TestResourceHandler) CreateResource(r RequestContext, data Payload,
+	version string) (Resource, error) {
+
+	resource := map[string]string{"test": "resource"}
+	return resource, nil
+}
+
+func (t TestResourceHandler) ReadResource(r RequestContext, id string,
+	version string) (Resource, error) {
+
+	resource := map[string]string{"test": "resource"}
+	return resource, nil
+}
+
+type ComplexTestResourceHandler struct{ BaseResourceHandler }
+
+func (t ComplexTestResourceHandler) ResourceName() string { return "resources" }
+
+func (t ComplexTestResourceHandler) CreateURI() string {
+	return "/api/v{version:[^/]+}/{company}/{category}/resources"
+}
+func (t ComplexTestResourceHandler) CreateResource(r RequestContext, data Payload,
+	version string) (Resource, error) {
+
+	resource := map[string]string{"test": "resource"}
+	return resource, nil
+}
 
 // Ensures that if a limit doesn't exist on the context, the default is returned.
 func TestLimitDefault(t *testing.T) {
@@ -104,45 +136,31 @@ func TestHeader(t *testing.T) {
 func TestBuildURL(t *testing.T) {
 	assert := assert.New(t)
 
-	router := mux.NewRouter()
-	router.
-		Path("/api/v{version}/widgets/{resource_id}").
-		Methods("POST").
-		Schemes("http", "https").
-		Name("test_post_route")
-
-	router.
-		Path("/api/v{version}/widgets").
-		Methods("GET").
-		Schemes("http", "https").
-		Name("test_get_route")
-
-	router.
-		Path("/api/v{version}/{company}/{category}/widgets").
-		Methods("GET").
-		Schemes("http", "https").
-		Name("test_complex_get_route")
+	api := NewAPI(NewConfiguration())
+	api.RegisterResourceHandler(TestResourceHandler{})
+	api.RegisterResourceHandler(ComplexTestResourceHandler{})
 
 	req, _ := http.NewRequest("GET", "https://example.com/api/v1/widgets", nil)
 	gContext.Set(req, "version", "1")
 
-	ctx := NewContextWithRouter(nil, req, router)
+	ctx := NewContextWithRouter(nil, req, api.(*muxAPI).router)
 
-	url, _ := ctx.BuildURL("test_post_route", "resource_id", "111")
+	url, _ := ctx.BuildURL("widgets", HandleCreate)
+	assert.Equal(url, "http://example.com/api/v1/widgets")
+
+	url, _ = ctx.BuildURL("widgets", HandleRead, "resource_id", "111")
 	assert.Equal(url, "http://example.com/api/v1/widgets/111")
 
-	url, _ = ctx.BuildPath("test_post_route", "resource_id", "111")
+	url, _ = ctx.BuildPath("widgets", HandleRead, "resource_id", "111")
 	assert.Equal(url, "/api/v1/widgets/111")
 
 	// Secure request should produce https URL
 	req.TLS = &tls.ConnectionState{}
-	url, _ = ctx.BuildURL("test_post_route", "resource_id", "222")
+	url, _ = ctx.BuildURL("widgets", HandleRead, "resource_id", "222")
 	assert.Equal(url, "https://example.com/api/v1/widgets/222")
 
-	url, _ = ctx.BuildURL(
-		"test_complex_get_route",
+	url, _ = ctx.BuildURL("resources", HandleCreate,
 		"company", "acme",
 		"category", "anvils")
-	assert.Equal(url, "https://example.com/api/v1/acme/anvils/widgets")
-
+	assert.Equal(url, "https://example.com/api/v1/acme/anvils/resources")
 }
