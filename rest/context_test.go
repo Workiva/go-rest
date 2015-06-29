@@ -167,8 +167,10 @@ func TestBuildURL(t *testing.T) {
 	url, _ = ctx.BuildURL("widgets", HandleRead, RouteVars{"resource_id": "222"})
 	assert.Equal(url, "https://example.com/api/v1/widgets/222")
 
+	// Make sure this works with another version number
+	gContext.Set(req, "version", "2")
 	url, _ = ctx.BuildURL("resources", HandleCreate, RouteVars{
 		"company":  "acme",
 		"category": "anvils"})
-	assert.Equal(url, "https://example.com/api/v1/acme/anvils/resources")
+	assert.Equal(url, "https://example.com/api/v2/acme/anvils/resources")
 }
