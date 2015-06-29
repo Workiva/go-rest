@@ -72,21 +72,18 @@ type RequestContext interface {
 	// string is returned with the error set.
 	NextURL() (string, error)
 
-	// BuildURL builds a full URL for the given resource name & method name with the
-	// key/value pairs for the route variables.
+	// BuildURL builds a full URL for a resource name & method.
 	//
 	// resourceName should have the same value as the handler's ResourceName method.
 	//
-	// methodName should be the Handle* constant that corresponds with the resource
+	// method is the HandleMethod constant that corresponds with the resource
 	// method for which to build the URL. E.g. HandleCreate with build a URL that
 	// corresponds with the CreateResource method.
 	//
-	// pairs should be key/value pairs for any URL variables, passed on to
-	// gorilla's Route.URL method.
+	// All URL variables should be named in the vars map.
 	BuildURL(resourceName string, method HandleMethod, vars RouteVars) (string, error)
 
-	// BuildPath builds a URL path for the given resource name & method name with the
-	// key/value pairs for the route variables.
+	// BuildURL builds a full URL for a resource name & method.
 	//
 	// See BuildURL for more details.
 	BuildPath(resourceName string, method HandleMethod, vars RouteVars) (string, error)
@@ -389,23 +386,20 @@ func (ctx *gorillaRequestContext) buildURL(fullPath bool, resourceName string,
 	return url.String(), nil
 }
 
-// BuildURL builds a full URL for the given resource name & method name with the
-// key/value pairs for the route variables.
+// BuildURL builds a full URL for a resource name & method.
 //
 // resourceName should have the same value as the handler's ResourceName method.
 //
-// methodName should be the Handle* constant that corresponds with the resource
+// method is the HandleMethod constant that corresponds with the resource
 // method for which to build the URL. E.g. HandleCreate with build a URL that
 // corresponds with the CreateResource method.
 //
-// pairs should be key/value pairs for any URL variables, passed on to
-// gorilla's Route.URL method.
+// All URL variables should be named in the vars map.
 func (ctx *gorillaRequestContext) BuildURL(resourceName string, method HandleMethod, vars RouteVars) (string, error) {
 	return ctx.buildURL(true, resourceName, method, vars)
 }
 
-// BuildPath builds a URL path for the given resource name & method name with the
-// key/value pairs for the route variables.
+// BuildURL builds a full URL for a resource name & method.
 //
 // See BuildURL for more details.
 func (ctx *gorillaRequestContext) BuildPath(resourceName string, method HandleMethod, vars RouteVars) (string, error) {
