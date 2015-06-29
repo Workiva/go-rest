@@ -17,7 +17,6 @@ limitations under the License.
 package rest
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -126,13 +125,6 @@ type ResourceHandler interface {
 type requestHandler struct {
 	API
 }
-
-type myReader struct {
-	*bytes.Buffer
-}
-
-// So that it implements the io.ReadCloser interface
-func (m myReader) Close() error { return nil }
 
 // handleCreate returns a HandlerFunc which will deserialize the request payload, pass
 // it to the provided create function, and then serialize and dispatch the response.
