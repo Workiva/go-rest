@@ -27,17 +27,19 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type HandleMethod string
+
 const (
 	defaultLogPrefix     = "rest "
 	defaultDocsDirectory = "_docs/"
 
 	// Handler names
-	HandleCreate     = "create"
-	HandleRead       = "read"
-	HandleUpdate     = "update"
-	HandleDelete     = "delete"
-	HandleReadList   = "readList"
-	HandleUpdateList = "updateList"
+	HandleCreate     HandleMethod = "create"
+	HandleRead       HandleMethod = "read"
+	HandleUpdate     HandleMethod = "update"
+	HandleDelete     HandleMethod = "delete"
+	HandleReadList   HandleMethod = "readList"
+	HandleUpdateList HandleMethod = "updateList"
 )
 
 // Address is the address and port to bind to (e.g. ":8080").
@@ -286,32 +288,32 @@ func (r *muxAPI) RegisterResourceHandler(h ResourceHandler, middleware ...Reques
 	// that and log it if it fails :)
 	r.router.Handle(
 		h.CreateURI(), applyMiddleware(r.handler.handleCreate(h), middleware),
-	).Methods("POST").Name(resource + ":" + HandleCreate)
+	).Methods("POST").Name(resource + ":" + string(HandleCreate))
 	r.checkRoute("create", h.CreateURI(), "POST", route)
 
 	r.router.Handle(
 		h.ReadListURI(), applyMiddleware(r.handler.handleReadList(h), middleware),
-	).Methods("GET").Name(resource + ":" + HandleReadList)
+	).Methods("GET").Name(resource + ":" + string(HandleReadList))
 	r.checkRoute("read list", h.ReadListURI(), "GET", route)
 
 	r.router.Handle(
 		h.ReadURI(), applyMiddleware(r.handler.handleRead(h), middleware),
-	).Methods("GET").Name(resource + ":" + HandleRead)
+	).Methods("GET").Name(resource + ":" + string(HandleRead))
 	r.checkRoute("read", h.ReadURI(), "GET", route)
 
 	r.router.Handle(
 		h.UpdateListURI(), applyMiddleware(r.handler.handleUpdateList(h), middleware),
-	).Methods("PUT").Name(resource + ":" + HandleUpdateList)
+	).Methods("PUT").Name(resource + ":" + string(HandleUpdateList))
 	r.checkRoute("update list", h.UpdateListURI(), "PUT", route)
 
 	r.router.Handle(
 		h.UpdateURI(), applyMiddleware(r.handler.handleUpdate(h), middleware),
-	).Methods("PUT").Name(resource + ":" + HandleUpdate)
+	).Methods("PUT").Name(resource + ":" + string(HandleUpdate))
 	r.checkRoute("update", h.UpdateURI(), "PUT", route)
 
 	r.router.Handle(
 		h.DeleteURI(), applyMiddleware(r.handler.handleDelete(h), middleware),
-	).Methods("DELETE").Name(resource + ":" + HandleDelete)
+	).Methods("DELETE").Name(resource + ":" + string(HandleDelete))
 	r.checkRoute("delete", h.DeleteURI(), "DELETE", route)
 
 	r.resourceHandlers = append(r.resourceHandlers, h)

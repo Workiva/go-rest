@@ -27,9 +27,13 @@ import (
 )
 
 // Test Handlers
-type TestResourceHandler struct{ BaseResourceHandler }
+type TestResourceHandler struct {
+	BaseResourceHandler
+}
 
-func (t TestResourceHandler) ResourceName() string { return "widgets" }
+func (t TestResourceHandler) ResourceName() string {
+	return "widgets"
+}
 
 func (t TestResourceHandler) CreateResource(r RequestContext, data Payload,
 	version string) (Resource, error) {
@@ -45,9 +49,13 @@ func (t TestResourceHandler) ReadResource(r RequestContext, id string,
 	return resource, nil
 }
 
-type ComplexTestResourceHandler struct{ BaseResourceHandler }
+type ComplexTestResourceHandler struct {
+	BaseResourceHandler
+}
 
-func (t ComplexTestResourceHandler) ResourceName() string { return "resources" }
+func (t ComplexTestResourceHandler) ResourceName() string {
+	return "resources"
+}
 
 func (t ComplexTestResourceHandler) CreateURI() string {
 	return "/api/v{version:[^/]+}/{company}/{category}/resources"
