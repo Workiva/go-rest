@@ -17,6 +17,7 @@ limitations under the License.
 package rest
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -126,6 +127,13 @@ type requestHandler struct {
 	API
 }
 
+type myReader struct {
+	*bytes.Buffer
+}
+
+// So that it implements the io.ReadCloser interface
+func (m myReader) Close() error { return nil }
+
 // handleCreate returns a HandlerFunc which will deserialize the request payload, pass
 // it to the provided create function, and then serialize and dispatch the response.
 // The serialization mechanism used is specified by the "format" query parameter.
@@ -135,34 +143,40 @@ func (h requestHandler) handleCreate(handler ResourceHandler) http.Handler {
 		version := ctx.Version()
 		rules := handler.Rules()
 
-		data, err := decodePayload(payloadString(r.Body))
-		if err != nil {
-			// Payload decoding failed.
-			ctx = ctx.setError(BadRequest(err.Error()))
+		if r.Header["Content-Type"][0] == "application/x-www-form-urlencoded" {
+			var data Payload
+			resource, _ := handler.CreateResource(ctx, data, ctx.Version())
+			resource = applyOutboundRules(resource, rules, version)
+			ctx = ctx.setResult(resource)
+			ctx = ctx.setStatus(http.StatusCreated)
 		} else {
-			data, err := applyInboundRules(data, rules, version)
+			data, err := decodePayload(payloadString(r.Body))
 			if err != nil {
-				// Type coercion failed.
-				ctx = ctx.setError(UnprocessableRequest(err.Error()))
+				ctx = ctx.setError(BadRequest(err.Error()))
 			} else {
-				resource, err := handler.CreateResource(ctx, data, ctx.Version())
-				if err == nil {
-					resource = applyOutboundRules(resource, rules, version)
-				}
-
-				if resource != nil {
-					ctx = ctx.setResult(resource)
-					ctx = ctx.setStatus(http.StatusCreated)
-				} else {
-					ctx = ctx.setStatus(http.StatusNoContent)
-				}
-
+				data, err := applyInboundRules(data, rules, version)
 				if err != nil {
-					ctx = ctx.setError(err)
+					// Type coercion failed.
+					ctx = ctx.setError(UnprocessableRequest(err.Error()))
+				} else {
+					resource, err := handler.CreateResource(ctx, data, ctx.Version())
+					if err == nil {
+						resource = applyOutboundRules(resource, rules, version)
+					}
+
+					if resource != nil {
+						ctx = ctx.setResult(resource)
+						ctx = ctx.setStatus(http.StatusCreated)
+					} else {
+						ctx = ctx.setStatus(http.StatusNoContent)
+					}
+
+					if err != nil {
+						ctx = ctx.setError(err)
+					}
 				}
 			}
 		}
-
 		h.sendResponse(w, ctx)
 	})
 }
@@ -276,25 +290,33 @@ func (h requestHandler) handleUpdate(handler ResourceHandler) http.Handler {
 		version := ctx.Version()
 		rules := handler.Rules()
 
-		data, err := decodePayload(payloadString(r.Body))
-		if err != nil {
-			// Payload decoding failed.
-			ctx = ctx.setError(BadRequest(err.Error()))
+		if r.Header["Content-Type"][0] == "application/x-www-form-urlencoded" {
+			var data Payload
+			resource, _ := handler.CreateResource(ctx, data, ctx.Version())
+			resource = applyOutboundRules(resource, rules, version)
+			ctx = ctx.setResult(resource)
+			ctx = ctx.setStatus(http.StatusCreated)
 		} else {
-			data, err := applyInboundRules(data, rules, version)
+			data, err := decodePayload(payloadString(r.Body))
 			if err != nil {
-				// Type coercion failed.
-				ctx = ctx.setError(UnprocessableRequest(err.Error()))
+				// Payload decoding failed.
+				ctx = ctx.setError(BadRequest(err.Error()))
 			} else {
-				resource, err := handler.UpdateResource(
-					ctx, ctx.ResourceID(), data, version)
-				if err == nil {
-					resource = applyOutboundRules(resource, rules, version)
-				}
+				data, err := applyInboundRules(data, rules, version)
+				if err != nil {
+					// Type coercion failed.
+					ctx = ctx.setError(UnprocessableRequest(err.Error()))
+				} else {
+					resource, err := handler.UpdateResource(
+						ctx, ctx.ResourceID(), data, version)
+					if err == nil {
+						resource = applyOutboundRules(resource, rules, version)
+					}
 
-				ctx = ctx.setResult(resource)
-				ctx = ctx.setError(err)
-				ctx = ctx.setStatus(http.StatusOK)
+					ctx = ctx.setResult(resource)
+					ctx = ctx.setError(err)
+					ctx = ctx.setStatus(http.StatusOK)
+				}
 			}
 		}
 
