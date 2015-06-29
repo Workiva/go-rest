@@ -83,13 +83,13 @@ type RequestContext interface {
 	//
 	// pairs should be key/value pairs for any URL variables, passed on to
 	// gorilla's Route.URL method.
-	BuildURL(resourceName string, method HandleMethod, pairs ...string) (string, error)
+	BuildURL(resourceName string, method HandleMethod, vars RouteVars) (string, error)
 
 	// BuildPath builds a URL path for the given resource name & method name with the
 	// key/value pairs for the route variables.
 	//
 	// See BuildURL for more details.
-	BuildPath(resourceName string, method HandleMethod, pairs ...string) (string, error)
+	BuildPath(resourceName string, method HandleMethod, vars RouteVars) (string, error)
 
 	// ResponseFormat returns the response format for the request, defaulting to "json" if
 	// one is not specified using the "format" query parameter.
@@ -351,8 +351,10 @@ func (ctx *gorillaRequestContext) NextURL() (string, error) {
 	return u.String(), nil
 }
 
+type RouteVars map[string]string
+
 func (ctx *gorillaRequestContext) buildURL(fullPath bool, resourceName string,
-	method HandleMethod, pairs ...string) (string, error) {
+	method HandleMethod, vars RouteVars) (string, error) {
 	r, ok := ctx.Request()
 	if !ok {
 		return "", fmt.Errorf("unable to build URL for resource name %q: no request available",
@@ -369,6 +371,11 @@ func (ctx *gorillaRequestContext) buildURL(fullPath bool, resourceName string,
 		builder = route.URLPath
 	}
 
+	// Transform RouteVars map to list of key, val pairs for Gorilla's API
+	pairs := make([]string, (len(vars)*2)+2)
+	for key, val := range vars {
+		pairs = append(pairs, key, val)
+	}
 	pairs = append(pairs, "version", ctx.Version())
 	url, err := builder(pairs...)
 	if err != nil {
@@ -393,16 +400,16 @@ func (ctx *gorillaRequestContext) buildURL(fullPath bool, resourceName string,
 //
 // pairs should be key/value pairs for any URL variables, passed on to
 // gorilla's Route.URL method.
-func (ctx *gorillaRequestContext) BuildURL(resourceName string, method HandleMethod, pairs ...string) (string, error) {
-	return ctx.buildURL(true, resourceName, method, pairs...)
+func (ctx *gorillaRequestContext) BuildURL(resourceName string, method HandleMethod, vars RouteVars) (string, error) {
+	return ctx.buildURL(true, resourceName, method, vars)
 }
 
 // BuildPath builds a URL path for the given resource name & method name with the
 // key/value pairs for the route variables.
 //
 // See BuildURL for more details.
-func (ctx *gorillaRequestContext) BuildPath(resourceName string, method HandleMethod, pairs ...string) (string, error) {
-	return ctx.buildURL(false, resourceName, method, pairs...)
+func (ctx *gorillaRequestContext) BuildPath(resourceName string, method HandleMethod, vars RouteVars) (string, error) {
+	return ctx.buildURL(false, resourceName, method, vars)
 }
 
 // Messages returns all of the messages set by the request handler to be included in

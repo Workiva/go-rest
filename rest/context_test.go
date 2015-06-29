@@ -153,22 +153,22 @@ func TestBuildURL(t *testing.T) {
 
 	ctx := NewContextWithRouter(nil, req, api.(*muxAPI).router)
 
-	url, _ := ctx.BuildURL("widgets", HandleCreate)
+	url, _ := ctx.BuildURL("widgets", HandleCreate, nil)
 	assert.Equal(url, "http://example.com/api/v1/widgets")
 
-	url, _ = ctx.BuildURL("widgets", HandleRead, "resource_id", "111")
+	url, _ = ctx.BuildURL("widgets", HandleRead, RouteVars{"resource_id": "111"})
 	assert.Equal(url, "http://example.com/api/v1/widgets/111")
 
-	url, _ = ctx.BuildPath("widgets", HandleRead, "resource_id", "111")
+	url, _ = ctx.BuildPath("widgets", HandleRead, RouteVars{"resource_id": "111"})
 	assert.Equal(url, "/api/v1/widgets/111")
 
 	// Secure request should produce https URL
 	req.TLS = &tls.ConnectionState{}
-	url, _ = ctx.BuildURL("widgets", HandleRead, "resource_id", "222")
+	url, _ = ctx.BuildURL("widgets", HandleRead, RouteVars{"resource_id": "222"})
 	assert.Equal(url, "https://example.com/api/v1/widgets/222")
 
-	url, _ = ctx.BuildURL("resources", HandleCreate,
-		"company", "acme",
-		"category", "anvils")
+	url, _ = ctx.BuildURL("resources", HandleCreate, RouteVars{
+		"company":  "acme",
+		"category": "anvils"})
 	assert.Equal(url, "https://example.com/api/v1/acme/anvils/resources")
 }
