@@ -348,6 +348,11 @@ func (ctx *gorillaRequestContext) NextURL() (string, error) {
 	return u.String(), nil
 }
 
+// RouteVars is a map of URL route variables to values.
+//
+//     vars = RouteVars{"category": "widgets", "resource_id": "42"}
+//
+// Variables are defined in CreateURI and the other URI methods.
 type RouteVars map[string]string
 
 func (ctx *gorillaRequestContext) buildURL(fullPath bool, resourceName string,
