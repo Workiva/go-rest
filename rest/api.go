@@ -35,11 +35,11 @@ const (
 
 	// Handler names
 	HandleCreate     HandleMethod = "create"
-	HandleRead       HandleMethod = "read"
-	HandleUpdate     HandleMethod = "update"
-	HandleDelete     HandleMethod = "delete"
-	HandleReadList   HandleMethod = "readList"
-	HandleUpdateList HandleMethod = "updateList"
+	HandleRead                    = "read"
+	HandleUpdate                  = "update"
+	HandleDelete                  = "delete"
+	HandleReadList                = "readList"
+	HandleUpdateList              = "updateList"
 )
 
 // Address is the address and port to bind to (e.g. ":8080").
