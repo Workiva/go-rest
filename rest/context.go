@@ -364,7 +364,7 @@ func (ctx *gorillaRequestContext) buildURL(fullPath bool, resourceName string,
 	}
 
 	routeName := resourceName + ":" + string(method)
-	route := ctx.router.Get(routeName).Host(r.Host)
+	route := ctx.router.Get(routeName)
 
 	var builder func(pairs ...string) (*url.URL, error)
 	if fullPath {
@@ -383,9 +383,11 @@ func (ctx *gorillaRequestContext) buildURL(fullPath bool, resourceName string,
 	if err != nil {
 		return "", err
 	}
+	url.Host = r.Host
 
+	url.Scheme = "http"
 	if r.TLS != nil {
-		url.Scheme = "https"
+		url.Scheme += "s"
 	}
 
 	return url.String(), nil
