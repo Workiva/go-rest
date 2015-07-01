@@ -17,12 +17,55 @@ limitations under the License.
 package rest
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"testing"
 
+	gContext "github.com/gorilla/context"
 	"github.com/stretchr/testify/assert"
 )
+
+// Test Handlers
+type TestResourceHandler struct {
+	BaseResourceHandler
+}
+
+func (t TestResourceHandler) ResourceName() string {
+	return "widgets"
+}
+
+func (t TestResourceHandler) CreateResource(r RequestContext, data Payload,
+	version string) (Resource, error) {
+
+	resource := map[string]string{"test": "resource"}
+	return resource, nil
+}
+
+func (t TestResourceHandler) ReadResource(r RequestContext, id string,
+	version string) (Resource, error) {
+
+	resource := map[string]string{"test": "resource"}
+	return resource, nil
+}
+
+type ComplexTestResourceHandler struct {
+	BaseResourceHandler
+}
+
+func (t ComplexTestResourceHandler) ResourceName() string {
+	return "resources"
+}
+
+func (t ComplexTestResourceHandler) CreateURI() string {
+	return "/api/v{version:[^/]+}/{company}/{category}/resources"
+}
+func (t ComplexTestResourceHandler) CreateResource(r RequestContext, data Payload,
+	version string) (Resource, error) {
+
+	resource := map[string]string{"test": "resource"}
+	return resource, nil
+}
 
 // Ensures that if a limit doesn't exist on the context, the default is returned.
 func TestLimitDefault(t *testing.T) {
@@ -96,4 +139,38 @@ func TestHeader(t *testing.T) {
 	ctx := NewContext(nil, req)
 
 	assert.Equal(req.Header, ctx.Header())
+}
+
+func TestBuildURL(t *testing.T) {
+	assert := assert.New(t)
+
+	api := NewAPI(NewConfiguration())
+	api.RegisterResourceHandler(TestResourceHandler{})
+	api.RegisterResourceHandler(ComplexTestResourceHandler{})
+
+	req, _ := http.NewRequest("GET", "https://example.com/api/v1/widgets", nil)
+	gContext.Set(req, "version", "1")
+
+	ctx := NewContextWithRouter(nil, req, api.(*muxAPI).router)
+
+	url, _ := ctx.BuildURL("widgets", HandleCreate, nil)
+	assert.Equal(url, "http://example.com/api/v1/widgets")
+
+	url, _ = ctx.BuildURL("widgets", HandleRead, RouteVars{"resource_id": "111"})
+	assert.Equal(url, "http://example.com/api/v1/widgets/111")
+
+	url, _ = ctx.BuildPath("widgets", HandleRead, RouteVars{"resource_id": "111"})
+	assert.Equal(url, "/api/v1/widgets/111")
+
+	// Secure request should produce https URL
+	req.TLS = &tls.ConnectionState{}
+	url, _ = ctx.BuildURL("widgets", HandleRead, RouteVars{"resource_id": "222"})
+	assert.Equal(url, "https://example.com/api/v1/widgets/222")
+
+	// Make sure this works with another version number
+	gContext.Set(req, "version", "2")
+	url, _ = ctx.BuildURL("resources", HandleCreate, RouteVars{
+		"company":  "acme",
+		"category": "anvils"})
+	assert.Equal(url, "https://example.com/api/v2/acme/anvils/resources")
 }

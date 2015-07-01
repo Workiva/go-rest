@@ -23,6 +23,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 // Resource represents a domain model.
@@ -124,6 +126,7 @@ type ResourceHandler interface {
 // requestHandler constructs http.HandlerFuncs responsible for handling HTTP requests.
 type requestHandler struct {
 	API
+	router *mux.Router
 }
 
 // handleCreate returns a HandlerFunc which will deserialize the request payload, pass
@@ -131,7 +134,7 @@ type requestHandler struct {
 // The serialization mechanism used is specified by the "format" query parameter.
 func (h requestHandler) handleCreate(handler ResourceHandler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := NewContext(nil, r)
+		ctx := NewContextWithRouter(nil, r, h.router)
 		version := ctx.Version()
 		rules := handler.Rules()
 
@@ -172,7 +175,7 @@ func (h requestHandler) handleCreate(handler ResourceHandler) http.Handler {
 // serialization mechanism used is specified by the "format" query parameter.
 func (h requestHandler) handleReadList(handler ResourceHandler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := NewContext(nil, r)
+		ctx := NewContextWithRouter(nil, r, h.router)
 		version := ctx.Version()
 		rules := handler.Rules()
 
@@ -200,7 +203,7 @@ func (h requestHandler) handleReadList(handler ResourceHandler) http.Handler {
 // mechanism used is specified by the "format" query parameter.
 func (h requestHandler) handleRead(handler ResourceHandler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := NewContext(nil, r)
+		ctx := NewContextWithRouter(nil, r, h.router)
 		version := ctx.Version()
 		rules := handler.Rules()
 
@@ -223,7 +226,7 @@ func (h requestHandler) handleRead(handler ResourceHandler) http.Handler {
 // parameter.
 func (h requestHandler) handleUpdateList(handler ResourceHandler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := NewContext(nil, r)
+		ctx := NewContextWithRouter(nil, r, h.router)
 		version := ctx.Version()
 		rules := handler.Rules()
 
@@ -272,7 +275,7 @@ func (h requestHandler) handleUpdateList(handler ResourceHandler) http.Handler {
 // parameter.
 func (h requestHandler) handleUpdate(handler ResourceHandler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := NewContext(nil, r)
+		ctx := NewContextWithRouter(nil, r, h.router)
 		version := ctx.Version()
 		rules := handler.Rules()
 
@@ -307,7 +310,7 @@ func (h requestHandler) handleUpdate(handler ResourceHandler) http.Handler {
 // mechanism used is specified by the "format" query parameter.
 func (h requestHandler) handleDelete(handler ResourceHandler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := NewContext(nil, r)
+		ctx := NewContextWithRouter(nil, r, h.router)
 		version := ctx.Version()
 		rules := handler.Rules()
 

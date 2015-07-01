@@ -72,6 +72,22 @@ type RequestContext interface {
 	// string is returned with the error set.
 	NextURL() (string, error)
 
+	// BuildURL builds a full URL for a resource name & method.
+	//
+	// resourceName should have the same value as the handler's ResourceName method.
+	//
+	// method is the HandleMethod constant that corresponds with the resource
+	// method for which to build the URL. E.g. HandleCreate with build a URL that
+	// corresponds with the CreateResource method.
+	//
+	// All URL variables should be named in the vars map.
+	BuildURL(resourceName string, method HandleMethod, vars RouteVars) (string, error)
+
+	// BuildURL builds a full URL for a resource name & method.
+	//
+	// See BuildURL for more details.
+	BuildPath(resourceName string, method HandleMethod, vars RouteVars) (string, error)
+
 	// ResponseFormat returns the response format for the request, defaulting to "json" if
 	// one is not specified using the "format" query parameter.
 	ResponseFormat() string
@@ -130,6 +146,7 @@ type RequestContext interface {
 type gorillaRequestContext struct {
 	context.Context
 	req      *http.Request
+	router   *mux.Router
 	messages []string
 }
 
@@ -162,14 +179,20 @@ func NewContext(parent context.Context, req *http.Request) RequestContext {
 	// parameters with the same name as query string values. Figure out a
 	// better way to handle this.
 
-	return &gorillaRequestContext{parent, req, []string{}}
+	return &gorillaRequestContext{parent, req, nil, []string{}}
+}
+
+func NewContextWithRouter(parent context.Context, req *http.Request, router *mux.Router) RequestContext {
+	context := NewContext(parent, req)
+	context.(*gorillaRequestContext).router = router
+	return context
 }
 
 // WithValue returns a new RequestContext with the provided key-value pair and this context
 // as the parent.
 func (ctx *gorillaRequestContext) WithValue(key, value interface{}) RequestContext {
 	if r, ok := ctx.Request(); ok {
-		return &gorillaRequestContext{context.WithValue(ctx, key, value), r, ctx.messages}
+		return &gorillaRequestContext{context.WithValue(ctx, key, value), r, ctx.router, ctx.messages}
 	}
 
 	// Should not reach this.
@@ -323,6 +346,69 @@ func (ctx *gorillaRequestContext) NextURL() (string, error) {
 	q.Set("next", cursor)
 	u.RawQuery = q.Encode()
 	return u.String(), nil
+}
+
+// RouteVars is a map of URL route variables to values.
+//
+//     vars = RouteVars{"category": "widgets", "resource_id": "42"}
+//
+// Variables are defined in CreateURI and the other URI methods.
+type RouteVars map[string]string
+
+func (ctx *gorillaRequestContext) buildURL(fullPath bool, resourceName string,
+	method HandleMethod, vars RouteVars) (string, error) {
+	r, ok := ctx.Request()
+	if !ok {
+		return "", fmt.Errorf("unable to build URL for resource name %q: no request available",
+			resourceName)
+	}
+
+	routeName := resourceName + ":" + string(method)
+	route := ctx.router.Get(routeName).Host(r.Host)
+
+	var builder func(pairs ...string) (*url.URL, error)
+	if fullPath {
+		builder = route.URL
+	} else {
+		builder = route.URLPath
+	}
+
+	// Transform RouteVars map to list of key, val pairs for Gorilla's API
+	pairs := make([]string, (len(vars)*2)+2)
+	for key, val := range vars {
+		pairs = append(pairs, key, val)
+	}
+	pairs = append(pairs, "version", ctx.Version())
+	url, err := builder(pairs...)
+	if err != nil {
+		return "", err
+	}
+
+	if r.TLS != nil {
+		url.Scheme = "https"
+	}
+
+	return url.String(), nil
+}
+
+// BuildURL builds a full URL for a resource name & method.
+//
+// resourceName should have the same value as the handler's ResourceName method.
+//
+// method is the HandleMethod constant that corresponds with the resource
+// method for which to build the URL. E.g. HandleCreate with build a URL that
+// corresponds with the CreateResource method.
+//
+// All URL variables should be named in the vars map.
+func (ctx *gorillaRequestContext) BuildURL(resourceName string, method HandleMethod, vars RouteVars) (string, error) {
+	return ctx.buildURL(true, resourceName, method, vars)
+}
+
+// BuildURL builds a full URL for a resource name & method.
+//
+// See BuildURL for more details.
+func (ctx *gorillaRequestContext) BuildPath(resourceName string, method HandleMethod, vars RouteVars) (string, error) {
+	return ctx.buildURL(false, resourceName, method, vars)
 }
 
 // Messages returns all of the messages set by the request handler to be included in
