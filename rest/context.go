@@ -366,20 +366,13 @@ func (ctx *gorillaRequestContext) buildURL(fullPath bool, resourceName string,
 	routeName := resourceName + ":" + string(method)
 	route := ctx.router.Get(routeName)
 
-	var builder func(pairs ...string) (*url.URL, error)
-	if fullPath {
-		builder = route.URL
-	} else {
-		builder = route.URLPath
-	}
-
 	// Transform RouteVars map to list of key, val pairs for Gorilla's API
 	pairs := make([]string, (len(vars)*2)+2)
 	for key, val := range vars {
 		pairs = append(pairs, key, val)
 	}
 	pairs = append(pairs, "version", ctx.Version())
-	url, err := builder(pairs...)
+	url, err := route.URL(pairs...)
 	if err != nil {
 		return "", err
 	}
@@ -390,7 +383,13 @@ func (ctx *gorillaRequestContext) buildURL(fullPath bool, resourceName string,
 		url.Scheme += "s"
 	}
 
-	return url.String(), nil
+	urlStr := ""
+	if fullPath {
+		urlStr = url.String()
+	} else {
+		urlStr = url.Path
+	}
+	return urlStr, nil
 }
 
 // BuildURL builds a full URL for a resource name & method.
