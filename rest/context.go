@@ -350,7 +350,16 @@ func (ctx *gorillaRequestContext) NextURL() (string, error) {
 // Variables are defined in CreateURI and the other URI methods.
 type RouteVars map[string]string
 
-func (ctx *gorillaRequestContext) buildURL(fullPath bool, resourceName string,
+// BuildURL builds a full URL for a resource name & method.
+//
+// resourceName should have the same value as the handler's ResourceName method.
+//
+// method is the HandleMethod constant that corresponds with the resource
+// method for which to build the URL. E.g. HandleCreate with build a URL that
+// corresponds with the CreateResource method.
+//
+// All URL variables should be named in the vars map.
+func (ctx *gorillaRequestContext) BuildURL(resourceName string,
 	method HandleMethod, vars RouteVars) (*url.URL, error) {
 	r, ok := ctx.Request()
 	if !ok {
@@ -379,19 +388,6 @@ func (ctx *gorillaRequestContext) buildURL(fullPath bool, resourceName string,
 	}
 
 	return url, nil
-}
-
-// BuildURL builds a full URL for a resource name & method.
-//
-// resourceName should have the same value as the handler's ResourceName method.
-//
-// method is the HandleMethod constant that corresponds with the resource
-// method for which to build the URL. E.g. HandleCreate with build a URL that
-// corresponds with the CreateResource method.
-//
-// All URL variables should be named in the vars map.
-func (ctx *gorillaRequestContext) BuildURL(resourceName string, method HandleMethod, vars RouteVars) (*url.URL, error) {
-	return ctx.buildURL(true, resourceName, method, vars)
 }
 
 // Messages returns all of the messages set by the request handler to be included in
