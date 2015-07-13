@@ -157,7 +157,6 @@ func TestBuildURL(t *testing.T) {
 
 	req, _ := http.NewRequest("GET", "https://example.com/api/v1/widgets", nil)
 	gContext.Set(req, "version", "1")
-	
 
 	writer := httptest.NewRecorder()
 	ctx := NewContextWithRouter(nil, req, writer, api.(*muxAPI).router)

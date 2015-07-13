@@ -138,7 +138,7 @@ type RequestContext interface {
 
 	// Header returns the header key-value pairs for the request.
 	Header() http.Header
-	
+
 	// ResponseWriter Access to Response Writer Interface to allow for setting Response Header values
 	ResponseWriter() http.ResponseWriter
 }
@@ -178,7 +178,7 @@ func NewContext(parent context.Context, req *http.Request, writer http.ResponseW
 	for key, value := range mux.Vars(req) {
 		gcontext.Set(req, key, value)
 	}
-	
+
 	// TODO: Keys can potentially be overwritten if the request path has
 	// parameters with the same name as query string values. Figure out a
 	// better way to handle this.
@@ -186,7 +186,7 @@ func NewContext(parent context.Context, req *http.Request, writer http.ResponseW
 	return &gorillaRequestContext{parent, req, writer, nil, []string{}}
 }
 
-func NewContextWithRouter(parent context.Context, req *http.Request, writer http.ResponseWriter, 
+func NewContextWithRouter(parent context.Context, req *http.Request, writer http.ResponseWriter,
 	router *mux.Router) RequestContext {
 
 	context := NewContext(parent, req, writer)
