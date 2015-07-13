@@ -162,23 +162,23 @@ func TestBuildURL(t *testing.T) {
 	ctx := NewContextWithRouter(nil, req, writer, api.(*muxAPI).router)
 
 	url, _ := ctx.BuildURL("widgets", HandleCreate, nil)
-	assert.Equal(url, "http://example.com/api/v1/widgets")
+	assert.Equal(url.String(), "http://example.com/api/v1/widgets")
 
 	url, _ = ctx.BuildURL("widgets", HandleRead, RouteVars{"resource_id": "111"})
-	assert.Equal(url, "http://example.com/api/v1/widgets/111")
+	assert.Equal(url.String(), "http://example.com/api/v1/widgets/111")
 
-	url, _ = ctx.BuildPath("widgets", HandleRead, RouteVars{"resource_id": "111"})
-	assert.Equal(url, "/api/v1/widgets/111")
+	url, _ = ctx.BuildURL("widgets", HandleRead, RouteVars{"resource_id": "111"})
+	assert.Equal(url.Path, "/api/v1/widgets/111")
 
 	// Secure request should produce https URL
 	req.TLS = &tls.ConnectionState{}
 	url, _ = ctx.BuildURL("widgets", HandleRead, RouteVars{"resource_id": "222"})
-	assert.Equal(url, "https://example.com/api/v1/widgets/222")
+	assert.Equal(url.String(), "https://example.com/api/v1/widgets/222")
 
 	// Make sure this works with another version number
 	gContext.Set(req, "version", "2")
 	url, _ = ctx.BuildURL("resources", HandleCreate, RouteVars{
 		"company":  "acme",
 		"category": "anvils"})
-	assert.Equal(url, "https://example.com/api/v2/acme/anvils/resources")
+	assert.Equal(url.String(), "https://example.com/api/v2/acme/anvils/resources")
 }
