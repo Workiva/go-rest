@@ -139,7 +139,7 @@ type RequestContext interface {
 	// Header returns the header key-value pairs for the request.
 	Header() http.Header
 	
-	// Response write access to change headers if needed
+	// ResponseWriter Access to Response Writer Interface to allow for setting Response Header values
 	ResponseWriter() http.ResponseWriter
 }
 
