@@ -138,6 +138,9 @@ type RequestContext interface {
 
 	// Header returns the header key-value pairs for the request.
 	Header() http.Header
+
+	// ResponseWriter Access to Response Writer Interface to allow for setting Response Header values
+	ResponseWriter() http.ResponseWriter
 }
 
 // gorillaRequestContext is an implementation of the RequestContext interface. It wraps
@@ -146,13 +149,14 @@ type RequestContext interface {
 type gorillaRequestContext struct {
 	context.Context
 	req      *http.Request
+	writer   http.ResponseWriter
 	router   *mux.Router
 	messages []string
 }
 
 // NewContext returns a RequestContext populated with parameters from the request path and
 // query string.
-func NewContext(parent context.Context, req *http.Request) RequestContext {
+func NewContext(parent context.Context, req *http.Request, writer http.ResponseWriter) RequestContext {
 	if parent == nil {
 		parent = context.Background()
 	}
@@ -179,11 +183,13 @@ func NewContext(parent context.Context, req *http.Request) RequestContext {
 	// parameters with the same name as query string values. Figure out a
 	// better way to handle this.
 
-	return &gorillaRequestContext{parent, req, nil, []string{}}
+	return &gorillaRequestContext{parent, req, writer, nil, []string{}}
 }
 
-func NewContextWithRouter(parent context.Context, req *http.Request, router *mux.Router) RequestContext {
-	context := NewContext(parent, req)
+func NewContextWithRouter(parent context.Context, req *http.Request, writer http.ResponseWriter,
+	router *mux.Router) RequestContext {
+
+	context := NewContext(parent, req, writer)
 	context.(*gorillaRequestContext).router = router
 	return context
 }
@@ -192,7 +198,7 @@ func NewContextWithRouter(parent context.Context, req *http.Request, router *mux
 // as the parent.
 func (ctx *gorillaRequestContext) WithValue(key, value interface{}) RequestContext {
 	if r, ok := ctx.Request(); ok {
-		return &gorillaRequestContext{context.WithValue(ctx, key, value), r, ctx.router, ctx.messages}
+		return &gorillaRequestContext{context.WithValue(ctx, key, value), r, ctx.writer, ctx.router, ctx.messages}
 	}
 
 	// Should not reach this.
@@ -425,4 +431,8 @@ func (ctx *gorillaRequestContext) Messages() []string {
 // AddMessage adds a message to the request messages to be included in the response.
 func (ctx *gorillaRequestContext) AddMessage(message string) {
 	ctx.messages = append(ctx.messages, message)
+}
+
+func (ctx *gorillaRequestContext) ResponseWriter() http.ResponseWriter {
+	return ctx.writer
 }

@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	gContext "github.com/gorilla/context"
@@ -71,7 +72,8 @@ func (t ComplexTestResourceHandler) CreateResource(r RequestContext, data Payloa
 func TestLimitDefault(t *testing.T) {
 	assert := assert.New(t)
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
-	ctx := NewContext(nil, req)
+	writer := httptest.NewRecorder()
+	ctx := NewContext(nil, req, writer)
 	assert.Equal(100, ctx.Limit())
 }
 
@@ -79,7 +81,8 @@ func TestLimitDefault(t *testing.T) {
 func TestLimitBadValue(t *testing.T) {
 	assert := assert.New(t)
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
-	ctx := NewContext(nil, req)
+	writer := httptest.NewRecorder()
+	ctx := NewContext(nil, req, writer)
 	ctx = ctx.WithValue(limitKey, "blah")
 	assert.Equal(100, ctx.Limit())
 }
@@ -88,7 +91,8 @@ func TestLimitBadValue(t *testing.T) {
 func TestLimit(t *testing.T) {
 	assert := assert.New(t)
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
-	ctx := NewContext(nil, req)
+	writer := httptest.NewRecorder()
+	ctx := NewContext(nil, req, writer)
 	ctx = ctx.WithValue(limitKey, "5")
 	assert.Equal(5, ctx.Limit())
 }
@@ -97,7 +101,8 @@ func TestLimit(t *testing.T) {
 func TestMessagesNoError(t *testing.T) {
 	assert := assert.New(t)
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
-	ctx := NewContext(nil, req)
+	writer := httptest.NewRecorder()
+	ctx := NewContext(nil, req, writer)
 	message := "foo"
 
 	assert.Equal(0, len(ctx.Messages()))
@@ -114,7 +119,8 @@ func TestMessagesNoError(t *testing.T) {
 func TestMessagesWithError(t *testing.T) {
 	assert := assert.New(t)
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
-	ctx := NewContext(nil, req)
+	writer := httptest.NewRecorder()
+	ctx := NewContext(nil, req, writer)
 	message := "foo"
 	errMessage := "blah"
 	err := fmt.Errorf(errMessage)
@@ -136,7 +142,8 @@ func TestMessagesWithError(t *testing.T) {
 func TestHeader(t *testing.T) {
 	assert := assert.New(t)
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
-	ctx := NewContext(nil, req)
+	writer := httptest.NewRecorder()
+	ctx := NewContext(nil, req, writer)
 
 	assert.Equal(req.Header, ctx.Header())
 }
@@ -151,7 +158,8 @@ func TestBuildURL(t *testing.T) {
 	req, _ := http.NewRequest("GET", "https://example.com/api/v1/widgets", nil)
 	gContext.Set(req, "version", "1")
 
-	ctx := NewContextWithRouter(nil, req, api.(*muxAPI).router)
+	writer := httptest.NewRecorder()
+	ctx := NewContextWithRouter(nil, req, writer, api.(*muxAPI).router)
 
 	url, _ := ctx.BuildURL("widgets", HandleCreate, nil)
 	assert.Equal(url, "http://example.com/api/v1/widgets")
