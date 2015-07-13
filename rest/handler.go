@@ -1,5 +1,5 @@
 /*
-Copyright 2014 Workiva, LLC
+Copyright 2014 - 2015 Workiva, LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -134,7 +134,7 @@ type requestHandler struct {
 // The serialization mechanism used is specified by the "format" query parameter.
 func (h requestHandler) handleCreate(handler ResourceHandler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := NewContextWithRouter(nil, r, h.router)
+		ctx := NewContextWithRouter(nil, r, w, h.router)
 		version := ctx.Version()
 		rules := handler.Rules()
 
@@ -166,7 +166,7 @@ func (h requestHandler) handleCreate(handler ResourceHandler) http.Handler {
 			}
 		}
 
-		h.sendResponse(w, ctx)
+		h.sendResponse(ctx)
 	})
 }
 
@@ -175,7 +175,7 @@ func (h requestHandler) handleCreate(handler ResourceHandler) http.Handler {
 // serialization mechanism used is specified by the "format" query parameter.
 func (h requestHandler) handleReadList(handler ResourceHandler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := NewContextWithRouter(nil, r, h.router)
+		ctx := NewContextWithRouter(nil, r, w, h.router)
 		version := ctx.Version()
 		rules := handler.Rules()
 
@@ -194,7 +194,7 @@ func (h requestHandler) handleReadList(handler ResourceHandler) http.Handler {
 		ctx = ctx.setError(err)
 		ctx = ctx.setStatus(http.StatusOK)
 
-		h.sendResponse(w, ctx)
+		h.sendResponse(ctx)
 	})
 }
 
@@ -203,7 +203,7 @@ func (h requestHandler) handleReadList(handler ResourceHandler) http.Handler {
 // mechanism used is specified by the "format" query parameter.
 func (h requestHandler) handleRead(handler ResourceHandler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := NewContextWithRouter(nil, r, h.router)
+		ctx := NewContextWithRouter(nil, r, w, h.router)
 		version := ctx.Version()
 		rules := handler.Rules()
 
@@ -216,7 +216,7 @@ func (h requestHandler) handleRead(handler ResourceHandler) http.Handler {
 		ctx = ctx.setError(err)
 		ctx = ctx.setStatus(http.StatusOK)
 
-		h.sendResponse(w, ctx)
+		h.sendResponse(ctx)
 	})
 }
 
@@ -226,7 +226,7 @@ func (h requestHandler) handleRead(handler ResourceHandler) http.Handler {
 // parameter.
 func (h requestHandler) handleUpdateList(handler ResourceHandler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := NewContextWithRouter(nil, r, h.router)
+		ctx := NewContextWithRouter(nil, r, w, h.router)
 		version := ctx.Version()
 		rules := handler.Rules()
 
@@ -265,7 +265,7 @@ func (h requestHandler) handleUpdateList(handler ResourceHandler) http.Handler {
 			}
 		}
 
-		h.sendResponse(w, ctx)
+		h.sendResponse(ctx)
 	})
 }
 
@@ -275,7 +275,7 @@ func (h requestHandler) handleUpdateList(handler ResourceHandler) http.Handler {
 // parameter.
 func (h requestHandler) handleUpdate(handler ResourceHandler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := NewContextWithRouter(nil, r, h.router)
+		ctx := NewContextWithRouter(nil, r, w, h.router)
 		version := ctx.Version()
 		rules := handler.Rules()
 
@@ -301,7 +301,7 @@ func (h requestHandler) handleUpdate(handler ResourceHandler) http.Handler {
 			}
 		}
 
-		h.sendResponse(w, ctx)
+		h.sendResponse(ctx)
 	})
 }
 
@@ -310,7 +310,7 @@ func (h requestHandler) handleUpdate(handler ResourceHandler) http.Handler {
 // mechanism used is specified by the "format" query parameter.
 func (h requestHandler) handleDelete(handler ResourceHandler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := NewContextWithRouter(nil, r, h.router)
+		ctx := NewContextWithRouter(nil, r, w, h.router)
 		version := ctx.Version()
 		rules := handler.Rules()
 
@@ -323,13 +323,13 @@ func (h requestHandler) handleDelete(handler ResourceHandler) http.Handler {
 		ctx = ctx.setError(err)
 		ctx = ctx.setStatus(http.StatusOK)
 
-		h.sendResponse(w, ctx)
+		h.sendResponse(ctx)
 	})
 }
 
 // sendResponse writes a success or error response to the provided http.ResponseWriter
 // based on the contents of the RequestContext.
-func (h requestHandler) sendResponse(w http.ResponseWriter, ctx RequestContext) {
+func (h requestHandler) sendResponse(ctx RequestContext) {
 	format := ctx.ResponseFormat()
 	serializer, err := h.responseSerializer(format)
 	if err != nil {
@@ -338,7 +338,7 @@ func (h requestHandler) sendResponse(w http.ResponseWriter, ctx RequestContext) 
 		ctx = ctx.setError(BadRequest(fmt.Sprintf("Format not implemented: %s", format)))
 	}
 
-	sendResponse(w, NewResponse(ctx), serializer)
+	sendResponse(ctx.ResponseWriter(), NewResponse(ctx), serializer)
 }
 
 // sendResponse writes a response to the http.ResponseWriter.
