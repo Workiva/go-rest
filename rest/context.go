@@ -17,7 +17,9 @@ limitations under the License.
 package rest
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -134,6 +136,9 @@ type RequestContext interface {
 	// Header returns the header key-value pairs for the request.
 	Header() http.Header
 
+	// Body returns a buffer containing the raw body of the request.
+	Body() *bytes.Buffer
+
 	// ResponseWriter Access to Response Writer Interface to allow for setting Response Header values
 	ResponseWriter() http.ResponseWriter
 }
@@ -144,6 +149,7 @@ type RequestContext interface {
 type gorillaRequestContext struct {
 	context.Context
 	req      *http.Request
+	body     *bytes.Buffer
 	writer   http.ResponseWriter
 	router   *mux.Router
 	messages []string
@@ -174,11 +180,19 @@ func NewContext(parent context.Context, req *http.Request, writer http.ResponseW
 		gcontext.Set(req, key, value)
 	}
 
+	var body []byte
+	if req.Body != nil {
+		bytes, err := ioutil.ReadAll(req.Body)
+		if err == nil {
+			body = bytes
+		}
+	}
+
 	// TODO: Keys can potentially be overwritten if the request path has
 	// parameters with the same name as query string values. Figure out a
 	// better way to handle this.
 
-	return &gorillaRequestContext{parent, req, writer, nil, []string{}}
+	return &gorillaRequestContext{parent, req, bytes.NewBuffer(body), writer, nil, []string{}}
 }
 
 func NewContextWithRouter(parent context.Context, req *http.Request, writer http.ResponseWriter,
@@ -193,7 +207,7 @@ func NewContextWithRouter(parent context.Context, req *http.Request, writer http
 // as the parent.
 func (ctx *gorillaRequestContext) WithValue(key, value interface{}) RequestContext {
 	if r, ok := ctx.Request(); ok {
-		return &gorillaRequestContext{context.WithValue(ctx, key, value), r, ctx.writer, ctx.router, ctx.messages}
+		return &gorillaRequestContext{context.WithValue(ctx, key, value), r, ctx.body, ctx.writer, ctx.router, ctx.messages}
 	}
 
 	// Should not reach this.
@@ -296,6 +310,11 @@ func (ctx *gorillaRequestContext) Header() http.Header {
 	}
 
 	return req.Header
+}
+
+// Body returns a buffer containing the raw body of the request.
+func (ctx *gorillaRequestContext) Body() *bytes.Buffer {
+	return ctx.body
 }
 
 // Request returns the *http.Request associated with context using NewContext, if any.
