@@ -19,8 +19,6 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -138,7 +136,7 @@ func (h requestHandler) handleCreate(handler ResourceHandler) http.Handler {
 		version := ctx.Version()
 		rules := handler.Rules()
 
-		data, err := decodePayload(payloadString(r.Body))
+		data, err := decodePayload(ctx.Body().Bytes())
 		if err != nil {
 			// Payload decoding failed.
 			ctx = ctx.setError(BadRequest(err.Error()))
@@ -230,7 +228,7 @@ func (h requestHandler) handleUpdateList(handler ResourceHandler) http.Handler {
 		version := ctx.Version()
 		rules := handler.Rules()
 
-		payloadStr := payloadString(r.Body)
+		payloadStr := ctx.Body().Bytes()
 		var data []Payload
 		var err error
 		data, err = decodePayloadSlice(payloadStr)
@@ -279,7 +277,7 @@ func (h requestHandler) handleUpdate(handler ResourceHandler) http.Handler {
 		version := ctx.Version()
 		rules := handler.Rules()
 
-		data, err := decodePayload(payloadString(r.Body))
+		data, err := decodePayload(ctx.Body().Bytes())
 		if err != nil {
 			// Payload decoding failed.
 			ctx = ctx.setError(BadRequest(err.Error()))
@@ -393,14 +391,4 @@ func decodePayloadSlice(payload []byte) ([]Payload, error) {
 	}
 
 	return data, nil
-}
-
-// payloadString returns the given io.Reader as a string. The reader must be rewound
-// after calling this in order to be read again.
-func payloadString(payload io.Reader) []byte {
-	payloadStr, err := ioutil.ReadAll(payload)
-	if err != nil {
-		return nil
-	}
-	return payloadStr
 }

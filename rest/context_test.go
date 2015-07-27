@@ -17,6 +17,7 @@ limitations under the License.
 package rest
 
 import (
+	"bytes"
 	"crypto/tls"
 	"fmt"
 	"net/http"
@@ -146,6 +147,18 @@ func TestHeader(t *testing.T) {
 	ctx := NewContext(nil, req, writer)
 
 	assert.Equal(req.Header, ctx.Header())
+}
+
+// Ensures that Body returns a buffer containing the request Body.
+func TestBody(t *testing.T) {
+	assert := assert.New(t)
+	payload := []byte(`[{"foo": "bar"}]`)
+	r := bytes.NewReader(payload)
+	req, _ := http.NewRequest("GET", "http://example.com/foo", r)
+	writer := httptest.NewRecorder()
+	ctx := NewContext(nil, req, writer)
+
+	assert.Equal(payload, ctx.Body().Bytes())
 }
 
 func TestBuildURL(t *testing.T) {
