@@ -334,9 +334,11 @@ func applyNestedInboundRules(
 		s := reflect.ValueOf(value)
 		nestedValues := make([]interface{}, s.Len())
 		for i := 0; i < s.Len(); i++ {
-			var payload map[string]interface{}
-			payload, err := applyInboundRules(
-				s.Index(i).Interface().(map[string]interface{}), rules, version)
+			payloadIFace, err := coerceType(s.Index(i).Interface(), Map)
+			if err != nil {
+				return nil, err
+			}
+			payload, err := applyInboundRules(payloadIFace.(map[string]interface{}), rules, version)
 			if err != nil {
 				return nil, err
 			}
@@ -344,9 +346,11 @@ func applyNestedInboundRules(
 		}
 		fieldValue = nestedValues
 	} else {
-		var payload map[string]interface{}
-		payload, err := applyInboundRules(
-			value.(map[string]interface{}), rules, version)
+		payloadIFace, err := coerceType(value, Map)
+		if err != nil {
+			return nil, err
+		}
+		payload, err := applyInboundRules(payloadIFace.(map[string]interface{}), rules, version)
 		if err != nil {
 			return nil, err
 		}
