@@ -338,7 +338,8 @@ func applyNestedInboundRules(
 			if err != nil {
 				return nil, err
 			}
-			payload, err := applyInboundRules(payloadIFace.(map[string]interface{}), rules, version)
+			var payload map[string]interface{}
+			payload, err = applyInboundRules(payloadIFace.(map[string]interface{}), rules, version)
 			if err != nil {
 				return nil, err
 			}
@@ -350,7 +351,8 @@ func applyNestedInboundRules(
 		if err != nil {
 			return nil, err
 		}
-		payload, err := applyInboundRules(payloadIFace.(map[string]interface{}), rules, version)
+		var payload map[string]interface{}
+		payload, err = applyInboundRules(payloadIFace.(map[string]interface{}), rules, version)
 		if err != nil {
 			return nil, err
 		}
