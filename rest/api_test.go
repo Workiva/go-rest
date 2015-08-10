@@ -106,6 +106,15 @@ func (m *MockResourceHandler) Authenticate(r *http.Request) error {
 	return args.Error(0)
 }
 
+func (m *MockResourceHandler) ValidVersions() []string {
+	args := m.Mock.Called()
+	versions := args.Get(0)
+	if versions != nil {
+		return versions.([]string)
+	}
+	return nil
+}
+
 func (m *MockResourceHandler) Rules() Rules {
 	args := m.Mock.Called()
 	rules := args.Get(0)
@@ -135,6 +144,7 @@ func TestHandleCreateBadFormat(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(&rules{})
 	handler.On("CreateResource").Return(&TestResource{}, nil)
 
@@ -166,6 +176,7 @@ func TestHandleCreateBadCreate(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(&rules{})
 	handler.On("CreateResource").Return(nil, fmt.Errorf("couldn't create"))
 
@@ -197,6 +208,7 @@ func TestHandleCreateHappyPath(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(&rules{})
 	handler.On("CreateResource").Return(&TestResource{Foo: "bar"}, nil)
 
@@ -228,6 +240,7 @@ func TestHandleCreateNoContent(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(&rules{})
 	handler.On("CreateResource").Return(nil, nil)
 
@@ -259,6 +272,7 @@ func TestHandleCreateNotAuthorized(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(fmt.Errorf("Not authorized"))
+	handler.On("ValidVersions").Return(nil)
 
 	api.RegisterResourceHandler(handler)
 	createHandler, _ := api.(*muxAPI).getRouteHandler("foo:create")
@@ -284,6 +298,7 @@ func TestHandleReadListBadFormat(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(&rules{})
 	handler.On("ReadResourceList").Return([]Resource{}, "", nil)
 
@@ -313,6 +328,7 @@ func TestHandleReadListBadRead(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(&rules{})
 	handler.On("ReadResourceList").Return(nil, "", fmt.Errorf("no resource"))
 
@@ -341,6 +357,7 @@ func TestHandleReadListHappyPath(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(&rules{})
 	handler.On("ReadResourceList").Return([]Resource{&TestResource{Foo: "hello"}}, "cursor123", nil)
 
@@ -369,6 +386,7 @@ func TestHandleReadBadFormat(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(&rules{})
 	handler.On("ReadResource").Return(&TestResource{}, nil)
 
@@ -397,6 +415,7 @@ func TestHandleReadBadRead(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(&rules{})
 	handler.On("ReadResource").Return(nil, fmt.Errorf("no resource"))
 
@@ -425,6 +444,7 @@ func TestHandleReadHappyPath(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(&rules{})
 	handler.On("ReadResource").Return(&TestResource{Foo: "hello"}, nil)
 
@@ -454,6 +474,7 @@ func TestHandleUpdateListBadFormat(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(&rules{})
 	handler.On("UpdateResourceList").Return([]Resource{&TestResource{}}, nil)
 
@@ -485,6 +506,7 @@ func TestHandleUpdateListBadUpdate(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(&rules{})
 	handler.On("UpdateResourceList").Return(nil, fmt.Errorf("couldn't update"))
 
@@ -515,6 +537,7 @@ func TestHandleUpdateListPayloadNotList(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(&rules{})
 	handler.On("UpdateResourceList").Return([]Resource{&TestResource{Foo: "bar"}}, nil)
 
@@ -546,6 +569,7 @@ func TestHandleUpdateListHappyPath(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(&rules{})
 	handler.On("UpdateResourceList").Return([]Resource{&TestResource{Foo: "bar"}}, nil)
 
@@ -576,6 +600,7 @@ func TestHandleUpdateBadFormat(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(&rules{})
 	handler.On("UpdateResource").Return(&TestResource{}, nil)
 
@@ -607,6 +632,7 @@ func TestHandleUpdateBadUpdate(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(&rules{})
 	handler.On("UpdateResource").Return(nil, fmt.Errorf("couldn't update"))
 
@@ -637,6 +663,7 @@ func TestHandleUpdateHappyPath(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(&rules{})
 	handler.On("UpdateResource").Return(&TestResource{Foo: "bar"}, nil)
 
@@ -668,6 +695,7 @@ func TestHandleDeleteBadFormat(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(&rules{})
 	handler.On("DeleteResource").Return(&TestResource{}, nil)
 
@@ -697,6 +725,7 @@ func TestHandleDeleteBadDelete(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(&rules{})
 	handler.On("DeleteResource").Return(nil, fmt.Errorf("no resource"))
 
@@ -725,6 +754,7 @@ func TestHandleDeleteHappyPath(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(&rules{})
 	handler.On("DeleteResource").Return(&TestResource{Foo: "hello"}, nil)
 
@@ -762,6 +792,7 @@ func TestApplyMiddleware(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(&rules{})
 	handler.On("ReadResource").Return(&TestResource{Foo: "hello"}, nil)
 
@@ -796,6 +827,7 @@ func TestOutboundRules(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(NewRules((*TestResource)(nil), rule))
 	handler.On("ReadResource").Return(&TestResource{Foo: "hello"}, nil)
 
@@ -828,6 +860,7 @@ func TestOutboundRulesDontApplyOnError(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(NewRules((*TestResource)(nil), rule))
 	handler.On("ReadResource").Return(nil, fmt.Errorf("oh snap"))
 
@@ -861,6 +894,7 @@ func TestOutboundRulesDontApplyOnNilResource(t *testing.T) {
 
 	handler.On("ResourceName").Return("foo")
 	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(NewRules((*TestResource)(nil), rule))
 	handler.On("ReadResource").Return(nil, nil)
 
@@ -914,6 +948,7 @@ func TestValidateBadField(t *testing.T) {
 	api := NewAPI(&Configuration{})
 	handler := new(MockResourceHandler)
 	handler.On("ResourceName").Return("foo")
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(NewRules((*TestResource)(nil), &Rule{Field: "bar"}))
 	api.RegisterResourceHandler(handler)
 
@@ -926,6 +961,7 @@ func TestValidateBadType(t *testing.T) {
 	api := NewAPI(&Configuration{})
 	handler := new(MockResourceHandler)
 	handler.On("ResourceName").Return("foo")
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(NewRules((*TestResource)(nil), &Rule{Field: "Foo", Type: Int}))
 	api.RegisterResourceHandler(handler)
 
@@ -938,6 +974,7 @@ func TestValidateHappyPath(t *testing.T) {
 	api := NewAPI(&Configuration{})
 	handler := new(MockResourceHandler)
 	handler.On("ResourceName").Return("foo")
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(NewRules((*TestResource)(nil), &Rule{
 		Field: "Foo",
 		Type:  String,
@@ -953,6 +990,7 @@ func TestValidateNoRules(t *testing.T) {
 	api := NewAPI(&Configuration{})
 	handler := new(MockResourceHandler)
 	handler.On("ResourceName").Return("foo")
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(&rules{})
 	api.RegisterResourceHandler(handler)
 
@@ -966,6 +1004,7 @@ func TestValidateRulesOrPanicBadField(t *testing.T) {
 	api := NewAPI(&Configuration{})
 	handler := new(MockResourceHandler)
 	handler.On("ResourceName").Return("foo")
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(NewRules((*TestResource)(nil), &Rule{Field: "bar"}))
 	api.RegisterResourceHandler(handler)
 
@@ -982,6 +1021,7 @@ func TestValidateRulesOrPanicBadType(t *testing.T) {
 	api := NewAPI(&Configuration{})
 	handler := new(MockResourceHandler)
 	handler.On("ResourceName").Return("foo")
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(NewRules((*TestResource)(nil), &Rule{Field: "Foo", Type: Int}))
 	api.RegisterResourceHandler(handler)
 
@@ -998,6 +1038,7 @@ func TestValidateRulesOrPanicHappyPath(t *testing.T) {
 	api := NewAPI(&Configuration{})
 	handler := new(MockResourceHandler)
 	handler.On("ResourceName").Return("foo")
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(NewRules((*TestResource)(nil), &Rule{
 		Field: "Foo",
 		Type:  String,
@@ -1017,6 +1058,7 @@ func TestValidateRulesOrPanicNoRules(t *testing.T) {
 	api := NewAPI(&Configuration{})
 	handler := new(MockResourceHandler)
 	handler.On("ResourceName").Return("foo")
+	handler.On("ValidVersions").Return(nil)
 	handler.On("Rules").Return(&rules{})
 	api.RegisterResourceHandler(handler)
 
@@ -1073,4 +1115,34 @@ func TestMiddlewareProxyDelegate(t *testing.T) {
 
 	assert.True(called)
 	assert.True(handler.called)
+}
+
+// Ensure that version validation middleware passes through request
+// on a valid version, and returns a 400 on an invalid version.
+func TestVersionMiddleware(t *testing.T) {
+	assert := assert.New(t)
+
+	api := NewAPI(&Configuration{})
+	handler := new(MockResourceHandler)
+	handler.On("Authenticate").Return(nil)
+	handler.On("ValidVersions").Return([]string{"1"})
+	handler.On("Rules").Return(&rules{})
+	handler.On("ResourceName").Return("widgets")
+	handler.On("ReadResourceList").Return([]Resource{"foo"}, "", nil)
+
+	api.RegisterResourceHandler(handler)
+
+	// Valid version
+	req, _ := http.NewRequest("GET", "http://example.com/api/v1/widgets", nil)
+	w := httptest.NewRecorder()
+	api.ServeHTTP(w, req)
+	assert.Equal(w.Code, 200)
+	assert.Contains(w.Body.String(), "foo")
+
+	// Invalid version
+	req, _ = http.NewRequest("GET", "http://example.com/api/v2/widgets", nil)
+	w = httptest.NewRecorder()
+	api.ServeHTTP(w, req)
+	assert.Equal(w.Code, http.StatusBadRequest)
+	assert.NotContains(w.Body.String(), "foo")
 }

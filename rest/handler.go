@@ -115,6 +115,11 @@ type ResourceHandler interface {
 	// unauthorized and any error message will be sent back with the response.
 	Authenticate(*http.Request) error
 
+	// ValidVersions returns the list of all versions accepted at this endpoint.
+	// Invalid versions will result in a BadRequest error.
+	// If the value is nil, any version will be accepted.
+	ValidVersions() []string
+
 	// Rules returns the resource rules to apply to incoming requests and outgoing
 	// responses. The default behavior, seen in BaseResourceHandler, is to apply no
 	// rules.
