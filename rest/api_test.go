@@ -1143,6 +1143,6 @@ func TestVersionMiddleware(t *testing.T) {
 	req, _ = http.NewRequest("GET", "http://example.com/api/v2/widgets", nil)
 	w = httptest.NewRecorder()
 	api.ServeHTTP(w, req)
-	assert.Equal(w.Code, 400)
+	assert.Equal(w.Code, http.StatusBadRequest)
 	assert.NotContains(w.Body.String(), "foo")
 }
