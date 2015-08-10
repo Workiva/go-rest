@@ -139,6 +139,10 @@ func (b BaseResourceHandler) Authenticate(r *http.Request) error {
 	return nil
 }
 
+func (b BaseResourceHandler) ValidVersions() []string {
+	return nil
+}
+
 // Rules returns the resource rules to apply to incoming requests and outgoing
 // responses. No rules are applied by default. Implement if necessary.
 func (b BaseResourceHandler) Rules() Rules {

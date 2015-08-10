@@ -189,6 +189,25 @@ func newAuthMiddleware(authenticate func(*http.Request) error) RequestMiddleware
 	}
 }
 
+// newVersionMiddleware checks the request version against all valid versions.
+func newVersionMiddleware(validVersions []string) RequestMiddleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			requestVersion := mux.Vars(r)["version"]
+
+			for _, v := range validVersions {
+				if requestVersion == v {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(fmt.Sprintf("Version %q is not available.", requestVersion)))
+		})
+	}
+}
+
 // muxAPI is an implementation of the API interface which relies on the gorilla/mux
 // package to handle request dispatching (see http://www.gorillatoolkit.org/pkg/mux).
 type muxAPI struct {
@@ -259,6 +278,9 @@ func (r *muxAPI) RegisterResourceHandler(h ResourceHandler, middleware ...Reques
 	h = resourceHandlerProxy{h}
 	resource := h.ResourceName()
 	middleware = append(middleware, newAuthMiddleware(h.Authenticate))
+	if validVersions := h.ValidVersions(); validVersions != nil {
+		middleware = append(middleware, newVersionMiddleware(validVersions))
+	}
 
 	// Some browsers don't support PUT and DELETE, so allow method overriding.
 	// POST requests with X-HTTP-Method-Override=PUT/DELETE will route to the
