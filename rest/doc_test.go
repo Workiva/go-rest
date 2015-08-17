@@ -451,7 +451,7 @@ func TestGenerateDocsHappyPath(t *testing.T) {
 	assert.Nil(docGenerator.generateDocs(api), "Return value should be nil")
 }
 
-// Ensures that generate returns nil context and nil error when there are no output fields for a
+// Ensures that generate returns nil context and nil error when there are no fields for a
 // version.
 func TestGenerateNoOutput(t *testing.T) {
 	assert := assert.New(t)
