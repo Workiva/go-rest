@@ -221,8 +221,8 @@ func (d *defaultContextGenerator) generate(handler ResourceHandler, version stri
 	inputFields := getInputFields(handler.Rules().ForVersion(version))
 	outputFields := getOutputFields(handler.Rules().ForVersion(version))
 
-	if len(outputFields) == 0 {
-		// Handler has no output fields for this version.
+	if len(inputFields) == 0 && len(outputFields) == 0 {
+		// Handler has no fields for this version.
 		return nil, nil
 	}
 
