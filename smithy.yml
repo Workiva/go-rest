@@ -1,0 +1,8 @@
+project: golang
+language: golang
+
+script:
+  - ./run_tests.sh
+
+test_reports:
+  - tests.xml
