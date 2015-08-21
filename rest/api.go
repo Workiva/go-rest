@@ -48,10 +48,25 @@ type Address string
 // FilePath represents a file path.
 type FilePath string
 
+// An interface satisfied by log.Logger
+type StdLogger interface {
+	Print(...interface{})
+	Printf(string, ...interface{})
+	Println(...interface{})
+
+	Fatal(...interface{})
+	Fatalf(string, ...interface{})
+	Fatalln(...interface{})
+
+	Panic(...interface{})
+	Panicf(string, ...interface{})
+	Panicln(...interface{})
+}
+
 // Configuration contains settings for configuring an API.
 type Configuration struct {
 	Debug         bool
-	Logger        *log.Logger
+	Logger        StdLogger
 	GenerateDocs  bool
 	DocsDirectory string
 }
