@@ -987,8 +987,8 @@ func TestApplyInboundRulesNestedRulesSlice(t *testing.T) {
 	assert.Nil(err, "Error should be nil")
 }
 
-// Ensures that nested inbound Rules are correctly applied to slices.
-func TestApplyInboundRulesNestedRulesSliceOfPrimitive(t *testing.T) {
+// Ensures that nested inbound Rules are correctly applied to slices of primitives.
+func TestApplyNestedInboundRulesSliceOfPrimitive(t *testing.T) {
 	assert := assert.New(t)
 	payload := []string{"foo", "bar"}
 	rules := NewRules((*string)(nil),
@@ -999,7 +999,7 @@ func TestApplyInboundRulesNestedRulesSliceOfPrimitive(t *testing.T) {
 
 	actual, err := applyNestedInboundRules(payload, rules, "1")
 
-	assert.Equal([]interface{}{"foo", "bar"}, actual, fmt.Sprintf("Incorrect return value %s", payload))
+	assert.Equal([]interface{}{"foo", "bar"}, actual, "Incorrect return value")
 
 	assert.Nil(err, "Error should be nil")
 }
