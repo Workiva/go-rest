@@ -110,10 +110,11 @@ func (r *rules) Validate() error {
 		if rule.Rules != nil {
 			// If a rule is on a slice, check for to see what the underlying type is.
 			// If it is primitive, there is nothing to validate.
-			if nestedType := typeToKind[rule.Rules.Contents()[0].Type]; typeToKind[rule.Type] == reflect.Slice &&
-				nestedType == reflect.Struct || nestedType == reflect.Map {
-				if err := rule.Rules.Validate(); err != nil {
-					return err
+			if typeToKind[rule.Type] == reflect.Slice {
+				if nestedType := typeToKind[rule.Rules.Contents()[0].Type]; nestedType == reflect.Struct || nestedType == reflect.Map {
+					if err := rule.Rules.Validate(); err != nil {
+						return err
+					}
 				}
 			}
 		}
