@@ -341,7 +341,7 @@ func applyNestedInboundRules(
 		for i := 0; i < s.Len(); i++ {
 			// Check to see if the nested type is a slice or map.
 			// If not, it is a primitive which should be coerced to its rule type.
-			if iType := reflect.TypeOf(s.Index(i).Interface()).Kind(); iType != reflect.Map && iType != reflect.Slice && iType != reflect.Struct {
+			if iType := reflect.TypeOf(s.Index(i).Interface()).Kind(); iType != reflect.Map && iType != reflect.Slice {
 				payloadIFace, err := coerceType(s.Index(i).Interface(), rules.Contents()[0].Type)
 				if err != nil {
 					return nil, err
