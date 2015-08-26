@@ -111,7 +111,7 @@ func (r *rules) Validate() error {
 			// If a rule is on a slice, check for to see what the underlying type is.
 			// If it is primitive, there is nothing to validate.
 			if nestedType := typeToKind[rule.Rules.Contents()[0].Type]; typeToKind[rule.Type] == reflect.Slice &&
-				nestedType == reflect.Struct || nestedType == reflect.Map && reflect.Struct == reflect.Slice {
+				nestedType == reflect.Struct || nestedType == reflect.Map {
 				if err := rule.Rules.Validate(); err != nil {
 					return err
 				}
@@ -340,7 +340,7 @@ func applyNestedInboundRules(
 		nestedValues := make([]interface{}, s.Len())
 		for i := 0; i < s.Len(); i++ {
 			// Check to see if the nested type is a slice or map.
-			// If not, it is a primitive which should be coerced to its rule type.
+			// If not, it should be coerced to its rule type.
 			if iType := reflect.TypeOf(s.Index(i).Interface()).Kind(); iType != reflect.Map && iType != reflect.Slice {
 				payloadIFace, err := coerceType(s.Index(i).Interface(), rules.Contents()[0].Type)
 				if err != nil {
