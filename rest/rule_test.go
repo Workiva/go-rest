@@ -987,6 +987,55 @@ func TestApplyInboundRulesNestedRulesSlice(t *testing.T) {
 	assert.Nil(err, "Error should be nil")
 }
 
+// Ensures that nested inbound Rules marking primitives fail if type cannot be coerced.
+func TestApplyInboundRulesNestedRulesUnableToCoerceToPrimitive(t *testing.T) {
+	assert := assert.New(t)
+	payload := Payload{"foo": []interface{}{"bar", []interface{}{"baz"}}}
+	rules := NewRules((*TestResourceSlice)(nil),
+		&Rule{
+			Field:      "Foo",
+			FieldAlias: "foo",
+			Type:       Slice,
+			Versions:   []string{"1"},
+			Rules: NewRules((*string)(nil),
+				&Rule{
+					Type: String,
+				},
+			),
+		},
+	)
+	expectedErr := fmt.Errorf("Value does not match rule type, expecting: string, got: slice")
+
+	actual, err := applyInboundRules(payload, rules, "1")
+
+	assert.Equal(expectedErr, err, "Incorrect error message")
+	assert.Nil(actual, "Payload should be nil")
+}
+
+// Ensures that nested inbound Rules are correctly applied to slices of primitives, happy path.
+func TestApplyInboundRulesNestedRules(t *testing.T) {
+	assert := assert.New(t)
+	payload := Payload{"foo": []interface{}{"bar", "baz"}}
+	rules := NewRules((*TestResourceSlice)(nil),
+		&Rule{
+			Field:      "Foo",
+			FieldAlias: "foo",
+			Type:       Slice,
+			Versions:   []string{"1"},
+			Rules: NewRules((*string)(nil),
+				&Rule{
+					Type: String,
+				},
+			),
+		},
+	)
+
+	actual, err := applyInboundRules(payload, rules, "1")
+
+	assert.Equal(payload, actual, "Incorrect return value")
+	assert.Nil(err, "Error should be nil")
+}
+
 // Ensures that nested inbound Rules are not applied if they do not apply to the version.
 func TestApplyInboundRulesNestedRulesDifferentVersion(t *testing.T) {
 	assert := assert.New(t)

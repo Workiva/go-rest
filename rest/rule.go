@@ -108,8 +108,15 @@ func (r *rules) Validate() error {
 
 		// Validate nested Rules.
 		if rule.Rules != nil {
-			if err := rule.Rules.Validate(); err != nil {
-				return err
+			// If a rule is on a slice, check to see what the underlying type is.
+			// If it is primitive, there is nothing to validate.
+			if typeToKind[rule.Type] == reflect.Slice {
+				nestedType := typeToKind[rule.Rules.Contents()[0].Type]
+				if nestedType == reflect.Struct || nestedType == reflect.Map {
+					if err := rule.Rules.Validate(); err != nil {
+						return err
+					}
+				}
 			}
 		}
 	}
@@ -334,16 +341,30 @@ func applyNestedInboundRules(
 		s := reflect.ValueOf(value)
 		nestedValues := make([]interface{}, s.Len())
 		for i := 0; i < s.Len(); i++ {
-			payloadIFace, err := coerceType(s.Index(i).Interface(), Map)
-			if err != nil {
-				return nil, err
+			// Check to see if the nested type is a slice or map.
+			// If not, it should be coerced to its rule type.
+			iKind := reflect.TypeOf(s.Index(i).Interface()).Kind()
+			ruleType := rules.Contents()[0].Type
+			if ruleKind := typeToKind[ruleType]; iKind == reflect.Slice && ruleKind != reflect.Slice {
+				return nil, fmt.Errorf("Value does not match rule type, expecting: %v, got: %v", ruleKind, iKind)
+			} else if iKind != reflect.Map && iKind != reflect.Slice {
+				payloadIFace, err := coerceType(s.Index(i).Interface(), ruleType)
+				if err != nil {
+					return nil, err
+				}
+				nestedValues[i] = payloadIFace
+			} else {
+				payloadIFace, err := coerceType(s.Index(i).Interface(), Map)
+				if err != nil {
+					return nil, err
+				}
+				var payload map[string]interface{}
+				payload, err = applyInboundRules(payloadIFace.(map[string]interface{}), rules, version)
+				if err != nil {
+					return nil, err
+				}
+				nestedValues[i] = payload
 			}
-			var payload map[string]interface{}
-			payload, err = applyInboundRules(payloadIFace.(map[string]interface{}), rules, version)
-			if err != nil {
-				return nil, err
-			}
-			nestedValues[i] = payload
 		}
 		fieldValue = nestedValues
 	} else {
