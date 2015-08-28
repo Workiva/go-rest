@@ -31,6 +31,10 @@ type TestResource struct {
 	Foo string `json:"foo"`
 }
 
+type TestResourceSlice struct {
+	Foo []string `json:"foo"`
+}
+
 type MockResourceHandler struct {
 	mock.Mock
 	BaseResourceHandler

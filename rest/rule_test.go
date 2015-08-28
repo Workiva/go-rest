@@ -987,20 +987,52 @@ func TestApplyInboundRulesNestedRulesSlice(t *testing.T) {
 	assert.Nil(err, "Error should be nil")
 }
 
-// Ensures that nested inbound Rules are correctly applied to slices of primitives.
-func TestApplyNestedInboundRulesSliceOfPrimitive(t *testing.T) {
+// Ensures that nested inbound Rules marking primitives fail if type cannot be coerced.
+func TestApplyInboundRulesNestedRulesUnableToCoerceToPrimitive(t *testing.T) {
 	assert := assert.New(t)
-	payload := []string{"foo", "bar"}
-	rules := NewRules((*string)(nil),
+	payload := Payload{"foo": []interface{}{"bar", []interface{}{"baz"}}}
+	rules := NewRules((*TestResourceSlice)(nil),
 		&Rule{
-			Type: String,
+			Field: "Foo",
+			FieldAlias: "foo",
+			Type: Slice,
+			Versions: []string{"1"},
+			Rules: NewRules((*string)(nil),
+				&Rule{
+					Type: String,
+				},
+			),
+		},
+	)
+	expectedErr := fmt.Errorf("Unable to coerce slice to map[string]interface{}")
+
+	actual, err := applyInboundRules(payload, rules, "1")
+
+	assert.Equal(expectedErr, err, "Incorrect error message")
+	assert.Nil(actual, "Payload should be nil")
+}
+
+// Ensures that nested inbound Rules are correctly applied to slices of primitives, happy path.
+func TestApplyInboundRulesNestedRules(t *testing.T) {
+	assert := assert.New(t)
+	payload := Payload{"foo": []interface{}{"bar", "baz"}}
+	rules := NewRules((*TestResourceSlice)(nil),
+		&Rule{
+			Field: "Foo",
+			FieldAlias: "foo",
+			Type: Slice,
+			Versions: []string{"1"},
+			Rules: NewRules((*string)(nil),
+				&Rule{
+					Type: String,
+				},
+			),
 		},
 	)
 
-	actual, err := applyNestedInboundRules(payload, rules, "1")
+	actual, err := applyInboundRules(payload, rules, "1")
 
-	assert.Equal([]interface{}{"foo", "bar"}, actual, "Incorrect return value")
-
+	assert.Equal(payload, actual, "Incorrect return value")
 	assert.Nil(err, "Error should be nil")
 }
 
