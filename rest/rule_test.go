@@ -993,10 +993,10 @@ func TestApplyInboundRulesNestedRulesUnableToCoerceToPrimitive(t *testing.T) {
 	payload := Payload{"foo": []interface{}{"bar", []interface{}{"baz"}}}
 	rules := NewRules((*TestResourceSlice)(nil),
 		&Rule{
-			Field: "Foo",
+			Field:      "Foo",
 			FieldAlias: "foo",
-			Type: Slice,
-			Versions: []string{"1"},
+			Type:       Slice,
+			Versions:   []string{"1"},
 			Rules: NewRules((*string)(nil),
 				&Rule{
 					Type: String,
@@ -1004,7 +1004,7 @@ func TestApplyInboundRulesNestedRulesUnableToCoerceToPrimitive(t *testing.T) {
 			),
 		},
 	)
-	expectedErr := fmt.Errorf("Unable to coerce slice to map[string]interface{}")
+	expectedErr := fmt.Errorf("Value does not match rule type, expecting: string, got: slice")
 
 	actual, err := applyInboundRules(payload, rules, "1")
 
@@ -1018,10 +1018,10 @@ func TestApplyInboundRulesNestedRules(t *testing.T) {
 	payload := Payload{"foo": []interface{}{"bar", "baz"}}
 	rules := NewRules((*TestResourceSlice)(nil),
 		&Rule{
-			Field: "Foo",
+			Field:      "Foo",
 			FieldAlias: "foo",
-			Type: Slice,
-			Versions: []string{"1"},
+			Type:       Slice,
+			Versions:   []string{"1"},
 			Rules: NewRules((*string)(nil),
 				&Rule{
 					Type: String,

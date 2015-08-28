@@ -343,8 +343,12 @@ func applyNestedInboundRules(
 		for i := 0; i < s.Len(); i++ {
 			// Check to see if the nested type is a slice or map.
 			// If not, it should be coerced to its rule type.
-			if iType := reflect.TypeOf(s.Index(i).Interface()).Kind(); iType != reflect.Map && iType != reflect.Slice {
-				payloadIFace, err := coerceType(s.Index(i).Interface(), rules.Contents()[0].Type)
+			iKind := reflect.TypeOf(s.Index(i).Interface()).Kind()
+			ruleType := rules.Contents()[0].Type
+			if ruleKind := typeToKind[ruleType]; iKind == reflect.Slice && ruleKind != reflect.Slice {
+				return nil, fmt.Errorf("Value does not match rule type, expecting: %v, got: %v", ruleKind, iKind)
+			} else if iKind != reflect.Map && iKind != reflect.Slice {
+				payloadIFace, err := coerceType(s.Index(i).Interface(), ruleType)
 				if err != nil {
 					return nil, err
 				}
