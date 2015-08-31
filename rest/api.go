@@ -309,7 +309,7 @@ func (r *muxAPI) RegisterResourceHandler(h ResourceHandler, middleware ...Reques
 	route = r.router.Handle(
 		h.ReadURI(), applyMiddleware(r.handler.handleRead(h), middleware),
 	).Methods("POST").Headers("X-HTTP-Method-Override", "GET").Name(resource + ":readOverride")
-	r.checkRoute("read override", h.ReadListURI(), "OVERRIDE-GET", route)
+	r.checkRoute("read override", h.ReadURI(), "OVERRIDE-GET", route)
 
 	route = r.router.Handle(
 		h.UpdateListURI(), applyMiddleware(r.handler.handleUpdateList(h), middleware),
