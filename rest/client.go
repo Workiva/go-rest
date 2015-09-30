@@ -111,6 +111,7 @@ var do = func(c *http.Client, method, url string, body interface{}, header http.
 	if err != nil {
 		return nil, err
 	}
+	resp.Body.Close()
 
 	return decodeResponse(rawResp, resp)
 }
