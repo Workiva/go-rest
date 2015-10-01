@@ -49,6 +49,19 @@ type Response struct {
 	Raw      *http.Response // The raw HTTP response.
 }
 
+// Wraps response decoding error in a helpful way
+type ResponseDecodeError struct {
+	StatusCode int    // Response status code
+	Status     string // Response status message
+	Response   []byte // Payload of the response that could not be decoded
+	Error      error  // Error that occurred while decoding the response
+}
+
+func (rde *ResponseDecodeError) Error() string {
+	return fmt.Sprintf("(Error, Status Code, Status Message, Payload) = (%s, %d, %s, %s)",
+		rde.Error.Error(), rde.StatusCode, rde.Status, string(rde.Response))
+}
+
 // Get will perform an HTTP GET on the specified URL and return the response.
 func (c *Client) Get(url string, header http.Header) (*Response, error) {
 	return do(c.Client, httpGet, url, nil, header)
@@ -120,7 +133,12 @@ var do = func(c *http.Client, method, url string, body interface{}, header http.
 func decodeResponse(response []byte, r *http.Response) (*Response, error) {
 	var payload map[string]interface{}
 	if err := json.Unmarshal(response, &payload); err != nil {
-		return nil, fmt.Errorf("%v. Response with status %d: %s had unmarshallable payload %s", err, r.StatusCode, r.Status, string(response))
+		return nil, &ResponseDecodeError{
+			StatusCode: r.StatusCode,
+			Status:     r.Status,
+			Error:      err,
+			Response:   response,
+		}
 	}
 
 	messages := []string{}
