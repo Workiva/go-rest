@@ -51,15 +51,15 @@ type Response struct {
 
 // Wraps response decoding error in a helpful way
 type ResponseDecodeError struct {
-	StatusCode int    // Response status code
-	Status     string // Response status message
-	Response   []byte // Payload of the response that could not be decoded
-	Error      error  // Error that occurred while decoding the response
+	StatusCode  int    // Response status code
+	Status      string // Response status message
+	Response    []byte // Payload of the response that could not be decoded
+	DecodeError error  // Error that occurred while decoding the response
 }
 
 func (rde *ResponseDecodeError) Error() string {
 	return fmt.Sprintf("(Error, Status Code, Status Message, Payload) = (%s, %d, %s, %s)",
-		rde.Error.Error(), rde.StatusCode, rde.Status, string(rde.Response))
+		rde.DecodeError.Error(), rde.StatusCode, rde.Status, string(rde.Response))
 }
 
 // Get will perform an HTTP GET on the specified URL and return the response.
@@ -134,10 +134,10 @@ func decodeResponse(response []byte, r *http.Response) (*Response, error) {
 	var payload map[string]interface{}
 	if err := json.Unmarshal(response, &payload); err != nil {
 		return nil, &ResponseDecodeError{
-			StatusCode: r.StatusCode,
-			Status:     r.Status,
-			Error:      err,
-			Response:   response,
+			StatusCode:  r.StatusCode,
+			Status:      r.Status,
+			DecodeError: err,
+			Response:    response,
 		}
 	}
 
