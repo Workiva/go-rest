@@ -96,6 +96,7 @@ var do = func(c *http.Client, method, url string, body interface{}, header http.
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	// Don't try to decode the response on 404.
 	if resp.StatusCode == http.StatusNotFound {
@@ -112,7 +113,6 @@ var do = func(c *http.Client, method, url string, body interface{}, header http.
 	if err != nil {
 		return nil, err
 	}
-	resp.Body.Close()
 
 	return decodeResponse(rawResp, resp)
 }
