@@ -19,6 +19,7 @@ package rest
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -119,7 +120,7 @@ var do = func(c *http.Client, method, url string, body interface{}, header http.
 func decodeResponse(response []byte, r *http.Response) (*Response, error) {
 	var payload map[string]interface{}
 	if err := json.Unmarshal(response, &payload); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%v. Response with status %d: %s had unmarshallable payload %s", err, r.StatusCode, r.Status, string(response))
 	}
 
 	messages := []string{}
