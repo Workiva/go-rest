@@ -19,6 +19,7 @@ package rest
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -46,6 +47,19 @@ type Response struct {
 	Next     string         // A cursor to the next result set.
 	Result   interface{}    // The decoded result of the REST request.
 	Raw      *http.Response // The raw HTTP response.
+}
+
+// Wraps response decoding error in a helpful way
+type ResponseDecodeError struct {
+	StatusCode  int    // Response status code
+	Status      string // Response status message
+	Response    []byte // Payload of the response that could not be decoded
+	DecodeError error  // Error that occurred while decoding the response
+}
+
+func (rde *ResponseDecodeError) Error() string {
+	return fmt.Sprintf("(Error, Status Code, Status Message, Payload) = (%s, %d, %s, %s)",
+		rde.DecodeError.Error(), rde.StatusCode, rde.Status, string(rde.Response))
 }
 
 // Get will perform an HTTP GET on the specified URL and return the response.
@@ -95,6 +109,7 @@ var do = func(c *http.Client, method, url string, body interface{}, header http.
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	// Don't try to decode the response on 404.
 	if resp.StatusCode == http.StatusNotFound {
@@ -111,7 +126,6 @@ var do = func(c *http.Client, method, url string, body interface{}, header http.
 	if err != nil {
 		return nil, err
 	}
-	resp.Body.Close()
 
 	return decodeResponse(rawResp, resp)
 }
@@ -119,7 +133,12 @@ var do = func(c *http.Client, method, url string, body interface{}, header http.
 func decodeResponse(response []byte, r *http.Response) (*Response, error) {
 	var payload map[string]interface{}
 	if err := json.Unmarshal(response, &payload); err != nil {
-		return nil, err
+		return nil, &ResponseDecodeError{
+			StatusCode:  r.StatusCode,
+			Status:      r.Status,
+			DecodeError: err,
+			Response:    response,
+		}
 	}
 
 	messages := []string{}
