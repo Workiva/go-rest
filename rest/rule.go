@@ -17,6 +17,7 @@ limitations under the License.
 package rest
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"reflect"
@@ -343,7 +344,7 @@ func applyNestedInboundRules(
 		for i := 0; i < s.Len(); i++ {
 			val := s.Index(i).Interface()
 			if val == nil {
-				return nil, fmt.Errorf("nested value is nil")
+				return nil, errors.New("nested value is nil")
 			}
 			// Check to see if the nested type is a slice or map.
 			// If not, it should be coerced to its rule type.
