@@ -1073,6 +1073,30 @@ func TestApplyInboundRulesNestedRulesDifferentVersion(t *testing.T) {
 	assert.Nil(err, "Error should be nil")
 }
 
+// Ensures that nested rules throw an error if a member is nil.
+func TestApplyInboundRulesNestedRulesNilMember(t *testing.T) {
+	assert := assert.New(t)
+	payload := Payload{"foo": []interface{}{nil}}
+	rules := NewRules((*TestResourceSlice)(nil),
+		&Rule{
+			Field:      "Foo",
+			FieldAlias: "foo",
+			Type:       Slice,
+			Versions:   []string{"1"},
+			Rules: NewRules((*string)(nil),
+				&Rule{
+					Type: String,
+				},
+			),
+		},
+	)
+
+	actual, err := applyInboundRules(payload, rules, "1")
+
+	assert.Nil(actual, "Payload should be nil")
+	assert.NotNil(err, "Error should not be nil")
+}
+
 // Ensures that non-resource Rules are applied correctly.
 func TestApplyInboundRulesNonResourceRule(t *testing.T) {
 	assert := assert.New(t)

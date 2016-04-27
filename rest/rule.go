@@ -17,6 +17,7 @@ limitations under the License.
 package rest
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"reflect"
@@ -341,9 +342,13 @@ func applyNestedInboundRules(
 		s := reflect.ValueOf(value)
 		nestedValues := make([]interface{}, s.Len())
 		for i := 0; i < s.Len(); i++ {
+			val := s.Index(i).Interface()
+			if val == nil {
+				return nil, errors.New("nested value is nil")
+			}
 			// Check to see if the nested type is a slice or map.
 			// If not, it should be coerced to its rule type.
-			iKind := reflect.TypeOf(s.Index(i).Interface()).Kind()
+			iKind := reflect.TypeOf(val).Kind()
 			ruleType := rules.Contents()[0].Type
 			if ruleKind := typeToKind[ruleType]; iKind == reflect.Slice && ruleKind != reflect.Slice {
 				return nil, fmt.Errorf("Value does not match rule type, expecting: %v, got: %v", ruleKind, iKind)
