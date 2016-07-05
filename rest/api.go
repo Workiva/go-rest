@@ -89,10 +89,18 @@ func NewConfiguration() *Configuration {
 	}
 }
 
+// MiddlewareError is returned by Middleware to indicate that a request should
+// not be served.
+type MiddlewareError interface {
+	error
+	Code() int
+	Response() []byte
+}
+
 // Middleware can be passed in to API#Start and API#StartTLS and will be
-// invoked on every request to a route handled by the API. Returns true if the
-// request should be terminated, false if it should continue.
-type Middleware func(w http.ResponseWriter, r *http.Request) bool
+// invoked on every request to a route handled by the API. Returns a
+// MiddlewareError if the request should be terminated.
+type Middleware func(w http.ResponseWriter, r *http.Request) MiddlewareError
 
 // middlewareProxy proxies an http.Handler by invoking middleware before
 // passing the request to the Handler. It implements the http.Handler
@@ -106,7 +114,9 @@ type middlewareProxy struct {
 // proxied http.Handler.
 func (m *middlewareProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	for _, middleware := range m.middleware {
-		if middleware(w, r) {
+		if err := middleware(w, r); err != nil {
+			w.WriteHeader(err.Code())
+			w.Write(err.Response())
 			return
 		}
 	}
