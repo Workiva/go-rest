@@ -46,8 +46,8 @@ func TestCORSMiddlewareWhitelist(t *testing.T) {
 	req.Header.Set("Access-Control-Request-Headers", "def")
 	w = httptest.NewRecorder()
 	err := middleware(w, req)
-	assert.Error(err)
-	assert.Equal(http.StatusBadRequest, err.Code())
+	assert.NotNil(err)
+	assert.Equal(http.StatusBadRequest, err.Code)
 
 	assert.Equal("", w.Header().Get("Access-Control-Allow-Origin"))
 	assert.Equal("", w.Header().Get("Access-Control-Allow-Methods"))
@@ -62,5 +62,5 @@ func TestCORSMiddlewareOptionsRequest(t *testing.T) {
 	req.Header.Set("Origin", "http://foo.com")
 	w := httptest.NewRecorder()
 	err := NewCORSMiddleware([]string{"foo.com"})(w, req)
-	assert.Equal(t, http.StatusOK, err.Code())
+	assert.Equal(t, http.StatusOK, err.Code)
 }
