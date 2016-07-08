@@ -8,28 +8,11 @@ import (
 	"github.com/Workiva/go-rest/rest"
 )
 
-type corsError struct {
-	msg  string
-	code int
-}
-
-func (c *corsError) Code() int {
-	return c.code
-}
-
-func (c *corsError) Response() []byte {
-	return []byte(c.msg)
-}
-
-func (c *corsError) Error() string {
-	return c.msg
-}
-
 // NewCORSMiddleware returns a Middleware which enables cross-origin requests.
 // Origin must match the supplied whitelist (which supports wildcards). Returns
 // a MiddlewareError if the request should be terminated.
 func NewCORSMiddleware(originWhitelist []string) rest.Middleware {
-	return func(w http.ResponseWriter, r *http.Request) rest.MiddlewareError {
+	return func(w http.ResponseWriter, r *http.Request) *rest.MiddlewareError {
 		originMatch := false
 		if origin := r.Header.Get("Origin"); checkOrigin(origin, originWhitelist) {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
@@ -39,14 +22,13 @@ func NewCORSMiddleware(originWhitelist []string) rest.Middleware {
 			originMatch = true
 		}
 
-		var err rest.MiddlewareError
+		var err *rest.MiddlewareError
 		if r.Method == "OPTIONS" {
-			err = &corsError{code: http.StatusOK}
-		}
-		if !originMatch {
-			err = &corsError{
-				code: http.StatusBadRequest,
-				msg:  "Origin does not match whitelist",
+			err = &rest.MiddlewareError{Code: http.StatusOK}
+		} else if !originMatch {
+			err = &rest.MiddlewareError{
+				Code:     http.StatusBadRequest,
+				Response: []byte("Origin does not match whitelist"),
 			}
 		}
 		return err
