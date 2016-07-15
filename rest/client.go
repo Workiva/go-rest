@@ -23,6 +23,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 )
 
 // Supported HTTP Methods
@@ -33,10 +34,45 @@ const (
 	httpPut    = "PUT"
 )
 
+type InovcationHandler func(c *http.Client, method, url string, body interface{}, header http.Header) (*Response, error)
+
+type ClientMiddleware func(InovcationHandler) InovcationHandler
+
+type HttpClient interface {
+	Do(req *http.Request) (resp *http.Response, err error)
+	Get(url string) (resp *http.Response, err error)
+	Post(url string, bodyType string, body io.Reader) (resp *http.Response, err error)
+	PostForm(url string, data url.Values) (resp *http.Response, err error)
+	Head(url string) (resp *http.Response, err error)
+}
+
+type RestClient interface {
+	// Get will perform an HTTP GET on the specified URL and return the response.
+	Get(url string, header http.Header) (*Response, error)
+
+	// Post will perform an HTTP POST on the specified URL and return the response.
+	Post(url string, body interface{}, header http.Header) (*Response, error)
+
+	// Put will perform an HTTP PUT on the specified URL and return the response.
+	Put(url string, body interface{}, header http.Header) (*Response, error)
+
+	// Delete will perform an HTTP DELETE on the specified URL and return the response.
+	Delete(url string, header http.Header) (*Response, error)
+}
+
+func NewRestClient(c HttpClient, middleware ...ClientMiddleware) RestClient {
+	return &client{c, middleware}
+}
+
 // Client is the type that encapsulates and uses the Authorizer to sign any REST
 // requests that are performed.
 type Client struct {
-	*http.Client
+	HttpClient
+}
+
+type client struct {
+	HttpClient
+	middleware []ClientMiddleware
 }
 
 // Response is unmarshaled struct returned from an HTTP request.
@@ -62,24 +98,63 @@ func (rde *ResponseDecodeError) Error() string {
 		rde.DecodeError.Error(), rde.StatusCode, rde.Status, string(rde.Response))
 }
 
+func (c *client) applyMiddleware(method InovcationHandler) InovcationHandler {
+	var m InovcationHandler
+	for _, middleware := range c.middleware {
+		m = middleware(method)
+	}
+	return m
+}
+
+func (c *client) process(method, url string, body interface{}, header http.Header) (*Response, error) {
+	m := c.applyMiddleware(do)
+	return m(c.HttpClient.(*http.Client), method, url, body, header)
+}
+
+// Get will perform an HTTP GET on the specified URL and return the response.
+func (c *client) Get(url string, header http.Header) (*Response, error) {
+	return c.process(httpGet, url, nil, header)
+}
+
+// Post will perform an HTTP POST on the specified URL and return the response.
+func (c *client) Post(url string, body interface{}, header http.Header) (*Response, error) {
+	return c.process(httpPost, url, body, header)
+}
+
+// Put will perform an HTTP PUT on the specified URL and return the response.
+func (c *client) Put(url string, body interface{}, header http.Header) (*Response, error) {
+	return c.process(httpPut, url, body, header)
+}
+
+// Delete will perform an HTTP DELETE on the specified URL and return the response.
+func (c *client) Delete(url string, header http.Header) (*Response, error) {
+	return c.process(httpDelete, url, nil, header)
+}
+
+/* Internal client calls. Would like to move up to the top level with a major
+version change. Keeping this around for now to maintain backwards compat and allow
+consumers to still construct the Client struct directly vs using the new constructor
+method that returns the internal implementation that maps to the interface.
+*/
+
 // Get will perform an HTTP GET on the specified URL and return the response.
 func (c *Client) Get(url string, header http.Header) (*Response, error) {
-	return do(c.Client, httpGet, url, nil, header)
+	return do(c.HttpClient.(*http.Client), httpGet, url, nil, header)
 }
 
 // Post will perform an HTTP POST on the specified URL and return the response.
 func (c *Client) Post(url string, body interface{}, header http.Header) (*Response, error) {
-	return do(c.Client, httpPost, url, body, header)
+	return do(c.HttpClient.(*http.Client), httpPost, url, body, header)
 }
 
 // Put will perform an HTTP PUT on the specified URL and return the response.
 func (c *Client) Put(url string, body interface{}, header http.Header) (*Response, error) {
-	return do(c.Client, httpPut, url, body, header)
+	return do(c.HttpClient.(*http.Client), httpPut, url, body, header)
 }
 
 // Delete will perform an HTTP DELETE on the specified URL and return the response.
 func (c *Client) Delete(url string, header http.Header) (*Response, error) {
-	return do(c.Client, httpDelete, url, nil, header)
+	return do(c.HttpClient.(*http.Client), httpDelete, url, nil, header)
 }
 
 var do = func(c *http.Client, method, url string, body interface{}, header http.Header) (*Response, error) {
