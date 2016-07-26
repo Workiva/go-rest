@@ -34,9 +34,9 @@ const (
 	httpPut    = "PUT"
 )
 
-type InovcationHandler func(c *http.Client, method, url string, body interface{}, header http.Header) (*Response, error)
+type InvocationHandler func(c *http.Client, method, url string, body interface{}, header http.Header) (*Response, error)
 
-type ClientMiddleware func(InovcationHandler) InovcationHandler
+type ClientMiddleware func(InvocationHandler) InvocationHandler
 
 type HttpClient interface {
 	Do(req *http.Request) (resp *http.Response, err error)
@@ -98,12 +98,11 @@ func (rde *ResponseDecodeError) Error() string {
 		rde.DecodeError.Error(), rde.StatusCode, rde.Status, string(rde.Response))
 }
 
-func (c *client) applyMiddleware(method InovcationHandler) InovcationHandler {
-	var m InovcationHandler
+func (c *client) applyMiddleware(method InvocationHandler) InvocationHandler {
 	for _, middleware := range c.middleware {
-		m = middleware(method)
+		method = middleware(method)
 	}
-	return m
+	return method
 }
 
 func (c *client) process(method, url string, body interface{}, header http.Header) (*Response, error) {
