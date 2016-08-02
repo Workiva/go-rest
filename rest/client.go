@@ -34,13 +34,13 @@ const (
 	httpPut    = "PUT"
 )
 
-// The type that is the function that is to be wrapped by the ClientMiddleware
+// InvocationHandler is a function that is to be wrapped by the ClientMiddleware
 type InvocationHandler func(c *http.Client, method, url string, body interface{}, header http.Header) (*Response, error)
 
-// A function that wraps another function, and returns the wrapped function
+// ClientMiddleware is a function that wraps another function, and returns the wrapped function
 type ClientMiddleware func(InvocationHandler) InvocationHandler
 
-// The type that is used to perform HTTP Methods
+// HttpClient is the type that is used to perform HTTP Methods
 type HttpClient interface {
 	Do(req *http.Request) (resp *http.Response, err error)
 	Get(url string) (resp *http.Response, err error)
@@ -49,7 +49,7 @@ type HttpClient interface {
 	Head(url string) (resp *http.Response, err error)
 }
 
-// The client that performs HTTP methods including Get, Post, Put, and Delete
+// RestClient performs HTTP methods including Get, Post, Put, and Delete
 type RestClient interface {
 	// Get will perform an HTTP GET on the specified URL and return the response.
 	Get(url string, header http.Header) (*Response, error)
@@ -105,7 +105,7 @@ func (rde *ResponseDecodeError) Error() string {
 		rde.DecodeError.Error(), rde.StatusCode, rde.Status, string(rde.Response))
 }
 
-// Wraps a given InvocationHandler with all of the middleware in the client
+// applyMiddleware wraps a given InvocationHandler with all of the middleware in the client
 func (c *client) applyMiddleware(method InvocationHandler) InvocationHandler {
 	for _, middleware := range c.middleware {
 		method = middleware(method)
