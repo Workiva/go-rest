@@ -1,0 +1,18 @@
+version: 1
+
+exclude:
+  - tests?/
+
+raven_monitored_classes: null
+
+raven_monitored_files:
+  ^rest/middleware/cors.go$:
+    reason: Contains CORS logic
+
+raven_monitored_functions:
+  ^rest/api.go$:
+    StartTLS:
+      reason: Logic for serving HTTPS connections
+
+raven_monitored_keywords: null
+
