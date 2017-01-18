@@ -1,5 +1,6 @@
 project: go-rest
 language: go
+runner_image: drydock-prod.workiva.net/workiva/smithy-runner:112206
 
 script:
   - echo "Just using Smithy for dependency scanning"
