@@ -78,11 +78,11 @@ func HandlerMiddleware(next http.Handler) http.Handler {
 }
 
 // Global API middleware is implemented as a function which takes an
-// http.ResponseWriter and http.Request and returns a bool indicating if the
-// request should terminate or not.
-func GlobalMiddleware(w http.ResponseWriter, r *http.Request) bool {
+// http.ResponseWriter and http.Request and returns a MiddlewareError if the
+// request should terminate.
+func GlobalMiddleware(w http.ResponseWriter, r *http.Request) *MiddlewareError {
 	log.Println(r)
-	return false
+	return nil
 }
 
 // This example shows how to implement request middleware. ResourceHandlers
