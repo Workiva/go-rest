@@ -271,3 +271,161 @@ func TestDoDecodeResult(t *testing.T) {
 
 	assert.Nil(err)
 }
+
+// Ensures that Get invokes do with the correct HTTP client, method, url and
+// header, and that middlewares are applied.
+func TestNewClientGet(t *testing.T) {
+	assert := assert.New(t)
+	middlewaresApplied := 0
+	middleware := func(next InvocationHandler) InvocationHandler {
+		return InvocationHandler(func(c *http.Client, method string, url string, body interface{}, header http.Header) (*Response, error) {
+			middlewaresApplied++
+			return next(c, method, url, body, header)
+		})
+	}
+	middlewares := []ClientMiddleware{middleware, middleware}
+
+	httpClient := http.DefaultClient
+	client := &client{httpClient, middlewares}
+	header := http.Header{}
+	url := "http://localhost"
+	mockResponse := &Response{}
+	mockDo := func(c *http.Client, m, u string, b interface{}, h http.Header) (*Response, error) {
+		assert.Equal(httpClient, c)
+		assert.Equal(httpGet, m)
+		assert.Nil(b)
+		assert.Equal(header, h)
+		assert.Equal(url, u)
+		return mockResponse, nil
+	}
+
+	before := do
+	do = mockDo
+
+	resp, err := client.Get(url, header)
+
+	assert.Equal(mockResponse, resp)
+	assert.Equal(middlewaresApplied, 2)
+	assert.Nil(err)
+
+	do = before
+}
+
+// Ensures that Post invokes do with the correct HTTP client, method, url and
+// header, and that middlewares are applied.
+func TestNewClientPost(t *testing.T) {
+	assert := assert.New(t)
+	middlewaresApplied := 0
+	middleware := func(next InvocationHandler) InvocationHandler {
+		return InvocationHandler(func(c *http.Client, method string, url string, body interface{}, header http.Header) (*Response, error) {
+			middlewaresApplied++
+			return next(c, method, url, body, header)
+		})
+	}
+	middlewares := []ClientMiddleware{middleware, middleware}
+
+	httpClient := http.DefaultClient
+	client := &client{httpClient, middlewares}
+	header := http.Header{}
+	url := "http://localhost"
+	body := "foo"
+	mockResponse := &Response{}
+	mockDo := func(c *http.Client, m, u string, b interface{}, h http.Header) (*Response, error) {
+		assert.Equal(httpClient, c)
+		assert.Equal(httpPost, m)
+		assert.Equal(body, b)
+		assert.Equal(header, h)
+		assert.Equal(url, u)
+		return mockResponse, nil
+	}
+
+	before := do
+	do = mockDo
+
+	resp, err := client.Post(url, body, header)
+
+	assert.Equal(mockResponse, resp)
+	assert.Equal(middlewaresApplied, 2)
+	assert.Nil(err)
+
+	do = before
+}
+
+// Ensures that Put invokes do with the correct HTTP client, method, url and
+// header, and that middlewares are applied.
+func TestNewClientPut(t *testing.T) {
+	assert := assert.New(t)
+	middlewaresApplied := 0
+	middleware := func(next InvocationHandler) InvocationHandler {
+		return InvocationHandler(func(c *http.Client, method string, url string, body interface{}, header http.Header) (*Response, error) {
+			middlewaresApplied++
+			return next(c, method, url, body, header)
+		})
+	}
+	middlewares := []ClientMiddleware{middleware, middleware}
+
+	httpClient := http.DefaultClient
+	client := &client{httpClient, middlewares}
+	header := http.Header{}
+	url := "http://localhost"
+	body := "foo"
+	mockResponse := &Response{}
+	mockDo := func(c *http.Client, m, u string, b interface{}, h http.Header) (*Response, error) {
+		assert.Equal(httpClient, c)
+		assert.Equal(httpPut, m)
+		assert.Equal(body, b)
+		assert.Equal(header, h)
+		assert.Equal(url, u)
+		return mockResponse, nil
+	}
+
+	before := do
+	do = mockDo
+
+	resp, err := client.Put(url, body, header)
+
+	assert.Equal(mockResponse, resp)
+	assert.Equal(middlewaresApplied, 2)
+	assert.Nil(err)
+
+	do = before
+}
+
+// Ensures that Delete invokes do with the correct HTTP client, method, url and
+// header, and that middlewares are applied.
+func TestNewClientDelete(t *testing.T) {
+	assert := assert.New(t)
+	middlewaresApplied := 0
+	middleware := func(next InvocationHandler) InvocationHandler {
+		return InvocationHandler(func(c *http.Client, method string, url string, body interface{}, header http.Header) (*Response, error) {
+			middlewaresApplied++
+			return next(c, method, url, body, header)
+		})
+	}
+	middlewares := []ClientMiddleware{middleware, middleware}
+
+	httpClient := http.DefaultClient
+	client := &client{httpClient, middlewares}
+	header := http.Header{}
+	url := "http://localhost"
+	mockResponse := &Response{}
+	mockDo := func(c *http.Client, m, u string, b interface{}, h http.Header) (*Response, error) {
+		assert.Equal(httpClient, c)
+		assert.Equal(httpDelete, m)
+		assert.Nil(b)
+		assert.Equal(header, h)
+		assert.Equal(url, u)
+		return mockResponse, nil
+	}
+
+	before := do
+	do = mockDo
+
+	resp, err := client.Delete(url, header)
+
+	assert.Equal(mockResponse, resp)
+	assert.Equal(middlewaresApplied, 2)
+	assert.Nil(err)
+
+	do = before
+}
