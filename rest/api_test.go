@@ -1082,14 +1082,14 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // Ensures that middlewareProxy invokes middleware and doesn't delegate to the
-// wrapped http.Handler if any middleware return true.
+// wrapped http.Handler if any middleware return error.
 func TestMiddlewareProxyTerminate(t *testing.T) {
 	assert := assert.New(t)
 	handler := &httpHandler{}
 	called := false
-	middleware := func(w http.ResponseWriter, r *http.Request) bool {
+	middleware := func(w http.ResponseWriter, r *http.Request) *MiddlewareError {
 		called = true
-		return true
+		return &MiddlewareError{}
 	}
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
 	w := httptest.NewRecorder()
@@ -1102,14 +1102,14 @@ func TestMiddlewareProxyTerminate(t *testing.T) {
 }
 
 // Ensures that middlewareProxy invokes middleware and delegates to the wrapped
-// http.Handler if all middleware return false.
+// http.Handler if all middleware return nil.
 func TestMiddlewareProxyDelegate(t *testing.T) {
 	assert := assert.New(t)
 	handler := &httpHandler{}
 	called := false
-	middleware := func(w http.ResponseWriter, r *http.Request) bool {
+	middleware := func(w http.ResponseWriter, r *http.Request) *MiddlewareError {
 		called = true
-		return false
+		return nil
 	}
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
 	w := httptest.NewRecorder()
