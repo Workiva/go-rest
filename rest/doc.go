@@ -27,7 +27,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hoisie/mustache"
+	"github.com/blakeroberts-wk/mustache"
 )
 
 type endpoint map[string]interface{}

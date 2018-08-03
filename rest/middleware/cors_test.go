@@ -64,3 +64,12 @@ func TestCORSMiddlewareOptionsRequest(t *testing.T) {
 	err := NewCORSMiddleware([]string{"foo.com"})(w, req)
 	assert.Equal(t, http.StatusOK, err.Code)
 }
+
+// Ensures that CORSMiddleware doesn't return an error when a request is given
+// without an Origin header.
+func TestCORSMiddlewareNoOrigin(t *testing.T) {
+	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
+	w := httptest.NewRecorder()
+	err := NewCORSMiddleware([]string{"blah.wdesk.org", "*.wdesk.com"})(w, req)
+	assert.Nil(t, err)
+}
