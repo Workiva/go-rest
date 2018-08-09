@@ -14,6 +14,10 @@ import (
 func NewCORSMiddleware(originWhitelist []string) rest.Middleware {
 	return func(w http.ResponseWriter, r *http.Request) *rest.MiddlewareError {
 		origin := r.Header.Get("Origin")
+		if origin == "" && r.Method != "OPTIONS" {
+			return nil
+		}
+
 		originMatch := false
 		if checkOrigin(origin, originWhitelist) {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
@@ -25,10 +29,6 @@ func NewCORSMiddleware(originWhitelist []string) rest.Middleware {
 
 		if r.Method == "OPTIONS" {
 			return &rest.MiddlewareError{Code: http.StatusOK}
-		}
-
-		if origin == "" {
-			return nil
 		}
 
 		if !originMatch {
