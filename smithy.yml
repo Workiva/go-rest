@@ -1,5 +1,0 @@
-project: go-rest
-language: go
-
-script:
-  - echo "Just using Smithy for dependency scanning"

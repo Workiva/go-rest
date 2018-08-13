@@ -13,8 +13,13 @@ import (
 // a MiddlewareError if the request should be terminated.
 func NewCORSMiddleware(originWhitelist []string) rest.Middleware {
 	return func(w http.ResponseWriter, r *http.Request) *rest.MiddlewareError {
+		origin := r.Header.Get("Origin")
+		if origin == "" && r.Method != "OPTIONS" {
+			return nil
+		}
+
 		originMatch := false
-		if origin := r.Header.Get("Origin"); checkOrigin(origin, originWhitelist) {
+		if checkOrigin(origin, originWhitelist) {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 			w.Header()["Access-Control-Allow-Headers"] = r.Header["Access-Control-Request-Headers"]
@@ -22,16 +27,18 @@ func NewCORSMiddleware(originWhitelist []string) rest.Middleware {
 			originMatch = true
 		}
 
-		var err *rest.MiddlewareError
 		if r.Method == "OPTIONS" {
-			err = &rest.MiddlewareError{Code: http.StatusOK}
-		} else if !originMatch {
-			err = &rest.MiddlewareError{
+			return &rest.MiddlewareError{Code: http.StatusOK}
+		}
+
+		if !originMatch {
+			return &rest.MiddlewareError{
 				Code:     http.StatusBadRequest,
 				Response: []byte("Origin does not match whitelist"),
 			}
 		}
-		return err
+
+		return nil
 	}
 }
 
