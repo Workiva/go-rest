@@ -1,6 +1,6 @@
 FROM golang:1.15-alpine
 
-RUN apk add --update build-base bash curl git openssh py-pip
+RUN apk add --update build-base git openssh
 
 ## github credentials
 ARG GIT_SSH_KEY
@@ -10,20 +10,22 @@ RUN chmod -R 700 ~/.ssh; echo "${GIT_SSH_KEY}" > ~/.ssh/id_rsa; chmod 600 ~/.ssh
 RUN eval "$(ssh-agent -s)" && \
     ssh-add ~/.ssh/id_rsa
 
-#install glide
-RUN go get -u github.com/Masterminds/glide
+ENV GOPATH=/go
+ENV BUILD_PATH=$GOPATH/src/github.com/Workiva/go-rest
+WORKDIR $BUILD_PATH
+COPY rest $BUILD_PATH/rest
+COPY go.mod $BUILD_PATH/
 
-WORKDIR /go/src/github.com/Workiva/go-rest
-COPY . /go/src/github.com/Workiva/go-rest
+RUN go mod download
 
-# install dependencies
-RUN glide install
-
-# run tests
-RUN go test $(glide novendor)
+# Check formatting, build, and test
+WORKDIR $BUILD_PATH/rest
+RUN test -z $(gofmt -l .)
+RUN go build ./...
+RUN go test ./...
 
 # artifacts
-ARG BUILD_ARTIFACTS_AUDIT=/go/src/github.com/Workiva/go-rest/glide.lock
+ARG BUILD_ARTIFACTS_AUDIT=/go/src/github.com/Workiva/go-rest/go.sum
 
 # no-op container
 FROM scratch

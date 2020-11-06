@@ -18,7 +18,7 @@ func TestPathTrimMiddlewareTrimPrefix(t *testing.T) {
 	assert.Equal(req.URL.Path, "/bar")
 }
 
-// Ensure that PathTrimMiddleware correclty passes a path that doesn't need 
+// Ensure that PathTrimMiddleware correclty passes a path that doesn't need
 // to be trimmed
 func TestPathTrimMiddlewareNoTrimPrefix(t *testing.T) {
 	assert := assert.New(t)
