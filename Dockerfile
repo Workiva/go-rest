@@ -26,10 +26,10 @@ COPY v2/go.mod $V2/
 COPY v2/go.sum $V2/
 COPY v2/rest $V2/rest
 
+RUN test -z $(go fmt ./...)
+
 # v1 - check formatting, build, test
 RUN go mod download
-WORKDIR $BUILD_PATH/rest
-RUN test -z $(gofmt -l .)
 RUN test -z $(go mod tidy -v)
 RUN go mod verify
 RUN go build ./...
@@ -38,8 +38,6 @@ RUN go test ./...
 # v2 - check formatting, build, test
 WORKDIR $V2
 RUN go mod download
-WORKDIR $V2/rest
-RUN test -z $(gofmt -l .)
 RUN test -z $(go mod tidy -v)
 RUN go mod verify
 RUN go build ./...

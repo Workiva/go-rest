@@ -5,7 +5,10 @@ go:
   - tip
 
 before_install: go get golang.org/x/tools/cmd/cover
-script: go test -cover ./...
+script:
+  - go test -cover ./...
+  - cd v2
+  - go test -cover ./...
 
 notifications:
   email: false
