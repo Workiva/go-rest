@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/Workiva/go-rest/rest"
+	"github.com/Workiva/go-rest/v2/rest"
 )
 
 // NewPathTrimMiddleware returns a Middleware which inspects request paths
