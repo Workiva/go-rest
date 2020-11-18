@@ -1,4 +1,4 @@
-module github.com/Workiva/go-rest/v2
+module github.com/Workiva/go-rest/v1
 
 go 1.15
 

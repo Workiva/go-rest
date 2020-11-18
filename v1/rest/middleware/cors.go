@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/Workiva/go-rest/v2/rest"
+	"github.com/Workiva/go-rest/v1/rest"
 )
 
 // NewCORSMiddleware returns a Middleware which enables cross-origin requests.
