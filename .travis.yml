@@ -7,8 +7,6 @@ go:
 before_install: go get golang.org/x/tools/cmd/cover
 script:
   - go test -cover ./...
-  - cd v1
-  - go test -cover ./...
 
 notifications:
   email: false

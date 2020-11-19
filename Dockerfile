@@ -12,31 +12,14 @@ RUN eval "$(ssh-agent -s)" && \
 
 ENV GOPATH=/go
 ENV BUILD_PATH=$GOPATH/src/github.com/Workiva/go-rest
-ENV V1=$BUILD_PATH/v1
 
 WORKDIR $BUILD_PATH
 
-# v1
 COPY go.mod $BUILD_PATH/
 COPY go.sum $BUILD_PATH/
 COPY rest $BUILD_PATH/rest
 
-# v2
-COPY v1/go.mod $V1/
-COPY v1/go.sum $V1/
-COPY v1/rest $V1/rest
-
 RUN test -z $(go fmt ./...)
-
-# v0 - check formatting, build, test
-RUN go mod download
-RUN test -z $(go mod tidy -v)
-RUN go mod verify
-RUN go build ./...
-RUN go test ./...
-
-# v1 - check formatting, build, test
-WORKDIR $V1
 RUN go mod download
 RUN test -z $(go mod tidy -v)
 RUN go mod verify
@@ -44,7 +27,7 @@ RUN go build ./...
 RUN go test ./...
 
 # artifacts
-ARG BUILD_ARTIFACTS_AUDIT=/go/src/github.com/Workiva/go-rest/go.sum:/go/src/github.com/Workiva/go-rest/v1/go.sum
+ARG BUILD_ARTIFACTS_AUDIT=/go/src/github.com/Workiva/go-rest/go.sum
 
 # no-op container
 FROM scratch
