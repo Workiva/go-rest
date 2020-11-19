@@ -145,7 +145,6 @@ type RequestContext interface {
 
 // requestContext is an implementation of the RequestContext interface.
 type requestContext struct {
-	context.Context
 	req      *http.Request
 	body     *bytes.Buffer
 	writer   http.ResponseWriter
