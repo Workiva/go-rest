@@ -1,12 +1,12 @@
 language: go
 
 go:
-  - "1.5"
-  - "1.10"
+  - "1.15"
   - tip
 
 before_install: go get golang.org/x/tools/cmd/cover
-script: go test -cover ./...
+script:
+  - go test -cover ./...
 
 notifications:
   email: false

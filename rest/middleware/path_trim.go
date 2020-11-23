@@ -1,6 +1,6 @@
 package middleware
 
-import(
+import (
 	"net/http"
 	"strings"
 

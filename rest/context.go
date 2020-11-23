@@ -18,15 +18,14 @@ package rest
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
 
-	gcontext "github.com/gorilla/context"
 	"github.com/gorilla/mux"
-	"golang.org/x/net/context"
 )
 
 const (
@@ -51,12 +50,13 @@ const (
 	resultKey
 )
 
-// RequestContext contains the context information for the current HTTP request. It's a wrapper
-// around Google's Context (http://godoc.org/code.google.com/p/go.net/context), which provides
-// facilities for sending request-scoped values, cancelation signals, and deadlines
-// across API boundaries to all the goroutines involved in handling a request.
+// RequestContext contains the context information for the current HTTP request. Context
+// values are stored on the http.Request context.
 type RequestContext interface {
-	context.Context
+	// Value returns the value associated with this context for key, or nil
+	// if no value is associated with key. Successive calls to Value with
+	// the same key returns the same result.
+	Value(key interface{}) interface{}
 
 	// WithValue returns a new RequestContext with the provided key-value pair and this context
 	// as the parent.
@@ -143,11 +143,8 @@ type RequestContext interface {
 	ResponseWriter() http.ResponseWriter
 }
 
-// gorillaRequestContext is an implementation of the RequestContext interface. It wraps
-// Gorilla's context package from which it attempts to store/retrieve values, delegating
-// to the parent Context if necessary.
-type gorillaRequestContext struct {
-	context.Context
+// requestContext is an implementation of the RequestContext interface.
+type requestContext struct {
 	req      *http.Request
 	body     *bytes.Buffer
 	writer   http.ResponseWriter
@@ -155,13 +152,14 @@ type gorillaRequestContext struct {
 	messages []string
 }
 
+func setValueOnRequestContext(req *http.Request, key, val interface{}) *http.Request {
+	ctx := context.WithValue(req.Context(), key, val)
+	return req.WithContext(ctx)
+}
+
 // NewContext returns a RequestContext populated with parameters from the request path and
 // query string.
-func NewContext(parent context.Context, req *http.Request, writer http.ResponseWriter) RequestContext {
-	if parent == nil {
-		parent = context.Background()
-	}
-
+func NewContext(req *http.Request, writer http.ResponseWriter) RequestContext {
 	for key, value := range req.URL.Query() {
 		var val interface{}
 		val = value
@@ -173,11 +171,11 @@ func NewContext(parent context.Context, req *http.Request, writer http.ResponseW
 			val = value[0]
 		}
 
-		gcontext.Set(req, key, val)
+		req = setValueOnRequestContext(req, key, val)
 	}
 
 	for key, value := range mux.Vars(req) {
-		gcontext.Set(req, key, value)
+		req = setValueOnRequestContext(req, key, value)
 	}
 
 	var body []byte
@@ -192,44 +190,56 @@ func NewContext(parent context.Context, req *http.Request, writer http.ResponseW
 	// parameters with the same name as query string values. Figure out a
 	// better way to handle this.
 
-	return &gorillaRequestContext{parent, req, bytes.NewBuffer(body), writer, nil, []string{}}
+	return &requestContext{
+		req:      req,
+		body:     bytes.NewBuffer(body),
+		writer:   writer,
+		router:   nil,
+		messages: []string{},
+	}
 }
 
-func NewContextWithRouter(parent context.Context, req *http.Request, writer http.ResponseWriter,
-	router *mux.Router) RequestContext {
-
-	context := NewContext(parent, req, writer)
-	context.(*gorillaRequestContext).router = router
+func NewContextWithRouter(req *http.Request, writer http.ResponseWriter, router *mux.Router) RequestContext {
+	context := NewContext(req, writer)
+	context.(*requestContext).router = router
 	return context
 }
 
 // WithValue returns a new RequestContext with the provided key-value pair and this context
 // as the parent.
-func (ctx *gorillaRequestContext) WithValue(key, value interface{}) RequestContext {
+func (ctx *requestContext) WithValue(key, value interface{}) RequestContext {
 	if r, ok := ctx.Request(); ok {
-		return &gorillaRequestContext{context.WithValue(ctx, key, value), r, ctx.body, ctx.writer, ctx.router, ctx.messages}
+		req := setValueOnRequestContext(r, key, value)
+		return &requestContext{
+			req:      req,
+			body:     ctx.body,
+			writer:   ctx.writer,
+			router:   ctx.router,
+			messages: ctx.messages,
+		}
 	}
 
 	// Should not reach this.
 	panic("Unable to set value on context: no request")
 }
 
-// Value returns Gorilla's context package's value for this Context's request
-// and key. It delegates to the parent Context if there is no such value.
-func (ctx *gorillaRequestContext) Value(key interface{}) interface{} {
+// Value returns this Context's request's value for the given key, or the request if
+// passed the request key. It will return nil if no value is associated with the key.
+func (ctx *requestContext) Value(key interface{}) interface{} {
 	if key == requestKey {
 		return ctx.req
 	}
-	if val, ok := gcontext.GetOk(ctx.req, key); ok {
+	val := ctx.req.Context().Value(key)
+	if val != nil {
 		return val
 	}
-	return ctx.Context.Value(key)
+	return nil
 }
 
 // ValueWithDefault returns the context value for the given key. If there's no
 // such value, the provided default is returned.
-func (ctx *gorillaRequestContext) ValueWithDefault(key, defaultVal interface{}) interface{} {
-	value := ctx.Value(key)
+func (ctx *requestContext) ValueWithDefault(key, defaultVal interface{}) interface{} {
+	value := ctx.req.Context().Value(key)
 	if value == nil {
 		value = defaultVal
 	}
@@ -238,35 +248,35 @@ func (ctx *gorillaRequestContext) ValueWithDefault(key, defaultVal interface{}) 
 
 // ResponseFormat returns the response format for the request, defaulting to "json"
 // if one is not specified using the "format" query parameter.
-func (ctx *gorillaRequestContext) ResponseFormat() string {
+func (ctx *requestContext) ResponseFormat() string {
 	return ctx.ValueWithDefault(formatKey, "json").(string)
 }
 
 // ResourceID returns the resource id for the request, defaulting to an empty string
 // if there isn't one.
-func (ctx *gorillaRequestContext) ResourceID() string {
+func (ctx *requestContext) ResourceID() string {
 	return ctx.ValueWithDefault(resourceIDKey, "").(string)
 }
 
 // Version returns the API version for the request, defaulting to an empty string
 // if one is not specified in the request path.
-func (ctx *gorillaRequestContext) Version() string {
+func (ctx *requestContext) Version() string {
 	return ctx.ValueWithDefault(versionKey, "").(string)
 }
 
 // Status returns the current HTTP status code that will be returned for the request,
 // defaulting to 200 if one hasn't been set yet.
-func (ctx *gorillaRequestContext) Status() int {
+func (ctx *requestContext) Status() int {
 	return ctx.ValueWithDefault(statusKey, http.StatusOK).(int)
 }
 
 // setStatus sets the HTTP status code to be returned for the request.
-func (ctx *gorillaRequestContext) setStatus(status int) RequestContext {
+func (ctx *requestContext) setStatus(status int) RequestContext {
 	return ctx.WithValue(statusKey, status)
 }
 
 // Error returns the current error for the request or nil if no errors have been set.
-func (ctx *gorillaRequestContext) Error() error {
+func (ctx *requestContext) Error() error {
 	err := ctx.ValueWithDefault(errorKey, nil)
 
 	if err == nil {
@@ -277,33 +287,33 @@ func (ctx *gorillaRequestContext) Error() error {
 }
 
 // setError sets the current error for the request.
-func (ctx *gorillaRequestContext) setError(err error) RequestContext {
+func (ctx *requestContext) setError(err error) RequestContext {
 	return ctx.WithValue(errorKey, err)
 }
 
 // Result returns the result resource for the request or nil if no result has been set.
-func (ctx *gorillaRequestContext) Result() interface{} {
+func (ctx *requestContext) Result() interface{} {
 	return ctx.ValueWithDefault(resultKey, nil)
 }
 
 // setResult sets the result resource for the request.
-func (ctx *gorillaRequestContext) setResult(result interface{}) RequestContext {
+func (ctx *requestContext) setResult(result interface{}) RequestContext {
 	return ctx.WithValue(resultKey, result)
 }
 
 // Cursor returns the current result cursor for the request, defaulting to an empty
 // string if one hasn't been set.
-func (ctx *gorillaRequestContext) Cursor() string {
+func (ctx *requestContext) Cursor() string {
 	return ctx.ValueWithDefault(cursorKey, "").(string)
 }
 
 // setCursor sets the current result cursor for the request.
-func (ctx *gorillaRequestContext) setCursor(cursor string) RequestContext {
+func (ctx *requestContext) setCursor(cursor string) RequestContext {
 	return ctx.WithValue(cursorKey, cursor)
 }
 
 // Header returns the header key-value pairs for the request.
-func (ctx *gorillaRequestContext) Header() http.Header {
+func (ctx *requestContext) Header() http.Header {
 	req, ok := ctx.Request()
 	if !ok {
 		return http.Header{}
@@ -313,21 +323,21 @@ func (ctx *gorillaRequestContext) Header() http.Header {
 }
 
 // Body returns a buffer containing the raw body of the request.
-func (ctx *gorillaRequestContext) Body() *bytes.Buffer {
+func (ctx *requestContext) Body() *bytes.Buffer {
 	return ctx.body
 }
 
 // Request returns the *http.Request associated with context using NewContext, if any.
-func (ctx *gorillaRequestContext) Request() (*http.Request, bool) {
-	// We cannot use ctx.(*gorillaRequestContext).req to get the request because ctx may
-	// be a Context derived from a *gorillaRequestContext. Instead, we use Value to
+func (ctx *requestContext) Request() (*http.Request, bool) {
+	// We cannot use ctx.(*requestContext).req to get the request because ctx may
+	// be a Context derived from a *requestContext. Instead, we use Value to
 	// access the request if it is anywhere up the Context tree.
 	req, ok := ctx.Value(requestKey).(*http.Request)
 	return req, ok
 }
 
 // Limit returns the maximum number of results that should be fetched.
-func (ctx *gorillaRequestContext) Limit() int {
+func (ctx *requestContext) Limit() int {
 	limitStr := ctx.ValueWithDefault(limitKey, "100")
 	limit, err := strconv.Atoi(limitStr.(string))
 	if err != nil {
@@ -339,7 +349,7 @@ func (ctx *gorillaRequestContext) Limit() int {
 // NextURL returns the URL to use to request the next page of results using the current
 // cursor. If there is no cursor for this request or the URL fails to be built, an empty
 // string is returned with the error set.
-func (ctx *gorillaRequestContext) NextURL() (string, error) {
+func (ctx *requestContext) NextURL() (string, error) {
 	cursor := ctx.Cursor()
 	if cursor == "" {
 		return "", fmt.Errorf("Unable to build next url: no cursor")
@@ -384,7 +394,7 @@ type RouteVars map[string]string
 // corresponds with the CreateResource method.
 //
 // All URL variables should be named in the vars map.
-func (ctx *gorillaRequestContext) BuildURL(resourceName string,
+func (ctx *requestContext) BuildURL(resourceName string,
 	method HandleMethod, vars RouteVars) (*url.URL, error) {
 	r, ok := ctx.Request()
 	if !ok {
@@ -417,7 +427,7 @@ func (ctx *gorillaRequestContext) BuildURL(resourceName string,
 
 // Messages returns all of the messages set by the request handler to be included in
 // the response.
-func (ctx *gorillaRequestContext) Messages() []string {
+func (ctx *requestContext) Messages() []string {
 	messages := ctx.messages
 	if err := ctx.Error(); err != nil {
 		messages = append(messages, err.Error())
@@ -426,10 +436,10 @@ func (ctx *gorillaRequestContext) Messages() []string {
 }
 
 // AddMessage adds a message to the request messages to be included in the response.
-func (ctx *gorillaRequestContext) AddMessage(message string) {
+func (ctx *requestContext) AddMessage(message string) {
 	ctx.messages = append(ctx.messages, message)
 }
 
-func (ctx *gorillaRequestContext) ResponseWriter() http.ResponseWriter {
+func (ctx *requestContext) ResponseWriter() http.ResponseWriter {
 	return ctx.writer
 }

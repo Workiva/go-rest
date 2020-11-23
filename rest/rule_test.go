@@ -788,7 +788,7 @@ func TestApplyInboundRulesCoerceStringToDurationError(t *testing.T) {
 	actual, err := applyInboundRules(payload, rules, "1")
 
 	assert.Nil(actual, "Return value should be nil")
-	assert.Equal("time: invalid duration hello", err.Error(), "Incorrect error")
+	assert.Equal(`time: invalid duration "hello"`, err.Error(), "Incorrect error")
 }
 
 // Ensures that inbound rules which specify time.Duration correctly coerce string.
